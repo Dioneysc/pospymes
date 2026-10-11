@@ -997,7 +997,240 @@ tr:last-child td { border-bottom: none; }
   border-radius: 6px;
   font-size: 13px;
 }
+/* ============================================
+   TOGGLES OPCIONALES (Descuento / Propina)
+   ============================================ */
+.toggles-extra {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 8px;
+}
 
+.toggle-btn {
+  background: #fff;
+  border: 2px dashed var(--borde);
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--texto-suave);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+  transition: all .15s;
+  font-family: inherit;
+}
+
+.toggle-btn:active {
+  transform: scale(.97);
+}
+
+.toggle-btn.activo {
+  background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+  border: 2px solid var(--naranja);
+  border-style: solid;
+  color: var(--naranja2);
+}
+
+.toggle-btn .toggle-val {
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.toggle-btn.activo .toggle-val {
+  color: var(--naranja2);
+}
+/* ALERTA STOCK BAJO */
+.alerta-stock {
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(245,124,0,.3);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.alerta-stock .ico { font-size: 24px; }
+
+.alerta-stock .texto { flex: 1; }
+
+.alerta-stock .badge-count {
+  background: #fff;
+  color: #f57c00;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* HISTORIAL */
+.hist-item {
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  border-left: 4px solid var(--naranja);
+}
+
+.hist-item .hist-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hist-item .hist-id {
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--gris-oscuro);
+}
+
+.hist-item .hist-fecha {
+  font-size: 12px;
+  color: var(--texto-suave);
+}
+
+.hist-item .hist-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--texto-suave);
+  margin-bottom: 8px;
+}
+
+.hist-item .hist-total {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--naranja);
+}
+
+.hist-item .hist-items {
+  font-size: 12px;
+  color: var(--texto-suave);
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.hist-item .hist-acciones {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.hist-item.cancelada {
+  opacity: .6;
+  border-left-color: var(--rojo);
+  background: #ffebee;
+}
+
+.hist-item.cancelada .hist-total {
+  text-decoration: line-through;
+  color: var(--rojo);
+}
+
+.badge-cancelada {
+  background: var(--rojo);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+/* GRÁFICA DE BARRAS (7 días) */
+.grafica-7dias {
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px;
+  margin-top: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+
+.grafica-7dias h3 {
+  font-size: 14px;
+  margin-bottom: 14px;
+  color: var(--gris-oscuro);
+}
+
+.barras-7d {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 6px;
+  height: 140px;
+}
+
+.barra-dia {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.barra-dia .valor {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--gris-oscuro);
+}
+
+.barra-dia .barra {
+  width: 100%;
+  background: linear-gradient(180deg, var(--naranja), var(--amarillo));
+  border-radius: 6px 6px 0 0;
+  min-height: 4px;
+  transition: height .3s;
+}
+
+.barra-dia .dia-sem {
+  font-size: 10px;
+  color: var(--texto-suave);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.barra-dia.hoy .barra {
+  background: linear-gradient(180deg, var(--verde), #4caf50);
+}
+
+/* MODAL DE CANCELACIÓN */
+.motivo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.motivo-grid button {
+  padding: 10px;
+  border: 2px solid var(--borde);
+  background: #fff;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.motivo-grid button:active {
+  background: #ffebee;
+  border-color: var(--rojo);
+}
 /* ============================================
    TOAST
    ============================================ */
@@ -1276,7 +1509,8 @@ tr:last-child td { border-bottom: none; }
   <main>
 
     <!-- ==================== VISTA: VENTA ==================== -->
-    <section id="caja" class="vista activa">
+       <section id="caja" class="vista activa">
+      <div id="alertaStock" class="alerta-stock" style="display:none" onclick="verInsumosBajos()"></div>
       <div class="caja-layout">
 
         <!-- Columna izquierda: productos -->
@@ -1297,8 +1531,20 @@ tr:last-child td { border-bottom: none; }
 
           <div id="carrito" class="carrito-lista"></div>
 
-          <!-- Descuento / Propina compactos -->
-          <div class="totales-sec">
+                   <!-- Botones toggle opcionales -->
+          <div class="toggles-extra">
+            <button class="toggle-btn" id="toggleDescuento" onclick="toggleDescuento()">
+              <span>🏷️ Descuento</span>
+              <span class="toggle-val" id="toggleDescuentoVal"></span>
+            </button>
+            <button class="toggle-btn" id="togglePropina" onclick="togglePropina()">
+              <span>💝 Propina</span>
+              <span class="toggle-val" id="togglePropinaVal"></span>
+            </button>
+          </div>
+
+          <!-- Descuento / Propina (ocultos por defecto) -->
+          <div class="totales-sec oculto" id="panelDescuento">
             <div class="fila-sec">
               <div class="lbl">Descuento</div>
               <div class="val" id="descuentoVal">$0.00</div>
@@ -1306,19 +1552,23 @@ tr:last-child td { border-bottom: none; }
                 <button onclick="aplicarDescuento(0)">0</button>
                 <button onclick="aplicarDescuento(5)">5%</button>
                 <button onclick="aplicarDescuento(10)">10%</button>
+                <button onclick="aplicarDescuento(15)">15%</button>
               </div>
             </div>
+          </div>
+
+          <div class="totales-sec oculto" id="panelPropina">
             <div class="fila-sec">
               <div class="lbl">Propina</div>
               <div class="val" id="propinaVal">$0.00</div>
               <div class="btns">
                 <button onclick="aplicarPropina(0)">0</button>
+                <button onclick="aplicarPropina(5)">5%</button>
                 <button onclick="aplicarPropina(10)">10%</button>
                 <button onclick="aplicarPropina(15)">15%</button>
               </div>
             </div>
           </div>
-
           <!-- Total grande -->
           <div class="total-box">
             <span class="label">Total:</span>
@@ -1391,7 +1641,19 @@ tr:last-child td { border-bottom: none; }
       </div>
       <div id="reporteContenido"></div>
     </section>
-
+    <!-- ==================== VISTA: HISTORIAL ==================== -->
+    <section id="historial" class="vista">
+      <div class="vista-header">
+        <h2>📅 Historial de tickets</h2>
+        <button class="btn-secondary" onclick="exportarHistorial()">📥 Exportar CSV</button>
+      </div>
+      <div class="filtros" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <input type="date" id="histDesde" onchange="renderHistorial()" style="padding:10px;border:2px solid var(--borde);border-radius:8px;flex:1;min-width:140px">
+        <input type="date" id="histHasta" onchange="renderHistorial()" style="padding:10px;border:2px solid var(--borde);border-radius:8px;flex:1;min-width:140px">
+        <button class="btn-secondary" onclick="limpiarFiltroHistorial()">Limpiar</button>
+      </div>
+      <div id="listaHistorial" class="tabla-wrap"></div>
+    </section>
     <!-- ==================== VISTA: GASTOS ==================== -->
     <section id="gastos" class="vista">
       <div class="vista-header">
@@ -1626,11 +1888,11 @@ function entrarApp() {
   renderCategorias();
   cargarNegocio();
   initDia();
+  mostrarAlertaStock();
   if (estadoCajaHoy.fondoInicial === null) {
     setTimeout(() => abrirFondoInicial(), 600);
   }
 }
-
 /* ============ HEADER DINÁMICO ============ */
 function actualizarHeader() {
   const n = DB.negocio;
@@ -1674,8 +1936,11 @@ function cambiarVista(nombre) {
   if (nombre === "gastos") renderGastos();
   if (nombre === "productos") renderProductos();
   if (nombre === "config") { cargarNegocio(); renderCategoriasGastos(); }
-}
+  if (nombre === "historial") { renderHistorial(); }
 
+  // Actualizar alerta de stock siempre
+  mostrarAlertaStock();
+}
 function irConfig() {
   cambiarVista("config");
 }
@@ -1689,6 +1954,7 @@ function abrirMenu() {
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('corte')" style="text-align:left;padding:14px;font-size:15px">💰 Caja</button>
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('reportes')" style="text-align:left;padding:14px;font-size:15px">📊 Reportes</button>
       <hr style="border:none;border-top:1px solid #eee;margin:8px 0">
+      <button class="btn-secondary" onclick="cerrarModal();cambiarVista('historial')" style="text-align:left;padding:14px;font-size:15px">📅 Historial de tickets</button>
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('productos')" style="text-align:left;padding:14px;font-size:15px">🍗 Productos</button>
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('gastos')" style="text-align:left;padding:14px;font-size:15px">💸 Gastos</button>
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('config')" style="text-align:left;padding:14px;font-size:15px">⚙️ Configuración</button>
@@ -1784,12 +2050,14 @@ function renderCarrito() {
   const elTot = $("#total");
   const elTotCobrar = $("#totalCobrar");
 
-  if (elDesc) elDesc.textContent = "-" + fmt(descuento);
+    if (elDesc) elDesc.textContent = "-" + fmt(descuento);
   if (elProp) elProp.textContent = fmt(propina);
   if (elTot) elTot.textContent = fmt(total);
   if (elTotCobrar) elTotCobrar.textContent = fmt(total);
-}
 
+  // Actualizar toggles
+  actualizarToggleValores();
+}
 function cambiarCantidad(i, d) {
   carrito[i].cantidad += d;
   if (carrito[i].cantidad <= 0) carrito.splice(i, 1);
@@ -1800,21 +2068,110 @@ function limpiarCarrito() {
   if (!carrito.length) return;
   if (!confirm("¿Vaciar el ticket?")) return;
   carrito = []; descuento = 0; propina = 0;
+
+  // Ocultar paneles
+  const pD = $("#panelDescuento");
+  const pP = $("#panelPropina");
+  const tD = $("#toggleDescuento");
+  const tP = $("#togglePropina");
+  if (pD) pD.classList.add("oculto");
+  if (pP) pP.classList.add("oculto");
+  if (tD) tD.classList.remove("activo");
+  if (tP) tP.classList.remove("activo");
+
   renderCarrito();
+}
+function toggleDescuento() {
+  const panel = $("#panelDescuento");
+  const btn = $("#toggleDescuento");
+  if (!panel || !btn) return;
+
+  const visible = !panel.classList.contains("oculto");
+
+  if (visible) {
+    // Ocultar y resetear descuento
+    panel.classList.add("oculto");
+    btn.classList.remove("activo");
+    descuento = 0;
+    actualizarToggleValores();
+    renderCarrito();
+  } else {
+    // Mostrar
+    panel.classList.remove("oculto");
+    btn.classList.add("activo");
+  }
+}
+
+function togglePropina() {
+  const panel = $("#panelPropina");
+  const btn = $("#togglePropina");
+  if (!panel || !btn) return;
+
+  const visible = !panel.classList.contains("oculto");
+
+  if (visible) {
+    // Ocultar y resetear propina
+    panel.classList.add("oculto");
+    btn.classList.remove("activo");
+    propina = 0;
+    actualizarToggleValores();
+    renderCarrito();
+  } else {
+    // Mostrar
+    panel.classList.remove("oculto");
+    btn.classList.add("activo");
+  }
 }
 
 function aplicarDescuento(pct) {
   const sub = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
   descuento = sub * (pct / 100);
+
+  // Si el descuento es 0, ocultar el panel
+  if (pct === 0) {
+    const panel = $("#panelDescuento");
+    const btn = $("#toggleDescuento");
+    if (panel) panel.classList.add("oculto");
+    if (btn) btn.classList.remove("activo");
+  }
+
+  actualizarToggleValores();
   renderCarrito();
 }
 
 function aplicarPropina(pct) {
   const sub = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
   propina = sub * (pct / 100);
+
+  // Si la propina es 0, ocultar el panel
+  if (pct === 0) {
+    const panel = $("#panelPropina");
+    const btn = $("#togglePropina");
+    if (panel) panel.classList.add("oculto");
+    if (btn) btn.classList.remove("activo");
+  }
+
+  actualizarToggleValores();
   renderCarrito();
 }
 
+function actualizarToggleValores() {
+  const btnDesc = $("#toggleDescuentoVal");
+  const btnProp = $("#togglePropinaVal");
+
+  if (btnDesc) {
+    btnDesc.textContent = descuento > 0 ? "-" + fmt(descuento) : "";
+  }
+  if (btnProp) {
+    btnProp.textContent = propina > 0 ? "+" + fmt(propina) : "";
+  }
+
+  // Actualizar clase activo según valor
+  const tDesc = $("#toggleDescuento");
+  const tProp = $("#togglePropina");
+  if (tDesc) tDesc.classList.toggle("activo", descuento > 0);
+  if (tProp) tProp.classList.toggle("activo", propina > 0);
+}
 function cobrar(metodo) {
   if (!carrito.length) return toast("⚠️ Ticket vacío");
   const sub = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
@@ -1970,9 +2327,19 @@ function finalizarVenta(metodo, total, pagoCon, cambio) {
 
   guardar();
   carrito = []; descuento = 0; propina = 0;
+
+  // Resetear paneles y toggles
+  const pD = $("#panelDescuento");
+  const pP = $("#panelPropina");
+  const tD = $("#toggleDescuento");
+  const tP = $("#togglePropina");
+  if (pD) pD.classList.add("oculto");
+  if (pP) pP.classList.add("oculto");
+  if (tD) tD.classList.remove("activo");
+  if (tP) tP.classList.remove("activo");
+
   renderCarrito();
   renderEstadoCaja();
-
   // Mostrar ticket para imprimir
   mostrarTicketImpresion(venta);
 
@@ -2322,7 +2689,7 @@ function reporteRango(tipo) {
   if (tipo === "semana") desde.setDate(ahora.getDate() - 7);
   if (tipo === "mes") desde.setMonth(ahora.getMonth() - 1);
 
-  const ventas = DB.ventas.filter(v => new Date(v.fecha) >= desde);
+  const ventas = DB.ventas.filter(v => new Date(v.fecha) >= desde && !v.cancelada);
   const gastos = DB.gastos.filter(g => new Date(g.fecha) >= desde);
 
   const totalV = ventas.reduce((s,v) => s + v.total, 0);
@@ -2413,6 +2780,8 @@ function reporteRango(tipo) {
         </tbody>
       </table>
     </div>
+
+        ${tipo === "semana" ? renderGrafica7Dias() : ""}
 
     <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn-secondary" onclick="exportarCSV()">📥 Exportar ventas a CSV</button>
@@ -2637,7 +3006,7 @@ function renderEstadoCaja() {
 
   initDia();
   const hoyStr = hoy();
-  const ventasHoy = DB.ventas.filter(v => v.fecha.slice(0,10) === hoyStr);
+  const ventasHoy = DB.ventas.filter(v => v.fecha.slice(0,10) === hoyStr && !v.cancelada);
   const efectivoVentas = ventasHoy.filter(v => v.metodo === "Efectivo").reduce((s,v) => s + v.total, 0);
   const tarjetaVentas = ventasHoy.filter(v => v.metodo === "Tarjeta").reduce((s,v) => s + v.total, 0);
   const transfVentas = ventasHoy.filter(v => v.metodo === "Transferencia").reduce((s,v) => s + v.total, 0);
@@ -2709,7 +3078,7 @@ function renderEstadoCaja() {
 function abrirCorteDiario() {
   initDia();
   const hoyStr = hoy();
-  const ventasHoy = DB.ventas.filter(v => v.fecha.slice(0,10) === hoyStr);
+  const ventasHoy = DB.ventas.filter(v => v.fecha.slice(0,10) === hoyStr && !v.cancelada);
   const efectivoVentas = ventasHoy.filter(v => v.metodo === "Efectivo").reduce((s,v) => s + v.total, 0);
   const tarjetaVentas = ventasHoy.filter(v => v.metodo === "Tarjeta").reduce((s,v) => s + v.total, 0);
   const transfVentas = ventasHoy.filter(v => v.metodo === "Transferencia").reduce((s,v) => s + v.total, 0);
@@ -2823,6 +3192,7 @@ function guardarCorte(esperado, efectivo, tarjeta, transf, total) {
   toast(`✅ Corte guardado · Diferencia: ${fmt(diferencia)}`);
   renderEstadoCaja();
   renderHistorialCortes();
+  mostrarAlertaStock();
   imprimirCorte(corte);
 }
 
@@ -2924,7 +3294,307 @@ function borrarCategoria(i) {
   renderCategoriasGastos();
   toast("🗑️ Categoría borrada");
 }
+/* ============ ALERTA DE STOCK BAJO ============ */
+function revisarStockBajo() {
+  const bajos = DB.insumos.filter(i => i.stock <= i.min);
+  return bajos;
+}
 
+function mostrarAlertaStock() {
+  const bajos = revisarStockBajo();
+  const el = document.getElementById("alertaStock");
+  if (!el) return;
+
+  if (bajos.length === 0) {
+    el.style.display = "none";
+    return;
+  }
+
+  el.style.display = "flex";
+  el.innerHTML = `
+    <span class="ico">⚠️</span>
+    <span class="texto">Stock bajo: ${bajos.length} insumo${bajos.length>1?'s':''} por reabastecer</span>
+    <span class="badge-count">${bajos.length}</span>
+  `;
+}
+
+function verInsumosBajos() {
+  const bajos = revisarStockBajo();
+  if (bajos.length === 0) return toast("✅ Todo el stock está bien");
+  abrirModal("⚠️ Insumos con stock bajo", `
+    <p style="color:#666;font-size:13px;margin-bottom:12px">Estos insumos están en o por debajo del mínimo:</p>
+    <div>
+      ${bajos.map(i => `
+        <div class="cat-item" style="background:#fff3e0;border-left:4px solid var(--warn)">
+          <div style="flex:1">
+            <b>${i.nombre}</b>
+            <div style="font-size:12px;color:#666">Stock: ${i.stock} ${i.unidad} · Mínimo: ${i.min}</div>
+          </div>
+          <button class="btn-mini" onclick="cerrarModal();abrirMovimiento(${i.id})">↕ Reabastecer</button>
+        </div>
+      `).join("")}
+    </div>
+    <div class="acciones">
+      <button class="btn-primary" onclick="cerrarModal();cambiarVista('inventario')">Ir a Inventario</button>
+    </div>
+  `);
+}
+
+/* ============ HISTORIAL DE TICKETS ============ */
+function renderHistorial() {
+  const desde = $("#histDesde")?.value;
+  const hasta = $("#histHasta")?.value;
+
+  let ventas = [...DB.ventas].sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+
+  if (desde) {
+    const d = new Date(desde + "T00:00:00");
+    ventas = ventas.filter(v => new Date(v.fecha) >= d);
+  }
+  if (hasta) {
+    const h = new Date(hasta + "T23:59:59");
+    ventas = ventas.filter(v => new Date(v.fecha) <= h);
+  }
+
+  const el = $("#listaHistorial");
+  if (!el) return;
+
+  if (!ventas.length) {
+    el.innerHTML = `<p style="text-align:center;padding:30px;color:#999">Sin ventas en este rango</p>`;
+    return;
+  }
+
+  el.innerHTML = ventas.map(v => {
+    const cancelada = v.cancelada || false;
+    const itemsTxt = v.items.map(i => `${i.cantidad}x ${i.nombre}`).join(", ");
+    return `
+      <div class="hist-item ${cancelada ? "cancelada" : ""}">
+        <div class="hist-header">
+          <div>
+            <div class="hist-id">
+              🧾 Ticket #${String(v.id).padStart(6, "0")}
+              ${cancelada ? `<span class="badge-cancelada">Cancelada</span>` : ""}
+            </div>
+            <div class="hist-fecha">${new Date(v.fecha).toLocaleString("es-MX")}</div>
+          </div>
+          <div class="hist-total">${fmt(v.total)}</div>
+        </div>
+        <div class="hist-meta">
+          <span>💳 ${v.metodo}</span>
+          <span>👤 ${v.usuario || "admin"}</span>
+          ${v.mesa ? `<span>🍽️ Mesa ${v.mesa}</span>` : ""}
+        </div>
+        <div class="hist-items">${itemsTxt}</div>
+        <div class="hist-acciones">
+          <button class="btn-mini" onclick='verTicketHistorial(${JSON.stringify(v).replace(/'/g, "&#39;")})'>👁️ Ver</button>
+          <button class="btn-mini" onclick='imprimirTicket(${JSON.stringify(v).replace(/'/g, "&#39;")})'>🖨️ Reimprimir</button>
+          ${!cancelada ? `<button class="btn-mini" style="color:var(--rojo);border-color:var(--rojo)" onclick="abrirCancelarVenta(${v.id})">↩️ Cancelar</button>` : ""}
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function verTicketHistorial(v) {
+  const n = DB.negocio;
+  const itemsHTML = v.items.map(it => `
+    <div class="fila">
+      <span>${it.cantidad}x ${it.nombre}</span>
+      <span>${fmt(it.precio * it.cantidad)}</span>
+    </div>
+  `).join("");
+
+  abrirModal("🧾 Ticket #" + String(v.id).padStart(6, "0"), `
+    <div class="ticket-preview">
+      <div class="centro bold grande">${n.nombre || "POS"}</div>
+      <div class="centro">${n.slogan || ""}</div>
+      <hr>
+      <div>Ticket No. ${String(v.id).padStart(6, "0")}</div>
+      <div>Fecha: ${new Date(v.fecha).toLocaleString("es-MX")}</div>
+      ${v.mesa ? `<div>Mesa: ${v.mesa}</div>` : ""}
+      <div>Cajero: ${v.usuario || "admin"}</div>
+      <hr>
+      <div class="fila bold"><span>Cant.</span><span>Total</span></div>
+      <hr>
+      ${itemsHTML}
+      <hr>
+      <div class="fila"><span>Subtotal</span><span>${fmt(v.subtotal)}</span></div>
+      ${v.descuento ? `<div class="fila"><span>Descuento</span><span>-${fmt(v.descuento)}</span></div>` : ""}
+      ${v.propina ? `<div class="fila"><span>Propina</span><span>${fmt(v.propina)}</span></div>` : ""}
+      <div class="fila bold grande"><span>TOTAL</span><span>${fmt(v.total)}</span></div>
+      <hr>
+      <div class="fila"><span>Forma de pago:</span><span>${v.metodo}</span></div>
+      ${v.metodo === "Efectivo" ? `
+        <div class="fila"><span>Efectivo</span><span>${fmt(v.pagoCon)}</span></div>
+        <div class="fila"><span>Cambio</span><span>${fmt(v.cambio)}</span></div>
+      ` : ""}
+      ${v.cancelada ? `
+        <hr>
+        <div class="centro bold" style="color:#c62828">*** CANCELADA ***</div>
+        <div class="centro">Motivo: ${v.motivoCancelacion || "—"}</div>
+        <div class="centro">${v.fechaCancelacion ? new Date(v.fechaCancelacion).toLocaleString("es-MX") : ""}</div>
+      ` : ""}
+      <hr>
+      <div class="centro">¡Gracias por su preferencia!</div>
+    </div>
+    <div class="acciones">
+      <button class="btn-secondary" onclick="cerrarModal()">Cerrar</button>
+      <button class="btn-primary" onclick='cerrarModal();imprimirTicket(${JSON.stringify(v).replace(/'/g, "&#39;")})'>🖨️ Reimprimir</button>
+    </div>
+  `);
+}
+
+function exportarHistorial() {
+  const rows = [["Ticket","Fecha","Cajero","Productos","Subtotal","Desc","Propina","Total","Método","Estado","Motivo cancelación"]];
+  DB.ventas.forEach(v => {
+    rows.push([
+      v.id,
+      new Date(v.fecha).toLocaleString("es-MX"),
+      v.usuario || "",
+      v.items.map(i => `${i.cantidad}x ${i.nombre}`).join(" | "),
+      v.subtotal, v.descuento || 0, v.propina || 0, v.total, v.metodo,
+      v.cancelada ? "Cancelada" : "Activa",
+      v.motivoCancelacion || ""
+    ]);
+  });
+  const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+  const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `historial_${hoy()}.csv`;
+  a.click();
+  toast("📥 Historial exportado");
+}
+
+function limpiarFiltroHistorial() {
+  const d = $("#histDesde");
+  const h = $("#histHasta");
+  if (d) d.value = "";
+  if (h) h.value = "";
+  renderHistorial();
+}
+
+/* ============ CANCELAR VENTA ============ */
+function abrirCancelarVenta(id) {
+  const v = DB.ventas.find(x => x.id === id);
+  if (!v) return toast("⚠️ Venta no encontrada");
+  if (v.cancelada) return toast("Ya está cancelada");
+
+  abrirModal("↩️ Cancelar venta #" + String(v.id).padStart(6, "0"), `
+    <div style="background:#fff3e0;border-radius:10px;padding:12px;margin-bottom:14px;font-size:13px">
+      <div style="display:flex;justify-content:space-between;padding:3px 0"><span>Fecha:</span><b>${new Date(v.fecha).toLocaleString("es-MX")}</b></div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0"><span>Total:</span><b>${fmt(v.total)}</b></div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0"><span>Método:</span><b>${v.metodo}</b></div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0"><span>Productos:</span><b>${v.items.length}</b></div>
+    </div>
+
+    <p style="color:#666;font-size:13px;margin-bottom:8px">Esta acción:</p>
+    <ul style="color:#666;font-size:13px;margin-left:20px;margin-bottom:14px">
+      <li>Devuelve los insumos al inventario</li>
+      <li>Marca el ticket como cancelado</li>
+      <li>No elimina el registro (queda en el historial)</li>
+    </ul>
+
+    <label>Motivo de cancelación</label>
+    <div class="motivo-grid">
+      <button onclick="document.getElementById('motivoCancel').value='Cliente cambió de opinión'">Cliente cambió de opinión</button>
+      <button onclick="document.getElementById('motivoCancel').value='Error de cobro'">Error de cobro</button>
+      <button onclick="document.getElementById('motivoCancel').value='Producto en mal estado'">Producto en mal estado</button>
+      <button onclick="document.getElementById('motivoCancel').value='Duplicado'">Duplicado</button>
+    </div>
+    <input id="motivoCancel" placeholder="Escribe o selecciona un motivo" style="margin-top:8px">
+
+    <div class="acciones">
+      <button class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-danger" onclick="confirmarCancelarVenta(${v.id})">↩️ Cancelar venta</button>
+    </div>
+  `);
+}
+
+function confirmarCancelarVenta(id) {
+  const v = DB.ventas.find(x => x.id === id);
+  if (!v) return toast("⚠️ Venta no encontrada");
+
+  const motivo = $("#motivoCancel").value.trim() || "Sin motivo";
+
+  if (!confirm(`¿Cancelar la venta #${v.id} por ${fmt(v.total)}?\n\nMotivo: ${motivo}`)) return;
+
+  // Devolver insumos al inventario
+  v.items.forEach(item => {
+    const prod = DB.productos.find(p => p.id === item.productoId);
+    if (!prod || !prod.insumos) return;
+    prod.insumos.forEach(ing => {
+      const ins = DB.insumos.find(x => x.id === ing.insumoId);
+      if (ins) ins.stock += ing.cantidad * item.cantidad;
+    });
+  });
+
+  // Marcar como cancelada
+  v.cancelada = true;
+  v.motivoCancelacion = motivo;
+  v.fechaCancelacion = new Date().toISOString();
+  v.usuarioCancelacion = JSON.parse(sessionStorage.getItem("sesion") || "{}").nombre || "admin";
+
+  guardar();
+  cerrarModal();
+  toast(`✅ Venta #${v.id} cancelada · Insumos reintegrados`);
+  renderHistorial();
+  renderEstadoCaja();
+  mostrarAlertaStock();
+}
+
+/* ============ GRÁFICA DE 7 DÍAS ============ */
+function renderGrafica7Dias() {
+  const dias = [];
+  const totales = [];
+  const nombresDia = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    d.setHours(0,0,0,0);
+    const finDia = new Date(d);
+    finDia.setHours(23,59,59,999);
+
+    const ventasDia = DB.ventas.filter(v => {
+      if (v.cancelada) return false;
+      const f = new Date(v.fecha);
+      return f >= d && f <= finDia;
+    });
+
+    const totalDia = ventasDia.reduce((s,v) => s + v.total, 0);
+    dias.push({
+      nombre: nombresDia[d.getDay()],
+      fecha: d.toLocaleDateString("es-MX", { day: "2-digit", month: "short" }),
+      total: totalDia,
+      esHoy: i === 0
+    });
+    totales.push(totalDia);
+  }
+
+  const max = Math.max(...totales, 1);
+
+  return `
+    <div class="grafica-7dias">
+      <h3>📊 Ventas últimos 7 días</h3>
+      <div class="barras-7d">
+        ${dias.map(d => {
+          const altura = d.total > 0 ? Math.max((d.total / max) * 100, 8) : 4;
+          return `
+            <div class="barra-dia ${d.esHoy ? "hoy" : ""}">
+              <div class="valor">${d.total > 0 ? "$" + Math.round(d.total) : ""}</div>
+              <div class="barra" style="height:${altura}%"></div>
+              <div class="dia-sem">${d.nombre}</div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+      <div style="text-align:center;font-size:11px;color:#999;margin-top:8px">
+        Total semana: <b>${fmt(totales.reduce((s,t) => s + t, 0))}</b>
+      </div>
+    </div>
+  `;
+}
 /* ============ SERVICE WORKER ============ */
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
   window.addEventListener("load", () => {
