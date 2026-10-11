@@ -1,0 +1,2995 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#1a1a1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="POS">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>🧮 POS</title>
+<style>
+/* ============================================
+   RESET Y VARIABLES
+   ============================================ */
+* { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 0; }
+
+:root {
+  --naranja: #f57c00;
+  --naranja2: #e65100;
+  --amarillo: #ffc107;
+  --amarillo2: #ff9800;
+  --rojo: #d32f2f;
+  --rojo2: #b71c1c;
+  --verde: #2e7d32;
+  --verde2: #1b5e20;
+  --azul: #1565c0;
+  --azul2: #0d47a1;
+  --morado: #6a1b9a;
+  --morado2: #4a148c;
+  --gris-oscuro: #1a1a1a;
+  --gris-medio: #2a2a2a;
+  --gris: #f5f5f5;
+  --gris-card: #f9f9f9;
+  --borde: #e0e0e0;
+  --texto: #212121;
+  --texto-suave: #666;
+  --ok: #2e7d32;
+  --warn: #f57c00;
+}
+
+.oculto { display: none !important; }
+
+html, body {
+  height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  background: var(--gris);
+  color: var(--texto);
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* ============================================
+   LOGIN
+   ============================================ */
+#login {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+  padding: 20px;
+}
+
+.login-box {
+  background: #fff;
+  padding: 32px 28px;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.5);
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+}
+
+.login-logo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin: 0 auto 12px;
+  display: block;
+}
+
+.login-box h1 {
+  font-size: 24px;
+  margin-bottom: 4px;
+  color: var(--gris-oscuro);
+}
+
+.login-box .sub {
+  color: var(--texto-suave);
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+
+.login-box input {
+  width: 100%;
+  padding: 14px;
+  margin: 6px 0;
+  border: 2px solid var(--borde);
+  border-radius: 10px;
+  font-size: 16px;
+  transition: border-color .2s;
+}
+
+.login-box input:focus {
+  outline: none;
+  border-color: var(--naranja);
+}
+
+.login-box button {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--naranja), var(--naranja2));
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+  box-shadow: 0 4px 12px rgba(245,124,0,.4);
+  transition: transform .1s;
+}
+
+.login-box button:active {
+  transform: scale(.98);
+}
+
+.login-box .hint {
+  font-size: 12px;
+  color: var(--texto-suave);
+  margin-top: 12px;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+.topbar {
+  background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+  color: #fff;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: 40px 1fr 40px;
+  align-items: center;
+  gap: 8px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,.3);
+}
+
+.topbar .btn-icon {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: background .15s;
+}
+
+.topbar .btn-icon:active {
+  background: rgba(255,255,255,.15);
+}
+
+.topbar .brand-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 44px;
+  gap: 2px;
+}
+
+.topbar .brand-logo {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+}
+
+.topbar .brand-name {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: .5px;
+  color: #fff;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.topbar .brand-slogan {
+  font-size: 10px;
+  color: var(--amarillo);
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* ============================================
+   MAIN / VISTAS
+   ============================================ */
+main {
+  padding: 12px;
+  padding-bottom: 90px; /* espacio para el nav inferior */
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.vista { display: none; }
+.vista.activa { display: block; }
+
+.vista-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.vista-header h2 {
+  font-size: 20px;
+  color: var(--gris-oscuro);
+}
+
+/* ============================================
+   BOTONES GENERALES
+   ============================================ */
+button {
+  cursor: pointer;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--naranja), var(--naranja2));
+  color: #fff;
+  border: none;
+  padding: 12px 20px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(245,124,0,.3);
+}
+
+.btn-primary:active { transform: scale(.98); }
+
+.btn-secondary {
+  background: #fff;
+  color: var(--texto);
+  border: 2px solid var(--borde);
+  padding: 12px 20px;
+  font-weight: 600;
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, var(--rojo), var(--rojo2));
+  color: #fff;
+  border: none;
+  padding: 12px 20px;
+  font-weight: 700;
+}
+
+.btn-mini {
+  padding: 6px 10px;
+  font-size: 12px;
+  border: 1px solid var(--borde);
+  background: #fff;
+  border-radius: 8px;
+  margin-right: 4px;
+}
+
+.btn-mini:active { background: #eee; }
+
+/* ============================================
+   CAJA / VENTA
+   ============================================ */
+.caja-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 14px;
+  height: calc(100dvh - 180px);
+  min-height: 500px;
+}
+
+.productos-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.barra-busqueda {
+  flex-shrink: 0;
+}
+
+.barra-busqueda input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--borde);
+  border-radius: 12px;
+  font-size: 15px;
+  background: #fff;
+}
+
+.categorias {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 8px 0 4px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.categorias::-webkit-scrollbar { display: none; }
+
+.categorias button {
+  background: #fff;
+  border: 2px solid var(--borde);
+  padding: 8px 16px;
+  border-radius: 20px;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--texto-suave);
+  transition: all .15s;
+}
+
+.categorias button.activo {
+  background: var(--naranja);
+  color: #fff;
+  border-color: var(--naranja);
+}
+
+/* GRID DE PRODUCTOS */
+.productos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  overflow-y: auto;
+  padding-bottom: 12px;
+  align-content: start;
+}
+
+.prod-btn {
+  background: #fff;
+  border: none;
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 140px;
+  text-align: center;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  transition: all .15s;
+  position: relative;
+  overflow: hidden;
+}
+
+.prod-btn:active {
+  transform: scale(.96);
+  box-shadow: 0 1px 4px rgba(0,0,0,.15);
+}
+
+.prod-emoji {
+  font-size: 46px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.prod-imagen {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 4px;
+}
+
+.prod-nombre {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--texto);
+  line-height: 1.2;
+}
+
+.prod-precio {
+  font-weight: 800;
+  font-size: 17px;
+  color: var(--texto);
+}
+
+/* Colores por categoría (opcional, se aplica con clase) */
+.prod-btn[data-cat="Pollos"] .prod-precio { color: var(--rojo); }
+.prod-btn[data-cat="Bebidas"] .prod-precio { color: var(--azul); }
+.prod-btn[data-cat="Salsas"] .prod-precio { color: var(--naranja); }
+.prod-btn[data-cat="Extras"] .prod-precio { color: #607d8b; }
+.prod-btn[data-cat="Alitas"] .prod-precio { color: #8d6e63; }
+
+/* CARRITO */
+.carrito-panel {
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 12px rgba(0,0,0,.08);
+  overflow: hidden;
+}
+
+.carrito-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--gris);
+  margin-bottom: 10px;
+}
+
+.carrito-header h3 {
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--gris-oscuro);
+}
+
+.carrito-header .btn-trash {
+  background: transparent;
+  border: none;
+  color: var(--rojo);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.carrito-header .btn-trash:active {
+  background: #ffebee;
+}
+
+.carrito-lista {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  min-height: 80px;
+}
+
+.carrito-vacio {
+  text-align: center;
+  color: var(--texto-suave);
+  padding: 30px 0;
+  font-size: 14px;
+}
+
+.carrito-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+}
+
+.carrito-item-info {
+  flex: 1;
+}
+
+.carrito-item-info b {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.item-controles {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.item-controles button {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--borde);
+  background: #f9f9f9;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gris-oscuro);
+}
+
+.item-controles button:active { background: #e0e0e0; }
+
+.item-controles span {
+  min-width: 24px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.item-precio {
+  font-weight: 800;
+  color: var(--gris-oscuro);
+  font-size: 15px;
+  margin-left: 8px;
+}
+
+/* Total box grande */
+.total-box {
+  background: var(--gris-oscuro);
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  margin-bottom: 10px;
+}
+
+.total-box .label {
+  font-size: 14px;
+  font-weight: 600;
+  opacity: .85;
+}
+
+.total-box .monto {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--amarillo);
+}
+
+/* Totales secundarios (descuento/propina) */
+.totales-sec {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.totales-sec .fila-sec {
+  flex: 1;
+  background: #f9f9f9;
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+
+.totales-sec .fila-sec .lbl {
+  font-size: 10px;
+  color: var(--texto-suave);
+  text-transform: uppercase;
+}
+
+.totales-sec .fila-sec .val {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gris-oscuro);
+}
+
+.totales-sec .fila-sec .btns {
+  display: flex;
+  gap: 3px;
+  margin-top: 3px;
+}
+
+.totales-sec .fila-sec .btns button {
+  padding: 2px 6px;
+  font-size: 10px;
+  border: 1px solid var(--borde);
+  background: #fff;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.totales-sec .fila-sec .btns button:active { background: #eee; }
+
+/* Botones de pago */
+.pagos {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.btn-pago {
+  padding: 12px 4px;
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: transform .1s;
+}
+
+.btn-pago:active { transform: scale(.96); }
+.btn-pago .ico { font-size: 22px; }
+
+.btn-pago.efectivo { background: linear-gradient(135deg, #43a047, var(--verde2)); }
+.btn-pago.tarjeta { background: linear-gradient(135deg, #1e88e5, var(--azul2)); }
+.btn-pago.transf { background: linear-gradient(135deg, #8e24aa, var(--morado2)); }
+
+/* Botón COBRAR grande */
+.btn-cobrar {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--amarillo), var(--amarillo2));
+  color: var(--gris-oscuro);
+  border: none;
+  border-radius: 12px;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: .5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(255,152,0,.4);
+  transition: transform .1s;
+}
+
+.btn-cobrar:active { transform: scale(.98); }
+
+.btn-cobrar .total-cobrar {
+  background: var(--gris-oscuro);
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 15px;
+}
+
+/* ============================================
+   TABLAS (Inventario, Caja, Reportes)
+   ============================================ */
+.tabla-wrap {
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+}
+
+th {
+  background: #fafafa;
+  font-weight: 700;
+  color: var(--texto-suave);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+
+tr:last-child td { border-bottom: none; }
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.badge.ok { background: #e8f5e9; color: var(--ok); }
+.badge.warn { background: #fff3e0; color: var(--warn); }
+.badge.danger { background: #ffebee; color: #c62828; }
+
+/* ============================================
+   MODAL
+   ============================================ */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  backdrop-filter: blur(2px);
+}
+
+.modal-contenido {
+  background: #fff;
+  border-radius: 18px;
+  padding: 22px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,.4);
+}
+
+.modal-cerrar {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #f5f5f5;
+  border: none;
+  font-size: 18px;
+  color: var(--texto-suave);
+  cursor: pointer;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-cerrar:active { background: #e0e0e0; }
+
+#modalTitulo {
+  font-size: 18px;
+  margin-bottom: 12px;
+  color: var(--gris-oscuro);
+}
+
+#modalBody input, #modalBody select, #modalBody textarea {
+  width: 100%;
+  padding: 12px;
+  margin: 6px 0;
+  border: 2px solid var(--borde);
+  border-radius: 10px;
+  font-size: 15px;
+}
+
+#modalBody input:focus, #modalBody select:focus {
+  outline: none;
+  border-color: var(--naranja);
+}
+
+#modalBody label {
+  display: block;
+  font-size: 12px;
+  color: var(--texto-suave);
+  margin-top: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+
+#modalBody .acciones {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+/* ============================================
+   REPORTES
+   ============================================ */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  border-left: 4px solid var(--naranja);
+}
+
+.card h4 {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+  letter-spacing: .4px;
+  font-weight: 700;
+}
+
+.card .big {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 6px 0;
+  color: var(--gris-oscuro);
+}
+
+.card small {
+  color: var(--texto-suave);
+  font-size: 12px;
+}
+
+.card.destacado {
+  background: linear-gradient(135deg, var(--naranja), var(--naranja2));
+  color: #fff;
+  border-left: none;
+}
+
+.card.destacado h4, .card.destacado .big { color: #fff; }
+
+.card.verde { border-left-color: var(--verde); }
+.card.azul { border-left-color: var(--azul); }
+.card.morado { border-left-color: var(--morado); }
+.card.rojo { border-left-color: var(--rojo); }
+
+/* ============================================
+   ESTADO DE CAJA (dashboard)
+   ============================================ */
+.estado-caja {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.estado-caja .card { border-left: 4px solid var(--naranja); }
+.estado-caja .card.verde { border-left-color: var(--verde); }
+.estado-caja .card.rojo { border-left-color: var(--rojo); }
+.estado-caja .card.azul { border-left-color: var(--azul); }
+
+/* ============================================
+   CONFIG
+   ============================================ */
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.card-config {
+  background: #fff;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+
+.card-config h3 {
+  margin-bottom: 12px;
+  font-size: 15px;
+  color: var(--gris-oscuro);
+}
+
+.card-config input {
+  width: 100%;
+  padding: 10px;
+  margin: 6px 0;
+  border: 2px solid var(--borde);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.card-config.peligro { border: 2px solid #ffcdd2; }
+
+/* ============================================
+   MODAL PAGO
+   ============================================ */
+.modal-pago { max-width: 420px; }
+
+.modal-pago input {
+  font-size: 26px !important;
+  text-align: center;
+  font-weight: 800;
+  padding: 16px !important;
+}
+
+.cambio-box {
+  background: #e8f5e9;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  margin: 12px 0;
+}
+
+.cambio-box p {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--ok);
+  letter-spacing: .5px;
+  font-weight: 700;
+}
+
+.cambio-box .monto {
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--ok);
+}
+
+.falta-box { background: #ffebee; }
+.falta-box p { color: #c62828; }
+.falta-box .monto { color: #c62828; }
+
+.billetes-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.billetes-grid button {
+  padding: 12px 6px;
+  border: 2px solid var(--borde);
+  background: #fff;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.billetes-grid button:active {
+  background: #ffeaea;
+  border-color: var(--naranja);
+}
+
+/* ============================================
+   CATEGORÍAS / MOVIMIENTOS
+   ============================================ */
+.cat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: #f9f9f9;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.cat-item button {
+  background: transparent;
+  border: none;
+  color: var(--rojo);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+}
+
+/* ============================================
+   ARQUEO
+   ============================================ */
+.arqueo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.arqueo-grid label {
+  font-size: 12px;
+  color: var(--texto-suave);
+  font-weight: 600;
+}
+
+.arqueo-fila {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.arqueo-fila input {
+  flex: 1;
+  padding: 10px !important;
+  font-size: 15px !important;
+}
+
+.arqueo-fila .sub {
+  width: 80px;
+  text-align: right;
+  font-weight: 700;
+  padding: 10px;
+  background: #f5f5f5;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+/* ============================================
+   TOAST
+   ============================================ */
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--gris-oscuro);
+  color: #fff;
+  padding: 14px 22px;
+  border-radius: 12px;
+  z-index: 2000;
+  box-shadow: 0 8px 24px rgba(0,0,0,.3);
+  animation: fadeIn .25s;
+  font-weight: 600;
+  font-size: 14px;
+  max-width: 90%;
+  text-align: center;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, -20px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* ============================================
+   NAV INFERIOR (Barra de pestañas abajo)
+   ============================================ */
+.nav-inferior {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-top: 2px solid var(--borde);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  z-index: 200;
+  box-shadow: 0 -4px 12px rgba(0,0,0,.08);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.nav-inferior button {
+  background: transparent;
+  border: none;
+  padding: 10px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--texto-suave);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all .15s;
+  border-radius: 0;
+}
+
+.nav-inferior button .ico {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.nav-inferior button.activo {
+  color: var(--naranja);
+  background: linear-gradient(180deg, transparent 60%, #fff3e0 100%);
+}
+
+.nav-inferior button.activo .ico {
+  transform: scale(1.15);
+}
+
+/* Ocultar tabs superiores (ahora usamos nav inferior) */
+.tabs { display: none; }
+
+/* ============================================
+   TICKET / MODAL IMPRESIÓN
+   ============================================ */
+.ticket-preview {
+  background: #fff;
+  padding: 20px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  border-radius: 10px;
+  border: 2px dashed #ccc;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.ticket-preview .centro { text-align: center; }
+.ticket-preview .bold { font-weight: 800; }
+.ticket-preview .grande { font-size: 18px; }
+.ticket-preview .fila { display: flex; justify-content: space-between; padding: 2px 0; }
+.ticket-preview hr { border: none; border-top: 1px dashed #999; margin: 8px 0; }
+
+.ticket-acciones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.ticket-acciones button {
+  padding: 14px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.ticket-acciones .btn-no-imprimir {
+  background: #f5f5f5;
+  color: var(--texto);
+}
+
+.ticket-acciones .btn-imprimir {
+  background: linear-gradient(135deg, #1e88e5, var(--azul2));
+  color: #fff;
+}
+
+/* ============================================
+   RESPONSIVE (MÓVIL)
+   ============================================ */
+@media (max-width: 900px) {
+  .caja-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+    gap: 10px;
+  }
+
+  .carrito-panel {
+    position: static;
+    max-height: none;
+  }
+
+  .productos-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+  }
+
+  .prod-btn {
+    min-height: 130px;
+    padding: 10px;
+  }
+
+  .prod-emoji { font-size: 42px; }
+
+  .vista-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .vista-header button { width: 100%; }
+
+  table, thead, tbody, th, td, tr { display: block; }
+  thead { display: none; }
+  tr {
+    background: #fff;
+    margin-bottom: 10px;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+  td {
+    border: none;
+    padding: 6px 0;
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+  }
+  td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: var(--texto-suave);
+    margin-right: 8px;
+    font-size: 12px;
+  }
+  .tabla-wrap {
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .modal { padding: 0; align-items: flex-end; }
+  .modal-contenido {
+    border-radius: 20px 20px 0 0;
+    max-width: 100%;
+    width: 100%;
+    max-height: 92vh;
+    padding: 20px 16px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  #modalBody .acciones {
+    flex-direction: column-reverse;
+  }
+  #modalBody .acciones button {
+    width: 100%;
+    padding: 14px;
+  }
+
+  .billetes-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .cards { grid-template-columns: repeat(2, 1fr); }
+  .estado-caja { grid-template-columns: repeat(2, 1fr); }
+  .config-grid { grid-template-columns: 1fr; }
+  .arqueo-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 380px) {
+  .productos-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+  .prod-btn { min-height: 110px; }
+  .prod-emoji { font-size: 36px; }
+  .cards { grid-template-columns: 1fr; }
+}
+
+/* Landscape móvil */
+@media (max-width: 900px) and (orientation: landscape) {
+  .caja-layout {
+    grid-template-columns: 1fr 320px;
+    height: calc(100dvh - 140px);
+  }
+  .productos-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+  .prod-btn { min-height: 100px; }
+  .prod-emoji { font-size: 32px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== LOGIN ==================== -->
+<div id="login">
+  <div class="login-box">
+    <img src="logo.png" alt="Logo" class="login-logo" onerror="this.style.display='none'">
+    <h1 id="loginNombre">🍗 POS PyMes</h1>
+    <p class="sub" id="loginSlogan">Sistema punto de venta</p>
+    <form id="formLogin" autocomplete="off" onsubmit="event.preventDefault(); hacerLogin();">
+      <input id="user" placeholder="Usuario" value="admin" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" name="pos_u">
+      <input id="pass" type="password" placeholder="Contraseña" value="admin123" autocomplete="new-password" name="pos_p">
+      <button type="submit">Entrar</button>
+    </form>
+    <p class="hint">Usuario: <b>admin</b> · Contraseña: <b>admin123</b></p>
+  </div>
+</div>
+
+<!-- ==================== APP ==================== -->
+<div id="app" class="oculto">
+
+  <!-- HEADER -->
+  <header class="topbar">
+    <button class="btn-icon" onclick="abrirMenu()" title="Menú">☰</button>
+    <div class="brand-wrap">
+      <img src="logo.png" alt="" class="brand-logo" onerror="this.style.display='none'">
+      <div class="brand-name" id="topbarNombre">POS</div>
+      <div class="brand-slogan" id="topbarSlogan">Sistema de venta</div>
+    </div>
+    <button class="btn-icon" onclick="irConfig()" title="Configuración">⚙️</button>
+  </header>
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- ==================== VISTA: VENTA ==================== -->
+    <section id="caja" class="vista activa">
+      <div class="caja-layout">
+
+        <!-- Columna izquierda: productos -->
+        <div class="productos-wrap">
+          <div class="barra-busqueda">
+            <input id="buscarProducto" placeholder="🔍 Buscar producto..." oninput="filtrarProductos()" autocomplete="off" enterkeyhint="done">
+            <div class="categorias" id="categorias"></div>
+          </div>
+          <div class="productos-grid" id="gridProductos"></div>
+        </div>
+
+        <!-- Columna derecha: carrito -->
+        <aside class="carrito-panel">
+          <div class="carrito-header">
+            <h3>🛒 Carrito de venta</h3>
+            <button class="btn-trash" onclick="limpiarCarrito()" title="Vaciar">🗑️</button>
+          </div>
+
+          <div id="carrito" class="carrito-lista"></div>
+
+          <!-- Descuento / Propina compactos -->
+          <div class="totales-sec">
+            <div class="fila-sec">
+              <div class="lbl">Descuento</div>
+              <div class="val" id="descuentoVal">$0.00</div>
+              <div class="btns">
+                <button onclick="aplicarDescuento(0)">0</button>
+                <button onclick="aplicarDescuento(5)">5%</button>
+                <button onclick="aplicarDescuento(10)">10%</button>
+              </div>
+            </div>
+            <div class="fila-sec">
+              <div class="lbl">Propina</div>
+              <div class="val" id="propinaVal">$0.00</div>
+              <div class="btns">
+                <button onclick="aplicarPropina(0)">0</button>
+                <button onclick="aplicarPropina(10)">10%</button>
+                <button onclick="aplicarPropina(15)">15%</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Total grande -->
+          <div class="total-box">
+            <span class="label">Total:</span>
+            <span class="monto" id="total">$0.00</span>
+          </div>
+
+          <!-- Botones de pago -->
+          <div class="pagos">
+            <button onclick="cobrar('Efectivo')" class="btn-pago efectivo">
+              <span class="ico">💵</span>
+              <span>Efectivo</span>
+            </button>
+            <button onclick="cobrar('Tarjeta')" class="btn-pago tarjeta">
+              <span class="ico">💳</span>
+              <span>Tarjeta</span>
+            </button>
+            <button onclick="cobrar('Transferencia')" class="btn-pago transf">
+              <span class="ico">🏦</span>
+              <span>Transf.</span>
+            </button>
+          </div>
+
+          <!-- Botón COBRAR grande -->
+          <button class="btn-cobrar" onclick="cobrarEfectivoRapido()">
+            <span>💳 COBRAR</span>
+            <span class="total-cobrar" id="totalCobrar">$0</span>
+          </button>
+
+          <!-- Input de mesa oculto pero funcional -->
+          <input id="mesaActual" type="hidden" value="">
+        </aside>
+
+      </div>
+    </section>
+
+    <!-- ==================== VISTA: INVENTARIO ==================== -->
+    <section id="inventario" class="vista">
+      <div class="vista-header">
+        <h2>📦 Inventario</h2>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn-secondary" onclick="abrirFormInsumo()">+ Insumo</button>
+          <button class="btn-primary" onclick="abrirMovimiento()">↕ Movimiento</button>
+        </div>
+      </div>
+      <div id="listaInsumos" class="tabla-wrap"></div>
+    </section>
+
+    <!-- ==================== VISTA: CAJA ==================== -->
+    <section id="corte" class="vista">
+      <div class="vista-header">
+        <h2>💰 Caja</h2>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn-secondary" onclick="abrirCajaFuerte()">🔐 Caja fuerte</button>
+          <button class="btn-primary" onclick="abrirCorteDiario()">📋 Corte de caja</button>
+        </div>
+      </div>
+      <div id="estadoCaja"></div>
+      <div id="historialCortes" class="tabla-wrap" style="margin-top:16px"></div>
+    </section>
+
+    <!-- ==================== VISTA: REPORTES ==================== -->
+    <section id="reportes" class="vista">
+      <div class="vista-header">
+        <h2>📊 Reportes</h2>
+        <div class="rango" id="rangoBotones">
+          <button onclick="reporteRango('dia')" class="activo">Hoy</button>
+          <button onclick="reporteRango('semana')">Semana</button>
+          <button onclick="reporteRango('mes')">Mes</button>
+        </div>
+      </div>
+      <div id="reporteContenido"></div>
+    </section>
+
+    <!-- ==================== VISTA: GASTOS ==================== -->
+    <section id="gastos" class="vista">
+      <div class="vista-header">
+        <h2>💸 Gastos</h2>
+        <button class="btn-primary" onclick="abrirFormGasto()">+ Nuevo gasto</button>
+      </div>
+      <div id="listaGastos" class="tabla-wrap"></div>
+    </section>
+
+    <!-- ==================== VISTA: PRODUCTOS ==================== -->
+    <section id="productos" class="vista">
+      <div class="vista-header">
+        <h2>🍗 Productos</h2>
+        <button class="btn-primary" onclick="abrirFormProducto()">+ Nuevo producto</button>
+      </div>
+      <div id="listaProductos" class="tabla-wrap"></div>
+    </section>
+
+    <!-- ==================== VISTA: CONFIG ==================== -->
+    <section id="config" class="vista">
+      <div class="vista-header">
+        <h2>⚙️ Configuración</h2>
+      </div>
+      <div class="config-grid">
+
+        <div class="card-config">
+          <h3>🏪 Datos del negocio</h3>
+          <input id="cfgNombre" placeholder="Nombre del negocio">
+          <input id="cfgSlogan" placeholder="Eslogan (ej: Asados al carbón)">
+          <input id="cfgDireccion" placeholder="Dirección">
+          <input id="cfgTelefono" placeholder="Teléfono">
+          <button class="btn-primary" onclick="guardarNegocio()" style="margin-top:8px">Guardar</button>
+        </div>
+
+        <div class="card-config">
+          <h3>💸 Categorías de gastos</h3>
+          <div id="listaCategoriasGastos" style="margin-bottom:12px"></div>
+          <div style="display:flex;gap:6px">
+            <input id="nuevaCategoria" placeholder="Nueva categoría">
+            <button class="btn-primary" onclick="agregarCategoria()">+</button>
+          </div>
+        </div>
+
+        <div class="card-config">
+          <h3>🔑 Cambiar contraseña</h3>
+          <input id="passActual" type="password" placeholder="Contraseña actual">
+          <input id="passNueva" type="password" placeholder="Contraseña nueva">
+          <input id="passConfirm" type="password" placeholder="Repite la nueva">
+          <button class="btn-primary" onclick="cambiarPassword()" style="margin-top:8px">🔐 Cambiar</button>
+        </div>
+
+        <div class="card-config">
+          <h3>💾 Respaldo de datos</h3>
+          <p style="color:#666;font-size:13px;margin-bottom:10px">Exporta todos los datos a un archivo JSON.</p>
+          <button class="btn-secondary" onclick="exportarBackup()">📥 Exportar</button>
+          <input type="file" id="fileImport" accept=".json" style="display:none" onchange="importarBackup(event)">
+          <button class="btn-secondary" onclick="document.getElementById('fileImport').click()">📤 Importar</button>
+        </div>
+
+        <div class="card-config peligro">
+          <h3>⚠️ Zona peligrosa</h3>
+          <p style="color:#666;font-size:13px;margin-bottom:10px">Borra TODOS los datos.</p>
+          <button class="btn-danger" onclick="borrarTodo()">🗑️ Borrar todo</button>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== NAV INFERIOR ==================== -->
+  <nav class="nav-inferior">
+    <button data-view="caja" class="activo" onclick="cambiarVista('caja')">
+      <span class="ico">🛒</span>
+      <span>Venta</span>
+    </button>
+    <button data-view="inventario" onclick="cambiarVista('inventario')">
+      <span class="ico">📦</span>
+      <span>Inventario</span>
+    </button>
+    <button data-view="corte" onclick="cambiarVista('corte')">
+      <span class="ico">💰</span>
+      <span>Caja</span>
+    </button>
+    <button data-view="reportes" onclick="cambiarVista('reportes')">
+      <span class="ico">📊</span>
+      <span>Reportes</span>
+    </button>
+  </nav>
+
+</div>
+
+<!-- MODAL -->
+
+<!-- MODAL -->
+<div id="modal" class="modal oculto">
+  <div class="modal-contenido">
+    <button class="modal-cerrar" onclick="cerrarModal()">✖</button>
+    <h3 id="modalTitulo"></h3>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<!-- BOTÓN INSTALAR PWA -->
+<button id="btnInstalar" style="display:none; position:fixed; bottom:16px; right:16px; z-index:999; background:#d32f2f; color:#fff; border:none; padding:14px 20px; border-radius:50px; box-shadow:0 6px 20px rgba(211,47,47,.4); font-weight:600; font-size:14px; cursor:pointer;">📲 Instalar app</button>
+
+<script>
+/* ============ UTILS ============ */
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const fmt = n => "$" + (Number(n)||0).toFixed(2);
+const hoy = () => new Date().toISOString().slice(0,10);
+
+function toast(msg) {
+  const t = document.createElement("div");
+  t.className = "toast";
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+function abrirModal(titulo, html) {
+  $("#modalTitulo").textContent = titulo;
+  $("#modalBody").innerHTML = html;
+  $("#modal").classList.remove("oculto");
+}
+
+function cerrarModal() { $("#modal").classList.add("oculto"); }
+
+/* ============ DATOS ============ */
+const LS = {
+  get: (k, def) => JSON.parse(localStorage.getItem(k) || JSON.stringify(def)),
+  set: (k, v) => localStorage.setItem(k, JSON.stringify(v))
+};
+
+let DB = {
+  productos: LS.get("productos", []),
+  insumos: LS.get("insumos", []),
+  ventas: LS.get("ventas", []),
+  gastos: LS.get("gastos", []),
+  usuarios: LS.get("usuarios", []),
+  negocio: LS.get("negocio", { nombre: "POS PyMes", slogan: "Sistema de venta", direccion: "", telefono: "" })
+};
+
+function guardar() {
+  LS.set("productos", DB.productos);
+  LS.set("insumos", DB.insumos);
+  LS.set("ventas", DB.ventas);
+  LS.set("gastos", DB.gastos);
+  LS.set("usuarios", DB.usuarios);
+  LS.set("negocio", DB.negocio);
+}
+
+function nuevoId(arr) {
+  return arr.length ? Math.max(...arr.map(x => x.id)) + 1 : 1;
+}
+
+/* ============ SEED (datos iniciales con emojis) ============ */
+function seed() {
+  if (DB.usuarios.length) return;
+
+  DB.usuarios = [{ id: 1, username: "admin", password: "admin123", rol: "admin", nombre: "Administrador" }];
+
+  DB.insumos = [
+    { id: 1, nombre: "Pollo crudo", unidad: "kg", stock: 50, min: 10, costo: 55 },
+    { id: 2, nombre: "Alitas crudas", unidad: "kg", stock: 20, min: 5, costo: 70 },
+    { id: 3, nombre: "Carbón", unidad: "kg", stock: 40, min: 10, costo: 25 },
+    { id: 4, nombre: "Salsa verde", unidad: "L", stock: 8, min: 2, costo: 40 },
+    { id: 5, nombre: "Salsa roja", unidad: "L", stock: 8, min: 2, costo: 40 },
+    { id: 6, nombre: "Empaques", unidad: "pza", stock: 200, min: 50, costo: 1.5 },
+    { id: 7, nombre: "Refresco 600ml", unidad: "pza", stock: 60, min: 24, costo: 12 },
+    { id: 8, nombre: "Tortillas", unidad: "kg", stock: 15, min: 5, costo: 22 }
+  ];
+
+  DB.productos = [
+    { id: 1, nombre: "Pollo entero", precio: 170, categoria: "Pollos", emoji: "🍗", activo: true, insumos: [
+      { insumoId: 1, cantidad: 1.8 }, { insumoId: 3, cantidad: 1.5 },
+      { insumoId: 4, cantidad: 0.1 }, { insumoId: 5, cantidad: 0.1 },
+      { insumoId: 6, cantidad: 1 }, { insumoId: 8, cantidad: 0.3 }
+    ]},
+    { id: 2, nombre: "Medio pollo", precio: 90, categoria: "Pollos", emoji: "🍗", activo: true, insumos: [
+      { insumoId: 1, cantidad: 0.9 }, { insumoId: 3, cantidad: 0.8 },
+      { insumoId: 4, cantidad: 0.05 }, { insumoId: 5, cantidad: 0.05 },
+      { insumoId: 6, cantidad: 1 }, { insumoId: 8, cantidad: 0.15 }
+    ]},
+    { id: 3, nombre: "Orden alitas", precio: 130, categoria: "Alitas", emoji: "🍖", activo: true, insumos: [
+      { insumoId: 2, cantidad: 0.8 }, { insumoId: 3, cantidad: 0.5 }, { insumoId: 6, cantidad: 1 }
+    ]},
+    { id: 4, nombre: "Refresco", precio: 25, categoria: "Bebidas", emoji: "🥤", activo: true, insumos: [
+      { insumoId: 7, cantidad: 1 }
+    ]},
+    { id: 5, nombre: "Salsas", precio: 15, categoria: "Salsas", emoji: "🌶️", activo: true, insumos: [
+      { insumoId: 4, cantidad: 0.05 }, { insumoId: 5, cantidad: 0.05 }
+    ]},
+    { id: 6, nombre: "Empaque", precio: 2, categoria: "Extras", emoji: "🥡", activo: true, insumos: [
+      { insumoId: 6, cantidad: 1 }
+    ]},
+    { id: 7, nombre: "Carbón 5kg", precio: 70, categoria: "Extras", emoji: "🔥", activo: true, insumos: [
+      { insumoId: 3, cantidad: 5 }
+    ]},
+    { id: 8, nombre: "Orden tortillas", precio: 15, categoria: "Extras", emoji: "🌮", activo: true, insumos: [
+      { insumoId: 8, cantidad: 0.2 }
+    ]}
+  ];
+
+  guardar();
+}
+
+/* ============ LOGIN ============ */
+function hacerLogin() {
+  const u = $("#user").value.trim();
+  const p = $("#pass").value;
+  const user = DB.usuarios.find(x => x.username === u && x.password === p);
+  if (!user) return toast("❌ Usuario o contraseña incorrectos");
+  sessionStorage.setItem("sesion", JSON.stringify(user));
+  entrarApp();
+}
+
+function logout() {
+  sessionStorage.removeItem("sesion");
+  $("#app").classList.add("oculto");
+  $("#login").style.display = "flex";
+}
+
+function entrarApp() {
+  const s = JSON.parse(sessionStorage.getItem("sesion") || "{}");
+  $("#login").style.display = "none";
+  $("#app").classList.remove("oculto");
+  seed();
+  actualizarHeader();
+  renderCaja();
+  renderCategorias();
+  cargarNegocio();
+  initDia();
+  if (estadoCajaHoy.fondoInicial === null) {
+    setTimeout(() => abrirFondoInicial(), 600);
+  }
+}
+
+/* ============ HEADER DINÁMICO ============ */
+function actualizarHeader() {
+  const n = DB.negocio;
+  const nombre = (n.nombre || "POS").toUpperCase();
+  const slogan = n.slogan || "Sistema de venta";
+
+  // Header
+  const elTopNombre = $("#topbarNombre");
+  const elTopSlogan = $("#topbarSlogan");
+  if (elTopNombre) elTopNombre.textContent = nombre;
+  if (elTopSlogan) elTopSlogan.textContent = slogan;
+  document.title = "🧮 " + nombre;
+
+  // Login
+  const elLoginNombre = $("#loginNombre");
+  const elLoginSlogan = $("#loginSlogan");
+  if (elLoginNombre) elLoginNombre.textContent = "🍗 " + n.nombre;
+  if (elLoginSlogan) elLoginSlogan.textContent = slogan;
+}
+
+/* ============ NAVEGACIÓN ============ */
+function cambiarVista(nombre) {
+  // Cambiar vista activa
+  $$(".vista").forEach(v => v.classList.remove("activa"));
+  const target = $("#" + nombre);
+  if (target) target.classList.add("activa");
+
+  // Cambiar botón activo del nav inferior
+  $$(".nav-inferior button").forEach(b => b.classList.remove("activo"));
+  const btn = document.querySelector(`.nav-inferior button[data-view="${nombre}"]`);
+  if (btn) btn.classList.add("activo");
+
+  // Scroll al top
+  window.scrollTo(0, 0);
+
+  // Render según vista
+  if (nombre === "caja") { renderCaja(); renderCategorias(); }
+  if (nombre === "inventario") renderInsumos();
+  if (nombre === "corte") { initDia(); renderEstadoCaja(); }
+  if (nombre === "reportes") reporteRango("dia");
+  if (nombre === "gastos") renderGastos();
+  if (nombre === "productos") renderProductos();
+  if (nombre === "config") { cargarNegocio(); renderCategoriasGastos(); }
+}
+
+function irConfig() {
+  cambiarVista("config");
+}
+
+/* ============ MENÚ LATERAL ============ */
+function abrirMenu() {
+  abrirModal("☰ Menú", `
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+      <button class="btn-secondary" onclick="cerrarModal();cambiarVista('caja')" style="text-align:left;padding:14px;font-size:15px">🛒 Venta</button>
+      <button class="btn-secondary" onclick="cerrarModal();cambiarVista('inventario')" style="text-align:left;padding:14px;font-size:15px">📦 Inventario</button>
+      <button class="btn-secondary" onclick="cerrarModal();cambiarVista('corte')" style="text-align:left;padding:14px;font-size:15px">💰 Caja</button>
+      <button class="btn-secondary" onclick="cerrarModal();cambiarVista('reportes')" style="text-align:left;padding:14px;font-size:15px">📊 Reportes</button>
+      <hr style="border:none;border-top:1px solid #eee;margin:8px 0">
+      <button class="btn-secondary" onclick="cerrarModal();cambiarVista('productos')" style="text-align:left;padding:14px;font-size:15px">🍗 Productos</button>
+      <button class="btn-secondary" onclick="cerrarModal();cambiarVista('gastos')" style="text-align:left;padding:14px;font-size:15px">💸 Gastos</button>
+      <button class="btn-secondary" onclick="cerrarModal();cambiarVista('config')" style="text-align:left;padding:14px;font-size:15px">⚙️ Configuración</button>
+      <hr style="border:none;border-top:1px solid #eee;margin:8px 0">
+      <button class="btn-danger" onclick="cerrarModal();logout()" style="padding:14px;font-size:15px">🚪 Cerrar sesión</button>
+    </div>
+  `);
+}
+
+/* ============ CAJA / VENTA ============ */
+let carrito = [];
+let descuento = 0;
+let propina = 0;
+let categoriaActiva = "Todas";
+
+function renderCategorias() {
+  const cats = ["Todas", ...new Set(DB.productos.filter(p=>p.activo).map(p=>p.categoria))];
+  $("#categorias").innerHTML = cats.map(c =>
+    `<button class="${c===categoriaActiva?'activo':''}" onclick="cambiarCategoria('${c}')">${c}</button>`
+  ).join("");
+}
+
+function cambiarCategoria(c) {
+  categoriaActiva = c;
+  const b = document.getElementById("buscarProducto");
+  if (b) b.value = "";
+  renderCategorias();
+  renderCaja();
+}
+
+function renderCaja() {
+  const busq = ($("#buscarProducto")?.value || "").toLowerCase();
+  let prods = DB.productos.filter(p => p.activo);
+  if (categoriaActiva !== "Todas") prods = prods.filter(p => p.categoria === categoriaActiva);
+  if (busq) prods = prods.filter(p => p.nombre.toLowerCase().includes(busq));
+
+  $("#gridProductos").innerHTML = prods.map(p => {
+    const contenido = p.imagen
+      ? `<img src="${p.imagen}" class="prod-imagen" onerror="this.outerHTML='<div class=\\'prod-emoji\\'>${p.emoji||'🍽️'}</div>'">`
+      : `<div class="prod-emoji">${p.emoji || "🍽️"}</div>`;
+    return `
+      <button class="prod-btn" data-cat="${p.categoria}" onclick="agregarAlCarrito(${p.id})">
+        ${contenido}
+        <span class="prod-nombre">${p.nombre}</span>
+        <span class="prod-precio">${fmt(p.precio)}</span>
+      </button>
+    `;
+  }).join("") || `<p style="color:#999;padding:20px;grid-column:1/-1;text-align:center">Sin productos</p>`;
+
+  renderCarrito();
+}
+
+function filtrarProductos() { renderCaja(); }
+
+function agregarAlCarrito(id) {
+  const p = DB.productos.find(x => x.id === id);
+  const ex = carrito.find(i => i.productoId === id);
+  if (ex) ex.cantidad++;
+  else carrito.push({
+    productoId: id,
+    nombre: p.nombre,
+    precio: p.precio,
+    emoji: p.emoji || "🍽️",
+    cantidad: 1
+  });
+  renderCarrito();
+}
+
+function renderCarrito() {
+  const c = $("#carrito");
+  if (!carrito.length) {
+    c.innerHTML = `<div class="carrito-vacio">🛒 Agrega productos al ticket</div>`;
+  } else {
+    c.innerHTML = carrito.map((it, i) => `
+      <div class="carrito-item">
+        <div class="carrito-item-info">
+          <b>${it.emoji || ""} ${it.nombre}</b>
+          <div class="item-controles">
+            <button onclick="cambiarCantidad(${i}, -1)">−</button>
+            <span>${it.cantidad}</span>
+            <button onclick="cambiarCantidad(${i}, 1)">+</button>
+          </div>
+        </div>
+        <div class="item-precio">${fmt(it.precio * it.cantidad)}</div>
+      </div>
+    `).join("");
+  }
+  const sub = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
+  const total = sub - descuento + propina;
+
+  const elDesc = $("#descuentoVal");
+  const elProp = $("#propinaVal");
+  const elTot = $("#total");
+  const elTotCobrar = $("#totalCobrar");
+
+  if (elDesc) elDesc.textContent = "-" + fmt(descuento);
+  if (elProp) elProp.textContent = fmt(propina);
+  if (elTot) elTot.textContent = fmt(total);
+  if (elTotCobrar) elTotCobrar.textContent = fmt(total);
+}
+
+function cambiarCantidad(i, d) {
+  carrito[i].cantidad += d;
+  if (carrito[i].cantidad <= 0) carrito.splice(i, 1);
+  renderCarrito();
+}
+
+function limpiarCarrito() {
+  if (!carrito.length) return;
+  if (!confirm("¿Vaciar el ticket?")) return;
+  carrito = []; descuento = 0; propina = 0;
+  renderCarrito();
+}
+
+function aplicarDescuento(pct) {
+  const sub = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
+  descuento = sub * (pct / 100);
+  renderCarrito();
+}
+
+function aplicarPropina(pct) {
+  const sub = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
+  propina = sub * (pct / 100);
+  renderCarrito();
+}
+
+function cobrar(metodo) {
+  if (!carrito.length) return toast("⚠️ Ticket vacío");
+  const sub = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
+  const total = sub - descuento + propina;
+
+  if (metodo === "Efectivo") {
+    abrirModalPago(total);
+  } else {
+    finalizarVenta(metodo, total, total, 0);
+  }
+}
+
+/* Botón COBRAR grande — cobra en efectivo */
+function cobrarEfectivoRapido() {
+  cobrar("Efectivo");
+}
+
+/* ============ MODAL DE PAGO ============ */
+function abrirModalPago(total) {
+  window._totalCobro = total;
+
+  const sugerencias = new Set();
+  sugerencias.add(total.toFixed(2));
+
+  const siguientes = [100, 200, 500, 1000];
+  for (const denom of siguientes) {
+    const candidato = Math.ceil(total / denom) * denom;
+    if (candidato > total && candidato <= total + 1000) {
+      sugerencias.add(candidato.toFixed(2));
+    }
+  }
+  [100, 200, 500, 1000].forEach(d => {
+    if (d >= total) sugerencias.add(d.toFixed(2));
+  });
+
+  const botones = [...sugerencias].map(v => +v).sort((a, b) => a - b).slice(0, 8);
+
+  abrirModal("💵 Cobro en efectivo", `
+    <div class="modal-pago">
+      <div style="text-align:center;margin-bottom:12px">
+        <p style="color:#666;font-size:12px;text-transform:uppercase;letter-spacing:.5px;font-weight:700">Total a cobrar</p>
+        <p style="font-size:38px;font-weight:800;color:var(--naranja);margin:4px 0">${fmt(total)}</p>
+      </div>
+
+      <label>¿Con cuánto paga?</label>
+      <input id="pagoCon" type="number" step="0.01" inputmode="decimal" placeholder="0.00" value="${total.toFixed(2)}" oninput="calcCambio()" onfocus="this.select()">
+
+      <div class="billetes-grid">
+        ${botones.map(b => `
+          <button onclick="setPago(${b})" ${b === total ? 'style="background:#fff3e0;border-color:var(--naranja);font-weight:800"' : ''}>
+            ${b === total ? '✅ ' : ''}$${b % 1 === 0 ? b : b.toFixed(2)}
+          </button>
+        `).join("")}
+      </div>
+
+      <div id="cambioBox" class="cambio-box">
+        <p>Cambio</p>
+        <div class="monto" id="cambioMonto">$0.00</div>
+      </div>
+
+      <div class="acciones">
+        <button class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
+        <button class="btn-primary" id="btnConfirmarPago" onclick="confirmarPago()">✅ Cobrar</button>
+      </div>
+    </div>
+  `);
+  setTimeout(() => {
+    const inp = $("#pagoCon");
+    if (inp) { inp.focus(); inp.select(); }
+    calcCambio();
+  }, 150);
+}
+
+function setPago(monto) {
+  $("#pagoCon").value = monto;
+  calcCambio();
+}
+
+function calcCambio() {
+  const total = window._totalCobro;
+  const pago = +$("#pagoCon").value || 0;
+  const cambio = pago - total;
+  const box = $("#cambioBox");
+  const monto = $("#cambioMonto");
+  const btn = $("#btnConfirmarPago");
+
+  if (pago === 0 || isNaN(pago)) {
+    box.classList.remove("falta-box");
+    box.querySelector("p").textContent = "Cambio";
+    monto.textContent = "$0.00";
+    btn.disabled = false;
+    return;
+  }
+
+  if (cambio < 0) {
+    box.classList.add("falta-box");
+    box.querySelector("p").textContent = "Falta";
+    monto.textContent = fmt(Math.abs(cambio));
+    btn.disabled = true;
+  } else if (cambio === 0) {
+    box.classList.remove("falta-box");
+    box.querySelector("p").textContent = "Pago exacto";
+    monto.textContent = "$0.00";
+    btn.disabled = false;
+  } else {
+    box.classList.remove("falta-box");
+    box.querySelector("p").textContent = "Cambio";
+    monto.textContent = fmt(cambio);
+    btn.disabled = false;
+  }
+}
+
+function confirmarPago() {
+  const total = window._totalCobro;
+  let pago = +$("#pagoCon").value;
+  if (!pago || pago === 0) pago = total;
+  const cambio = pago - total;
+  if (cambio < 0) return toast("⚠️ Falta dinero");
+  cerrarModal();
+  finalizarVenta("Efectivo", total, pago, cambio);
+}
+
+/* ============ FINALIZAR VENTA ============ */
+function finalizarVenta(metodo, total, pagoCon, cambio) {
+  const sub = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
+  const sesion = JSON.parse(sessionStorage.getItem("sesion") || "{}");
+  const mesa = $("#mesaActual")?.value || "";
+
+  const venta = {
+    id: nuevoId(DB.ventas),
+    fecha: new Date().toISOString(),
+    items: JSON.parse(JSON.stringify(carrito)),
+    subtotal: sub,
+    descuento,
+    propina,
+    total,
+    metodo,
+    pagoCon: metodo === "Efectivo" ? pagoCon : total,
+    cambio: metodo === "Efectivo" ? cambio : 0,
+    mesa,
+    usuario: sesion.nombre || "admin"
+  };
+  DB.ventas.push(venta);
+
+  carrito.forEach(item => {
+    const prod = DB.productos.find(p => p.id === item.productoId);
+    if (!prod || !prod.insumos) return;
+    prod.insumos.forEach(ing => {
+      const ins = DB.insumos.find(x => x.id === ing.insumoId);
+      if (ins) ins.stock = Math.max(0, ins.stock - ing.cantidad * item.cantidad);
+    });
+  });
+
+  guardar();
+  carrito = []; descuento = 0; propina = 0;
+  renderCarrito();
+  renderEstadoCaja();
+
+  // Mostrar ticket para imprimir
+  mostrarTicketImpresion(venta);
+
+  if (metodo === "Efectivo" && cambio > 0) {
+    toast(`✅ Venta #${venta.id} · Cambio: ${fmt(cambio)}`);
+  } else {
+    toast(`✅ Venta #${venta.id} cobrada: ${fmt(total)}`);
+  }
+}
+
+/* ============ TICKET EN MODAL CON OPCIONES ============ */
+function mostrarTicketImpresion(v) {
+  const n = DB.negocio;
+  const itemsHTML = v.items.map(it => `
+    <div class="fila">
+      <span>${it.cantidad}x ${it.nombre}</span>
+      <span>${fmt(it.precio * it.cantidad)}</span>
+    </div>
+  `).join("");
+
+  abrirModal("🧾 Ticket de venta", `
+    <div class="ticket-preview">
+      <div class="centro bold grande">${n.nombre || "POS"}</div>
+      <div class="centro">${n.slogan || ""}</div>
+      <hr>
+      <div>Ticket No. ${String(v.id).padStart(6, "0")}</div>
+      <div>Fecha: ${new Date(v.fecha).toLocaleDateString("es-MX")} ${new Date(v.fecha).toLocaleTimeString("es-MX", {hour:"2-digit",minute:"2-digit"})}</div>
+      ${v.mesa ? `<div>Mesa: ${v.mesa}</div>` : ""}
+      <hr>
+      <div class="fila bold"><span>Cant.</span><span>Total</span></div>
+      <hr>
+      ${itemsHTML}
+      <hr>
+      <div class="fila"><span>Subtotal</span><span>${fmt(v.subtotal)}</span></div>
+      ${v.descuento ? `<div class="fila"><span>Descuento</span><span>-${fmt(v.descuento)}</span></div>` : ""}
+      ${v.propina ? `<div class="fila"><span>Propina</span><span>${fmt(v.propina)}</span></div>` : ""}
+      <div class="fila bold grande"><span>TOTAL</span><span>${fmt(v.total)}</span></div>
+      <hr>
+      <div class="fila"><span>Forma de pago:</span><span>${v.metodo}</span></div>
+      ${v.metodo === "Efectivo" ? `
+        <div class="fila"><span>Efectivo</span><span>${fmt(v.pagoCon)}</span></div>
+        <div class="fila"><span>Cambio</span><span>${fmt(v.cambio)}</span></div>
+      ` : ""}
+      <hr>
+      <div class="centro">¡Gracias por su preferencia!</div>
+      <div class="centro bold">${n.nombre || ""}</div>
+      <div class="centro">${n.slogan || ""}</div>
+      <div class="centro">${n.telefono || ""}</div>
+    </div>
+
+    <div class="ticket-acciones">
+      <button class="btn-no-imprimir" onclick="cerrarModal()">
+        🖨️ No imprimir
+      </button>
+      <button class="btn-imprimir" onclick="imprimirTicket(${JSON.stringify(v).replace(/'/g, "&#39;")})">
+        🖨️ Imprimir
+      </button>
+    </div>
+  `);
+}
+
+/* ============ IMPRESIÓN TICKET ============ */
+function imprimirTicket(v) {
+  const n = DB.negocio;
+  const items = v.items.map(it =>
+    `<div class="fila"><span>${it.cantidad}x ${it.nombre}</span><span>${fmt(it.precio*it.cantidad)}</span></div>`
+  ).join("");
+  const html = `
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ticket ${v.id}</title>
+<style>
+  @page { size: 58mm auto; margin: 0; }
+  body { font-family: 'Courier New', monospace; font-size: 11px; width: 58mm; padding: 4mm; margin: 0; }
+  .c { text-align: center; } .b { font-weight: bold; } .g { font-size: 14px; }
+  .fila { display: flex; justify-content: space-between; padding: 2px 0; }
+  hr { border: none; border-top: 1px dashed #000; margin: 4px 0; }
+</style></head><body>
+  <div class="c b g">${n.nombre || "POS"}</div>
+  <div class="c">${n.slogan || ""}</div>
+  <div class="c">${n.direccion || ""}</div>
+  <div class="c">Tel: ${n.telefono || ""}</div>
+  <hr>
+  <div>Ticket #${v.id}</div>
+  <div>${new Date(v.fecha).toLocaleString("es-MX")}</div>
+  ${v.mesa ? `<div>Mesa: ${v.mesa}</div>` : ""}
+  <div>Cajero: ${v.usuario}</div>
+  <hr>
+  ${items}
+  <hr>
+  <div class="fila"><span>Subtotal:</span><span>${fmt(v.subtotal)}</span></div>
+  ${v.descuento ? `<div class="fila"><span>Descuento:</span><span>-${fmt(v.descuento)}</span></div>` : ""}
+  ${v.propina ? `<div class="fila"><span>Propina:</span><span>${fmt(v.propina)}</span></div>` : ""}
+  <div class="fila b g"><span>TOTAL:</span><span>${fmt(v.total)}</span></div>
+  <div class="fila"><span>Pago:</span><span>${v.metodo}</span></div>
+  ${v.metodo === "Efectivo" ? `
+    <div class="fila"><span>Recibido:</span><span>${fmt(v.pagoCon)}</span></div>
+    <div class="fila b"><span>Cambio:</span><span>${fmt(v.cambio)}</span></div>
+  ` : ""}
+  <hr>
+  <div class="c">¡Gracias por su preferencia!</div>
+  <div class="c b">${n.nombre || ""}</div>
+  <div class="c">${n.slogan || ""}</div>
+</body></html>`;
+  const w = window.open("", "_blank", "width=320,height=600");
+  if (!w) return toast("⚠️ Permite ventanas emergentes");
+  w.document.write(html);
+  w.document.close();
+  setTimeout(() => { w.print(); }, 300);
+}
+
+/* ============ PRODUCTOS ============ */
+function renderProductos() {
+  $("#listaProductos").innerHTML = `
+    <table>
+      <thead><tr><th>Emoji</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr></thead>
+      <tbody>
+        ${DB.productos.map(p => `
+          <tr>
+            <td data-label="Emoji" style="font-size:24px">${p.emoji || "🍽️"}</td>
+            <td data-label="Nombre">${p.nombre}</td>
+            <td data-label="Categoría">${p.categoria}</td>
+            <td data-label="Precio">${fmt(p.precio)}</td>
+            <td data-label="Estado"><span class="badge ${p.activo?'ok':'danger'}">${p.activo?'Activo':'Inactivo'}</span></td>
+            <td data-label="Acciones">
+              <button class="btn-mini" onclick="abrirFormProducto(${p.id})">✏️</button>
+              <button class="btn-mini" onclick="toggleProducto(${p.id})">${p.activo?'🚫':'✅'}</button>
+              <button class="btn-mini" onclick="borrarProducto(${p.id})">🗑️</button>
+            </td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>`;
+}
+
+function abrirFormProducto(id) {
+  const p = id ? DB.productos.find(x => x.id === id) : { nombre: "", precio: "", categoria: "General", emoji: "🍽️", activo: true };
+  abrirModal(id ? "Editar producto" : "Nuevo producto", `
+    <label>Nombre</label><input id="fpNombre" value="${p.nombre}">
+    <label>Precio</label><input id="fpPrecio" type="number" step="0.01" value="${p.precio}">
+    <label>Categoría</label><input id="fpCategoria" value="${p.categoria}">
+    <label>Emoji del producto</label>
+    <input id="fpEmoji" value="${p.emoji || "🍽️"}" maxlength="4" style="font-size:24px;text-align:center">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+      ${["🍗","🍖","🥤","🌶️","🥡","🔥","🌮","🐔","🥣","🍞","🌭","🍟","🧃","🍺","☕","🍰"].map(e =>
+        `<button type="button" onclick="document.getElementById('fpEmoji').value='${e}'" style="font-size:22px;padding:6px 10px;border:1px solid #ddd;background:#fff;border-radius:8px;cursor:pointer">${e}</button>`
+      ).join("")}
+    </div>
+    <label>Activo</label>
+    <select id="fpActivo"><option value="true" ${p.activo?'selected':''}>Sí</option><option value="false" ${!p.activo?'selected':''}>No</option></select>
+    <div class="acciones">
+      <button class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-primary" onclick="guardarProducto(${id||0})">Guardar</button>
+    </div>
+  `);
+}
+
+function guardarProducto(id) {
+  const nombre = $("#fpNombre").value.trim();
+  const precio = +$("#fpPrecio").value;
+  const categoria = $("#fpCategoria").value.trim() || "General";
+  const emoji = $("#fpEmoji").value.trim() || "🍽️";
+  const activo = $("#fpActivo").value === "true";
+  if (!nombre || !precio) return toast("Completa los campos");
+  if (id) {
+    const p = DB.productos.find(x => x.id === id);
+    Object.assign(p, { nombre, precio, categoria, emoji, activo });
+  } else {
+    DB.productos.push({ id: nuevoId(DB.productos), nombre, precio, categoria, emoji, activo, insumos: [] });
+  }
+  guardar(); cerrarModal(); renderProductos(); renderCaja(); renderCategorias(); toast("💾 Guardado");
+}
+
+function toggleProducto(id) {
+  const p = DB.productos.find(x => x.id === id);
+  p.activo = !p.activo;
+  guardar(); renderProductos(); renderCaja();
+}
+
+function borrarProducto(id) {
+  if (!confirm("¿Borrar producto?")) return;
+  DB.productos = DB.productos.filter(x => x.id !== id);
+  guardar(); renderProductos(); renderCaja(); renderCategorias(); toast("🗑️ Borrado");
+}
+
+/* ============ INVENTARIO ============ */
+function renderInsumos() {
+  $("#listaInsumos").innerHTML = `
+    <table>
+      <thead><tr><th>Insumo</th><th>Stock</th><th>Mínimo</th><th>Costo</th><th>Unidad</th><th>Estado</th><th>Acciones</th></tr></thead>
+      <tbody>
+        ${DB.insumos.map(i => {
+          const bajo = i.stock <= i.min;
+          return `<tr>
+            <td data-label="Insumo">${i.nombre}</td>
+            <td data-label="Stock">${i.stock}</td>
+            <td data-label="Mínimo">${i.min}</td>
+            <td data-label="Costo">${fmt(i.costo)}</td>
+            <td data-label="Unidad">${i.unidad}</td>
+            <td data-label="Estado"><span class="badge ${bajo?'danger':'ok'}">${bajo?'⚠ Bajo':'OK'}</span></td>
+            <td data-label="Acciones">
+              <button class="btn-mini" onclick="abrirFormInsumo(${i.id})">✏️</button>
+              <button class="btn-mini" onclick="abrirMovimiento(${i.id})">↕</button>
+              <button class="btn-mini" onclick="borrarInsumo(${i.id})">🗑️</button>
+            </td>
+          </tr>`;
+        }).join("")}
+      </tbody>
+    </table>`;
+}
+
+function abrirFormInsumo(id) {
+  const i = id ? DB.insumos.find(x => x.id === id) : { nombre: "", unidad: "kg", stock: 0, min: 0, costo: 0 };
+  abrirModal(id ? "Editar insumo" : "Nuevo insumo", `
+    <label>Nombre</label><input id="fiNombre" value="${i.nombre}">
+    <label>Unidad (kg, L, pza...)</label><input id="fiUnidad" value="${i.unidad}">
+    <label>Stock actual</label><input id="fiStock" type="number" step="0.01" value="${i.stock}">
+    <label>Stock mínimo</label><input id="fiMin" type="number" step="0.01" value="${i.min}">
+    <label>Costo por unidad</label><input id="fiCosto" type="number" step="0.01" value="${i.costo}">
+    <div class="acciones">
+      <button class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-primary" onclick="guardarInsumo(${id||0})">Guardar</button>
+    </div>
+  `);
+}
+
+function guardarInsumo(id) {
+  const data = {
+    nombre: $("#fiNombre").value.trim(),
+    unidad: $("#fiUnidad").value.trim() || "pza",
+    stock: +$("#fiStock").value,
+    min: +$("#fiMin").value,
+    costo: +$("#fiCosto").value
+  };
+  if (!data.nombre) return toast("Falta nombre");
+  if (id) Object.assign(DB.insumos.find(x => x.id === id), data);
+  else DB.insumos.push({ id: nuevoId(DB.insumos), ...data });
+  guardar(); cerrarModal(); renderInsumos(); toast("💾 Guardado");
+}
+
+function abrirMovimiento(insumoId) {
+  abrirModal("Movimiento de inventario", `
+    <label>Insumo</label>
+    <select id="mvInsumo">
+      ${DB.insumos.map(i => `<option value="${i.id}" ${i.id===insumoId?'selected':''}>${i.nombre}</option>`).join("")}
+    </select>
+    <label>Tipo</label>
+    <select id="mvTipo"><option value="entrada">Entrada (+)</option><option value="salida">Salida (−)</option></select>
+    <label>Cantidad</label><input id="mvCantidad" type="number" step="0.01" value="1">
+    <label>Motivo</label><input id="mvMotivo" placeholder="Compra, merma, ajuste...">
+    <div class="acciones">
+      <button class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-primary" onclick="aplicarMovimiento()">Aplicar</button>
+    </div>
+  `);
+}
+
+function aplicarMovimiento() {
+  const id = +$("#mvInsumo").value;
+  const tipo = $("#mvTipo").value;
+  const cant = +$("#mvCantidad").value;
+  const ins = DB.insumos.find(x => x.id === id);
+  if (tipo === "entrada") ins.stock += cant;
+  else ins.stock = Math.max(0, ins.stock - cant);
+  guardar(); cerrarModal(); renderInsumos();
+  toast(`✅ Movimiento aplicado`);
+}
+
+function borrarInsumo(id) {
+  if (!confirm("¿Borrar insumo?")) return;
+  DB.insumos = DB.insumos.filter(x => x.id !== id);
+  guardar(); renderInsumos();
+}
+
+/* ============ GASTOS ============ */
+let CATS_GASTO = LS.get("catsGasto", ["Compra de pollo","Carbón","Gas","Sueldos","Renta","Luz/Agua","Otros"]);
+function guardarCats() { LS.set("catsGasto", CATS_GASTO); }
+
+function renderGastos() {
+  const gastos = [...DB.gastos].sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+  $("#listaGastos").innerHTML = `
+    <table>
+      <thead><tr><th>Fecha</th><th>Categoría</th><th>Nota</th><th>Método</th><th>Monto</th><th>Acciones</th></tr></thead>
+      <tbody>
+        ${gastos.map(g => `
+          <tr>
+            <td data-label="Fecha">${new Date(g.fecha).toLocaleDateString("es-MX")}</td>
+            <td data-label="Categoría">${g.categoria}</td>
+            <td data-label="Nota">${g.nota || "—"}</td>
+            <td data-label="Método">${g.metodo || "Efectivo"}</td>
+            <td data-label="Monto">${fmt(g.monto)}</td>
+            <td data-label="Acciones"><button class="btn-mini" onclick="borrarGasto(${g.id})">🗑️</button></td>
+          </tr>
+        `).join("") || `<tr><td colspan="6" style="text-align:center;padding:20px;color:#999">Sin gastos</td></tr>`}
+      </tbody>
+    </table>`;
+}
+
+function abrirFormGasto() {
+  abrirModal("Nuevo gasto", `
+    <label>Categoría</label>
+    <select id="fgCategoria">${CATS_GASTO.map(c => `<option>${c}</option>`).join("")}</select>
+    <label>Monto</label><input id="fgMonto" type="number" step="0.01">
+    <label>Método de pago</label>
+    <select id="fgMetodo">
+      <option value="Efectivo">💵 Efectivo (afecta caja)</option>
+      <option value="Transferencia">🏦 Transferencia (no afecta caja)</option>
+    </select>
+    <label>Nota (opcional)</label><input id="fgNota">
+    <div class="acciones">
+      <button class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-primary" onclick="guardarGasto()">Guardar</button>
+    </div>
+  `);
+}
+
+function guardarGasto() {
+  const monto = +$("#fgMonto").value;
+  if (!monto) return toast("Monto inválido");
+  DB.gastos.push({
+    id: nuevoId(DB.gastos),
+    fecha: new Date().toISOString(),
+    categoria: $("#fgCategoria").value,
+    monto,
+    metodo: $("#fgMetodo").value,
+    nota: $("#fgNota").value.trim()
+  });
+  guardar(); cerrarModal(); renderGastos(); renderEstadoCaja();
+  toast("💾 Gasto registrado");
+}
+
+function borrarGasto(id) {
+  if (!confirm("¿Borrar gasto?")) return;
+  DB.gastos = DB.gastos.filter(x => x.id !== id);
+  guardar(); renderGastos(); renderEstadoCaja();
+}
+
+/* ============ REPORTES ============ */
+function reporteRango(tipo) {
+  $$("#rangoBotones button").forEach(b => b.classList.remove("activo"));
+  const btns = $$("#rangoBotones button");
+  if (tipo === "dia" && btns[0]) btns[0].classList.add("activo");
+  if (tipo === "semana" && btns[1]) btns[1].classList.add("activo");
+  if (tipo === "mes" && btns[2]) btns[2].classList.add("activo");
+
+  const ahora = new Date();
+  let desde = new Date();
+  if (tipo === "dia") desde.setHours(0,0,0,0);
+  if (tipo === "semana") desde.setDate(ahora.getDate() - 7);
+  if (tipo === "mes") desde.setMonth(ahora.getMonth() - 1);
+
+  const ventas = DB.ventas.filter(v => new Date(v.fecha) >= desde);
+  const gastos = DB.gastos.filter(g => new Date(g.fecha) >= desde);
+
+  const totalV = ventas.reduce((s,v) => s + v.total, 0);
+  const totalG = gastos.reduce((s,g) => s + g.monto, 0);
+
+  let costoReal = 0;
+  ventas.forEach(v => {
+    v.items.forEach(it => {
+      const prod = DB.productos.find(p => p.id === it.productoId);
+      if (!prod || !prod.insumos) return;
+      prod.insumos.forEach(ing => {
+        const ins = DB.insumos.find(x => x.id === ing.insumoId);
+        if (ins) costoReal += ins.costo * ing.cantidad * it.cantidad;
+      });
+    });
+  });
+
+  const ganancia = totalV - totalG - costoReal;
+
+  const efectivoV = ventas.filter(v => v.metodo === "Efectivo").reduce((s,v) => s + v.total, 0);
+  const tarjetaV = ventas.filter(v => v.metodo === "Tarjeta").reduce((s,v) => s + v.total, 0);
+  const transfV = ventas.filter(v => v.metodo === "Transferencia").reduce((s,v) => s + v.total, 0);
+
+  const porProd = {};
+  ventas.forEach(v => v.items.forEach(it => {
+    porProd[it.nombre] = porProd[it.nombre] || { qty: 0, total: 0 };
+    porProd[it.nombre].qty += it.cantidad;
+    porProd[it.nombre].total += it.precio * it.cantidad;
+  }));
+
+  const maxTotal = Math.max(...Object.values(porProd).map(p => p.total), 1);
+
+  $("#reporteContenido").innerHTML = `
+    <div class="cards">
+      <div class="card verde">
+        <h4>🛒 Total ventas</h4>
+        <p class="big">${fmt(totalV)}</p>
+        <small>${ventas.length} tickets</small>
+      </div>
+      <div class="card rojo">
+        <h4>💸 Gastos</h4>
+        <p class="big">${fmt(totalG)}</p>
+      </div>
+      <div class="card azul">
+        <h4>📦 Costo mercancía</h4>
+        <p class="big">${fmt(costoReal)}</p>
+      </div>
+      <div class="card destacado">
+        <h4>💰 Ganancia neta</h4>
+        <p class="big">${fmt(ganancia)}</p>
+      </div>
+    </div>
+
+    <div class="cards">
+      <div class="card verde">
+        <h4>💵 Efectivo</h4>
+        <p class="big">${fmt(efectivoV)}</p>
+      </div>
+      <div class="card azul">
+        <h4>💳 Tarjeta</h4>
+        <p class="big">${fmt(tarjetaV)}</p>
+      </div>
+      <div class="card morado">
+        <h4>🏦 Transferencia</h4>
+        <p class="big">${fmt(transfV)}</p>
+      </div>
+    </div>
+
+    <h3 style="margin:16px 0 8px;font-size:16px">🍗 Ventas por producto</h3>
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Producto</th><th>Cantidad</th><th>Total</th></tr></thead>
+        <tbody>
+          ${Object.entries(porProd).sort((a,b)=>b[1].total-a[1].total).map(([n,d]) => `
+            <tr>
+              <td data-label="Producto">${n}</td>
+              <td data-label="Cantidad">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <div style="flex:1;height:6px;background:#eee;border-radius:3px;overflow:hidden;min-width:40px">
+                    <div style="height:100%;width:${(d.total/maxTotal*100).toFixed(0)}%;background:linear-gradient(90deg,var(--naranja),var(--amarillo))"></div>
+                  </div>
+                  <span>${d.qty}</span>
+                </div>
+              </td>
+              <td data-label="Total"><b>${fmt(d.total)}</b></td>
+            </tr>
+          `).join("") || `<tr><td colspan="3" style="text-align:center;color:#999;padding:16px">Sin ventas</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-secondary" onclick="exportarCSV()">📥 Exportar ventas a CSV</button>
+    </div>
+  `;
+}
+
+function exportarCSV() {
+  const rows = [["ID","Fecha","Cajero","Productos","Subtotal","Descuento","Propina","Total","Método"]];
+  DB.ventas.forEach(v => {
+    rows.push([
+      v.id, new Date(v.fecha).toLocaleString("es-MX"), v.usuario || "",
+      v.items.map(i => `${i.cantidad}x ${i.nombre}`).join(" | "),
+      v.subtotal, v.descuento || 0, v.propina || 0, v.total, v.metodo
+    ]);
+  });
+  const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+  const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `ventas_${hoy()}.csv`;
+  a.click();
+  toast("📥 CSV descargado");
+}
+
+/* ============ CONFIG ============ */
+function cargarNegocio() {
+  const elN = $("#cfgNombre");
+  const elS = $("#cfgSlogan");
+  const elD = $("#cfgDireccion");
+  const elT = $("#cfgTelefono");
+  if (elN) elN.value = DB.negocio.nombre || "";
+  if (elS) elS.value = DB.negocio.slogan || "";
+  if (elD) elD.value = DB.negocio.direccion || "";
+  if (elT) elT.value = DB.negocio.telefono || "";
+}
+
+function guardarNegocio() {
+  DB.negocio = {
+    nombre: $("#cfgNombre").value.trim() || "POS",
+    slogan: $("#cfgSlogan").value.trim() || "Sistema de venta",
+    direccion: $("#cfgDireccion").value.trim(),
+    telefono: $("#cfgTelefono").value.trim()
+  };
+  guardar();
+  actualizarHeader();
+  toast("💾 Datos guardados");
+}
+
+function exportarBackup() {
+  const data = JSON.stringify(DB, null, 2);
+  const blob = new Blob([data], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `backup_pos_${hoy()}.json`;
+  a.click();
+  toast("📥 Respaldo descargado");
+}
+
+function importarBackup(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!confirm("Esto reemplazará todos los datos actuales. ¿Continuar?")) return;
+      DB = data;
+      guardar();
+      toast("✅ Respaldo importado");
+      location.reload();
+    } catch (err) {
+      toast("❌ Archivo inválido");
+    }
+  };
+  reader.readAsText(file);
+}
+
+function borrarTodo() {
+  if (!confirm("⚠️ Esto borrará TODO. ¿Estás seguro?")) return;
+  if (!confirm("⚠️ Última confirmación. ¿Borrar definitivamente?")) return;
+  localStorage.clear();
+  sessionStorage.clear();
+  location.reload();
+}
+
+function cambiarPassword() {
+  const actual = $("#passActual").value;
+  const nueva = $("#passNueva").value;
+  const confirm = $("#passConfirm").value;
+
+  if (!actual || !nueva || !confirm) return toast("⚠️ Completa todos los campos");
+  if (nueva.length < 4) return toast("⚠️ Mínimo 4 caracteres");
+  if (nueva !== confirm) return toast("❌ Las contraseñas no coinciden");
+
+  const sesion = JSON.parse(sessionStorage.getItem("sesion") || "{}");
+  const user = DB.usuarios.find(u => u.id === sesion.id);
+  if (!user) return toast("⚠️ Usuario no encontrado");
+  if (user.password !== actual) return toast("❌ Contraseña actual incorrecta");
+
+  user.password = nueva;
+  guardar();
+  sessionStorage.setItem("sesion", JSON.stringify(user));
+
+  $("#passActual").value = "";
+  $("#passNueva").value = "";
+  $("#passConfirm").value = "";
+
+  toast("✅ Contraseña actualizada");
+}
+
+/* ============ CAJA FUERTE ============ */
+let estadoCajaHoy = LS.get("cajaHoy", { fecha: hoy(), fondoInicial: null, retiros: [], depositos: [] });
+
+function initDia() {
+  if (estadoCajaHoy.fecha !== hoy()) {
+    estadoCajaHoy = { fecha: hoy(), fondoInicial: null, retiros: [], depositos: [] };
+    LS.set("cajaHoy", estadoCajaHoy);
+  }
+}
+
+function abrirFondoInicial() {
+  abrirModal("💵 Abrir caja del día", `
+    <p style="color:#666;font-size:14px;margin-bottom:12px">Ingresa el fondo inicial en efectivo para dar cambio.</p>
+    <label>Fondo inicial</label>
+    <input id="fondoMonto" type="number" step="0.01" value="${estadoCajaHoy.fondoInicial || 500}">
+    <div class="acciones">
+      <button class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-primary" onclick="guardarFondo()">Abrir caja</button>
+    </div>
+  `);
+}
+
+function guardarFondo() {
+  const monto = +$("#fondoMonto").value || 0;
+  estadoCajaHoy.fondoInicial = monto;
+  LS.set("cajaHoy", estadoCajaHoy);
+  cerrarModal();
+  renderEstadoCaja();
+  toast("✅ Caja abierta con fondo de " + fmt(monto));
+}
+
+function abrirCajaFuerte() {
+  initDia();
+  const retiros = estadoCajaHoy.retiros.reduce((s,r) => s + r.monto, 0);
+  const depositos = estadoCajaHoy.depositos.reduce((s,d) => s + d.monto, 0);
+  abrirModal("🔐 Caja fuerte", `
+    <div style="background:#f9f9f9;border-radius:8px;padding:12px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px">
+        <span>Total retirado hoy:</span><b>${fmt(retiros)}</b>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:14px">
+        <span>Total depositado hoy:</span><b>${fmt(depositos)}</b>
+      </div>
+    </div>
+
+    <label>Tipo de movimiento</label>
+    <select id="cfTipo">
+      <option value="retiro">⬆️ Retiro (a caja fuerte)</option>
+      <option value="deposito">⬇️ Depósito (a caja)</option>
+    </select>
+    <label>Monto</label>
+    <input id="cfMonto" type="number" step="0.01">
+    <label>Nota (opcional)</label>
+    <input id="cfNota" placeholder="Motivo del movimiento">
+
+    <div class="acciones">
+      <button class="btn-secondary" onclick="cerrarModal()">Cerrar</button>
+      <button class="btn-primary" onclick="guardarCajaFuerte()">Registrar</button>
+    </div>
+
+    ${estadoCajaHoy.retiros.concat(estadoCajaHoy.depositos).length ? `
+      <h4 style="margin-top:16px;font-size:13px;color:#666;text-transform:uppercase">Movimientos de hoy</h4>
+      <div style="max-height:200px;overflow-y:auto">
+        ${[...estadoCajaHoy.retiros.map((r,i)=>({...r,tipo:"retiro",idx:i})), ...estadoCajaHoy.depositos.map((d,i)=>({...d,tipo:"deposito",idx:i}))]
+          .sort((a,b)=>new Date(b.hora)-new Date(a.hora))
+          .map(m => `
+            <div class="cat-item">
+              <span style="flex:1">${new Date(m.hora).toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"})} · ${m.tipo==="retiro"?"⬆️":"⬇️"} ${m.nota||"—"}</span>
+              <b style="color:${m.tipo==="retiro"?"#c62828":"#2e7d32"}">${m.tipo==="retiro"?"-":"+"}${fmt(m.monto)}</b>
+              <button onclick="borrarMovimientoCajaFuerte('${m.tipo}',${m.idx})" style="background:transparent;border:none;color:#c62828;cursor:pointer;font-size:16px;padding:4px">🗑️</button>
+            </div>
+          `).join("")}
+      </div>
+    ` : ""}
+  `);
+}
+
+function guardarCajaFuerte() {
+  const tipo = $("#cfTipo").value;
+  const monto = +$("#cfMonto").value;
+  const nota = $("#cfNota").value.trim();
+  if (!monto || monto <= 0) return toast("Monto inválido");
+  const mov = { monto, nota, hora: new Date().toISOString() };
+  if (tipo === "retiro") estadoCajaHoy.retiros.push(mov);
+  else estadoCajaHoy.depositos.push(mov);
+  LS.set("cajaHoy", estadoCajaHoy);
+  cerrarModal();
+  renderEstadoCaja();
+  toast(tipo === "retiro" ? "⬆️ Retiro registrado" : "⬇️ Depósito registrado");
+}
+
+function borrarMovimientoCajaFuerte(tipo, idx) {
+  const arr = tipo === "retiro" ? estadoCajaHoy.retiros : estadoCajaHoy.depositos;
+  const mov = arr[idx];
+  if (!mov) return alert("⚠️ No se encontró el movimiento");
+  if (!confirm(`¿Borrar ${tipo} de ${fmt(mov.monto)}${mov.nota ? " ("+mov.nota+")" : ""}?`)) return;
+  arr.splice(idx, 1);
+  LS.set("cajaHoy", estadoCajaHoy);
+  cerrarModal();
+  setTimeout(() => {
+    abrirCajaFuerte();
+    renderEstadoCaja();
+    toast("🗑️ Movimiento eliminado");
+  }, 150);
+}
+
+/* ============ ESTADO DE CAJA ============ */
+function renderEstadoCaja() {
+  const elEstado = $("#estadoCaja");
+  if (!elEstado) return;
+
+  initDia();
+  const hoyStr = hoy();
+  const ventasHoy = DB.ventas.filter(v => v.fecha.slice(0,10) === hoyStr);
+  const efectivoVentas = ventasHoy.filter(v => v.metodo === "Efectivo").reduce((s,v) => s + v.total, 0);
+  const tarjetaVentas = ventasHoy.filter(v => v.metodo === "Tarjeta").reduce((s,v) => s + v.total, 0);
+  const transfVentas = ventasHoy.filter(v => v.metodo === "Transferencia").reduce((s,v) => s + v.total, 0);
+  const totalVentas = efectivoVentas + tarjetaVentas + transfVentas;
+  const retiros = estadoCajaHoy.retiros.reduce((s,r) => s + r.monto, 0);
+  const depositos = estadoCajaHoy.depositos.reduce((s,d) => s + d.monto, 0);
+  const gastosEfectivo = DB.gastos.filter(g => g.fecha.slice(0,10) === hoyStr && g.metodo !== "Transferencia").reduce((s,g) => s + g.monto, 0);
+
+  const fondo = estadoCajaHoy.fondoInicial || 0;
+  const esperadoEnCaja = fondo + efectivoVentas + depositos - retiros - gastosEfectivo;
+
+  elEstado.innerHTML = `
+    ${estadoCajaHoy.fondoInicial === null ? `
+      <div class="card" style="background:#fff3e0;border-left:4px solid var(--warn);margin-bottom:14px">
+        <b>⚠️ Caja no abierta</b>
+        <p style="color:#666;font-size:13px;margin:6px 0">Abre la caja con el fondo inicial.</p>
+        <button class="btn-primary" onclick="abrirFondoInicial()" style="margin-top:8px">💵 Abrir caja</button>
+      </div>
+    ` : ""}
+
+    <div class="estado-caja">
+      <div class="card azul">
+        <h4>Fondo inicial</h4>
+        <p class="big">${fmt(fondo)}</p>
+        <small><a href="#" onclick="abrirFondoInicial();return false" style="color:var(--naranja)">editar</a></small>
+      </div>
+      <div class="card verde">
+        <h4>Efectivo en ventas</h4>
+        <p class="big">${fmt(efectivoVentas)}</p>
+        <small>${ventasHoy.filter(v=>v.metodo==="Efectivo").length} tickets</small>
+      </div>
+      <div class="card">
+        <h4>Tarjeta</h4>
+        <p class="big">${fmt(tarjetaVentas)}</p>
+      </div>
+      <div class="card">
+        <h4>Transferencia</h4>
+        <p class="big">${fmt(transfVentas)}</p>
+      </div>
+      <div class="card rojo">
+        <h4>Retiros a caja fuerte</h4>
+        <p class="big">-${fmt(retiros)}</p>
+      </div>
+      <div class="card">
+        <h4>Gastos en efectivo</h4>
+        <p class="big">-${fmt(gastosEfectivo)}</p>
+      </div>
+    </div>
+
+    <div class="card destacado" style="padding:20px;text-align:center">
+      <h4 style="font-size:11px;text-transform:uppercase;letter-spacing:.5px">💵 Efectivo esperado en caja</h4>
+      <p style="font-size:36px;font-weight:800;margin:8px 0">${fmt(esperadoEnCaja)}</p>
+      <small style="opacity:.9">Fondo + ventas efectivo + depósitos − retiros − gastos</small>
+    </div>
+
+    <div class="cards" style="margin-top:14px">
+      <div class="card">
+        <h4>Total ventas del día</h4>
+        <p class="big">${fmt(totalVentas)}</p>
+        <small>${ventasHoy.length} tickets</small>
+      </div>
+    </div>
+  `;
+
+  renderHistorialCortes();
+}
+
+/* ============ CORTE DIARIO ============ */
+function abrirCorteDiario() {
+  initDia();
+  const hoyStr = hoy();
+  const ventasHoy = DB.ventas.filter(v => v.fecha.slice(0,10) === hoyStr);
+  const efectivoVentas = ventasHoy.filter(v => v.metodo === "Efectivo").reduce((s,v) => s + v.total, 0);
+  const tarjetaVentas = ventasHoy.filter(v => v.metodo === "Tarjeta").reduce((s,v) => s + v.total, 0);
+  const transfVentas = ventasHoy.filter(v => v.metodo === "Transferencia").reduce((s,v) => s + v.total, 0);
+  const totalVentas = efectivoVentas + tarjetaVentas + transfVentas;
+  const retiros = estadoCajaHoy.retiros.reduce((s,r) => s + r.monto, 0);
+  const depositos = estadoCajaHoy.depositos.reduce((s,d) => s + d.monto, 0);
+  const gastosDia = DB.gastos.filter(g => g.fecha.slice(0,10) === hoyStr);
+  const gastosEfectivo = gastosDia.filter(g => g.metodo !== "Transferencia").reduce((s,g) => s + g.monto, 0);
+  const fondo = estadoCajaHoy.fondoInicial || 0;
+  const esperado = fondo + efectivoVentas + depositos - retiros - gastosEfectivo;
+
+  abrirModal("📋 Corte de caja", `
+    <div style="background:#f9f9f9;border-radius:10px;padding:12px;margin-bottom:14px;font-size:13px">
+      <div style="display:flex;justify-content:space-between;padding:3px 0"><span>Fondo inicial:</span><b>${fmt(fondo)}</b></div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0"><span>+ Ventas efectivo:</span><b>${fmt(efectivoVentas)}</b></div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0"><span>+ Depósitos:</span><b>${fmt(depositos)}</b></div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0"><span>− Retiros:</span><b>-${fmt(retiros)}</b></div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0"><span>− Gastos efectivo:</span><b>-${fmt(gastosEfectivo)}</b></div>
+      <hr style="border:none;border-top:1px solid #ddd;margin:6px 0">
+      <div style="display:flex;justify-content:space-between;font-size:15px"><b>Efectivo esperado:</b><b style="color:var(--naranja)">${fmt(esperado)}</b></div>
+    </div>
+
+    <h4 style="font-size:13px;margin-bottom:8px">Arqueo (conteo físico)</h4>
+    <div class="arqueo-grid">
+      <div>
+        <label>Billetes $1000</label>
+        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="1000" value="0" oninput="calcArqueo()"><span class="sub" id="s1000">$0</span></div>
+        <label>Billetes $500</label>
+        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="500" value="0" oninput="calcArqueo()"><span class="sub" id="s500">$0</span></div>
+        <label>Billetes $200</label>
+        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="200" value="0" oninput="calcArqueo()"><span class="sub" id="s200">$0</span></div>
+        <label>Billetes $100</label>
+        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="100" value="0" oninput="calcArqueo()"><span class="sub" id="s100">$0</span></div>
+        <label>Billetes $50</label>
+        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="50" value="0" oninput="calcArqueo()"><span class="sub" id="s50">$0</span></div>
+      </div>
+      <div>
+        <label>Billetes $20</label>
+        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="20" value="0" oninput="calcArqueo()"><span class="sub" id="s20">$0</span></div>
+        <label>Monedas $10</label>
+        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="10" value="0" oninput="calcArqueo()"><span class="sub" id="s10">$0</span></div>
+        <label>Monedas $5</label>
+        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="5" value="0" oninput="calcArqueo()"><span class="sub" id="s5">$0</span></div>
+        <label>Monedas $2</label>
+        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="2" value="0" oninput="calcArqueo()"><span class="sub" id="s2">$0</span></div>
+        <label>Monedas $1</label>
+        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="1" value="0" oninput="calcArqueo()"><span class="sub" id="s1">$0</span></div>
+      </div>
+    </div>
+
+    <div style="margin-top:14px;padding:12px;background:#f9f9f9;border-radius:10px">
+      <div style="display:flex;justify-content:space-between;padding:4px 0"><span>Contado:</span><b id="totalContado">$0.00</b></div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0"><span>Esperado:</span><b>${fmt(esperado)}</b></div>
+      <hr style="border:none;border-top:1px solid #ddd;margin:6px 0">
+      <div style="display:flex;justify-content:space-between;font-size:17px"><b>Diferencia:</b><b id="diferencia" style="color:var(--ok)">$0.00</b></div>
+    </div>
+
+    <label>Nota del corte (opcional)</label>
+    <input id="corteNota" placeholder="Observaciones...">
+
+    <div class="acciones">
+      <button class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-primary" onclick="guardarCorte(${esperado}, ${efectivoVentas}, ${tarjetaVentas}, ${transfVentas}, ${totalVentas})">💾 Guardar corte</button>
+    </div>
+  `);
+
+  window._esperadoCorte = esperado;
+}
+
+function calcArqueo() {
+  let total = 0;
+  $$(".arqueo").forEach(inp => {
+    const v = +inp.dataset.v;
+    const cant = +inp.value || 0;
+    const sub = v * cant;
+    total += sub;
+    const span = $("#s" + v);
+    if (span) span.textContent = fmt(sub);
+  });
+  $("#totalContado").textContent = fmt(total);
+  const esp = window._esperadoCorte || 0;
+  const dif = total - esp;
+  const el = $("#diferencia");
+  el.textContent = (dif >= 0 ? "+" : "") + fmt(dif);
+  el.style.color = Math.abs(dif) < 0.01 ? "var(--ok)" : (dif > 0 ? "#1565c0" : "var(--rojo)");
+}
+
+function guardarCorte(esperado, efectivo, tarjeta, transf, total) {
+  const contado = +$("#totalContado").textContent.replace(/[^0-9.-]/g, "");
+  const nota = $("#corteNota").value.trim();
+  const diferencia = contado - esperado;
+
+  const corte = {
+    id: nuevoId(LS.get("cortes", [])),
+    fecha: new Date().toISOString(),
+    dia: hoy(),
+    fondo: estadoCajaHoy.fondoInicial || 0,
+    ventas: { efectivo, tarjeta, transf, total, tickets: DB.ventas.filter(v => v.fecha.slice(0,10) === hoy()).length },
+    gastos: DB.gastos.filter(g => g.fecha.slice(0,10) === hoy()).reduce((s,g) => s + g.monto, 0),
+    retiros: estadoCajaHoy.retiros.reduce((s,r) => s + r.monto, 0),
+    depositos: estadoCajaHoy.depositos.reduce((s,d) => s + d.monto, 0),
+    esperado, contado, diferencia, nota,
+    usuario: JSON.parse(sessionStorage.getItem("sesion") || "{}").nombre || "admin"
+  };
+
+  const cortes = LS.get("cortes", []);
+  cortes.push(corte);
+  LS.set("cortes", cortes);
+
+  cerrarModal();
+  toast(`✅ Corte guardado · Diferencia: ${fmt(diferencia)}`);
+  renderEstadoCaja();
+  renderHistorialCortes();
+  imprimirCorte(corte);
+}
+
+function renderHistorialCortes() {
+  const cortes = LS.get("cortes", []).slice().reverse();
+  const el = $("#historialCortes");
+  if (!el) return;
+  el.innerHTML = `
+    <h3 style="margin-bottom:8px;font-size:15px;padding:12px 12px 0">Historial de cortes</h3>
+    <table>
+      <thead><tr><th>Fecha</th><th>Ventas</th><th>Contado</th><th>Diferencia</th><th>Cajero</th><th></th></tr></thead>
+      <tbody>
+        ${cortes.length ? cortes.map(c => `
+          <tr>
+            <td data-label="Fecha">${new Date(c.fecha).toLocaleString("es-MX",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}</td>
+            <td data-label="Ventas">${fmt(c.ventas.total)}</td>
+            <td data-label="Contado">${fmt(c.contado)}</td>
+            <td data-label="Diferencia"><span class="badge ${Math.abs(c.diferencia)<0.01?'ok':(c.diferencia>0?'warn':'danger')}">${(c.diferencia>=0?"+":"")+fmt(c.diferencia)}</span></td>
+            <td data-label="Cajero">${c.usuario}</td>
+            <td><button class="btn-mini" onclick='imprimirCorte(${JSON.stringify(c).replace(/'/g,"&#39;")})'>🖨️</button></td>
+          </tr>
+        `).join("") : `<tr><td colspan="6" style="text-align:center;padding:20px;color:#999">Sin cortes registrados</td></tr>`}
+      </tbody>
+    </table>
+  `;
+}
+
+function imprimirCorte(c) {
+  const n = DB.negocio;
+  const html = `
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Corte</title>
+<style>
+  @page { size: 58mm auto; margin: 0; }
+  body { font-family: 'Courier New', monospace; font-size: 11px; width: 58mm; padding: 4mm; margin: 0; }
+  .c { text-align: center; } .b { font-weight: bold; } .g { font-size: 13px; }
+  .fila { display: flex; justify-content: space-between; padding: 2px 0; }
+  hr { border: none; border-top: 1px dashed #000; margin: 4px 0; }
+</style></head><body>
+  <div class="c b g">${n.nombre || "POS"}</div>
+  <div class="c">${n.slogan || ""}</div>
+  <div class="c">CORTE DE CAJA</div>
+  <hr>
+  <div>Fecha: ${new Date(c.fecha).toLocaleString("es-MX")}</div>
+  <div>Cajero: ${c.usuario}</div>
+  <hr>
+  <div class="b">VENTAS</div>
+  <div class="fila"><span>Efectivo:</span><span>${fmt(c.ventas.efectivo)}</span></div>
+  <div class="fila"><span>Tarjeta:</span><span>${fmt(c.ventas.tarjeta)}</span></div>
+  <div class="fila"><span>Transferencia:</span><span>${fmt(c.ventas.transf)}</span></div>
+  <div class="fila b"><span>TOTAL:</span><span>${fmt(c.ventas.total)}</span></div>
+  <div class="fila"><span>Tickets:</span><span>${c.ventas.tickets}</span></div>
+  <hr>
+  <div class="b">EFECTIVO</div>
+  <div class="fila"><span>Fondo inicial:</span><span>${fmt(c.fondo)}</span></div>
+  <div class="fila"><span>Depósitos:</span><span>+${fmt(c.depositos)}</span></div>
+  <div class="fila"><span>Retiros:</span><span>-${fmt(c.retiros)}</span></div>
+  <div class="fila"><span>Gastos efectivo:</span><span>-${fmt(c.gastos)}</span></div>
+  <div class="fila b"><span>Esperado:</span><span>${fmt(c.esperado)}</span></div>
+  <div class="fila b"><span>Contado:</span><span>${fmt(c.contado)}</span></div>
+  <div class="fila b g"><span>DIFERENCIA:</span><span>${fmt(c.diferencia)}</span></div>
+  <hr>
+  ${c.nota ? `<div>Nota: ${c.nota}</div><hr>` : ""}
+  <div class="c">Firma: _____________</div>
+</body></html>`;
+  const w = window.open("", "_blank", "width=320,height=600");
+  if (!w) return;
+  w.document.write(html);
+  w.document.close();
+  setTimeout(() => w.print(), 300);
+}
+
+/* ============ CATEGORÍAS ============ */
+function renderCategoriasGastos() {
+  const el = $("#listaCategoriasGastos");
+  if (!el) return;
+  el.innerHTML = CATS_GASTO.map((c, i) => `
+    <div class="cat-item">
+      <span>${c}</span>
+      <button onclick="borrarCategoria(${i})" title="Eliminar">🗑️</button>
+    </div>
+  `).join("") || `<p style="color:#999;font-size:13px">Sin categorías</p>`;
+}
+
+function agregarCategoria() {
+  const val = $("#nuevaCategoria").value.trim();
+  if (!val) return toast("Escribe un nombre");
+  if (CATS_GASTO.includes(val)) return toast("Ya existe");
+  CATS_GASTO.push(val);
+  guardarCats();
+  $("#nuevaCategoria").value = "";
+  renderCategoriasGastos();
+  toast("✅ Categoría agregada");
+}
+
+function borrarCategoria(i) {
+  if (!confirm(`¿Borrar "${CATS_GASTO[i]}"?`)) return;
+  CATS_GASTO.splice(i, 1);
+  guardarCats();
+  renderCategoriasGastos();
+  toast("🗑️ Categoría borrada");
+}
+
+/* ============ SERVICE WORKER ============ */
+if ("serviceWorker" in navigator && location.protocol !== "file:") {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js")
+      .then(reg => console.log("✅ Service Worker registrado"))
+      .catch(err => console.log("SW error:", err));
+  });
+}
+
+/* ============ PWA INSTALACIÓN ============ */
+let deferredPrompt;
+const btnInst = document.getElementById("btnInstalar");
+
+window.addEventListener("beforeinstallprompt", e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (btnInst) btnInst.style.display = "block";
+});
+
+if (btnInst) {
+  btnInst.addEventListener("click", async () => {
+    if (!deferredPrompt) {
+      const esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      if (esIOS) {
+        alert("Para instalar en iPhone/iPad:\n\n1. Toca Compartir ⬆️\n2. Elige 'Añadir a pantalla de inicio'\n3. Confirma");
+      } else {
+        alert("Tu navegador no soporta instalación directa.\n\nPrueba con Chrome.");
+      }
+      return;
+    }
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    btnInst.style.display = "none";
+  });
+}
+
+if (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone) {
+  if (btnInst) btnInst.style.display = "none";
+}
+
+/* ============ ONLINE / OFFLINE ============ */
+window.addEventListener("offline", () => {
+  if (document.getElementById("offlineBadge")) return;
+  const b = document.createElement("div");
+  b.id = "offlineBadge";
+  b.textContent = "📴 Sin conexión";
+  b.style.cssText = "position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:8px 16px;border-radius:20px;font-size:12px;z-index:5000;";
+  document.body.appendChild(b);
+});
+
+window.addEventListener("online", () => {
+  const b = document.getElementById("offlineBadge");
+  if (b) b.remove();
+});
+
+/* ============ INICIALIZACIÓN ============ */
+document.addEventListener("DOMContentLoaded", () => {
+  seed();
+  initDia();
+  const sesion = sessionStorage.getItem("sesion");
+  if (sesion) entrarApp();
+  const p = document.getElementById("pass");
+  if (p) p.addEventListener("keypress", e => { if (e.key === "Enter") hacerLogin(); });
+});
+</script>
+</body>
+</html>
