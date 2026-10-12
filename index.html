@@ -836,7 +836,10 @@ body.modo-oscuro .carrito-flotante-total {
             <span class="total-cobrar" id="totalCobrar">$0</span>
           </button>
 
-          <input id="mesaActual" type="hidden" value="">
+          <div class="mesa-input" style="display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:13px">
+  <label style="color:#64748b;font-weight:600">Mesa:</label>
+  <input id="mesaActual" placeholder="Ej: 3" style="flex:1;padding:8px;border:2px solid var(--borde);border-radius:8px;font-size:14px">
+</div>
         </aside>
         
                 <!-- BOTÓN FLOTANTE CARRITO (solo móvil) -->
@@ -1635,6 +1638,7 @@ function finalizarVenta(metodo, total, pagoCon, cambio) {
   cerrarCarritoModal();
   renderCarrito();
   renderEstadoCaja();
+  reproducirSonido("cobro");
   mostrarTicketImpresion(venta);
 
   if (metodo === "Efectivo" && cambio > 0) {
@@ -1698,148 +1702,92 @@ function imprimirTicket(v) {
     `<div class="fila"><span>${it.cantidad}x ${it.nombre}</span><span>${fmt(it.precio*it.cantidad)}</span></div>`
   ).join("");
 
-  // Contenido del ticket
-  const ticketHTML = `
-    <div class="c b g">${n.nombre || "POS"}</div>
-    <div class="c">${n.slogan || ""}</div>
-    <div class="c">${n.direccion || ""}</div>
-    <div class="c">Tel: ${n.telefono || ""}</div>
-    <hr>
-    <div>Ticket #${v.id}</div>
-    <div>${new Date(v.fecha).toLocaleString("es-MX")}</div>
-    ${v.mesa ? `<div>Mesa: ${v.mesa}</div>` : ""}
-    <div>Cajero: ${v.usuario}</div>
-    <hr>
-    ${items}
-    <hr>
-    <div class="fila"><span>Subtotal:</span><span>${fmt(v.subtotal)}</span></div>
-    ${v.descuento ? `<div class="fila"><span>Descuento:</span><span>-${fmt(v.descuento)}</span></div>` : ""}
-    ${v.propina ? `<div class="fila"><span>Propina:</span><span>${fmt(v.propina)}</span></div>` : ""}
-    <div class="fila b g"><span>TOTAL:</span><span>${fmt(v.total)}</span></div>
-    <div class="fila"><span>Pago:</span><span>${v.metodo}</span></div>
-    ${v.metodo === "Efectivo" ? `
-      <div class="fila"><span>Recibido:</span><span>${fmt(v.pagoCon)}</span></div>
-      <div class="fila b"><span>Cambio:</span><span>${fmt(v.cambio)}</span></div>
-    ` : ""}
-    <hr>
-    <div class="c">¡Gracias por su preferencia!</div>
-    <div class="c b">${n.nombre || ""}</div>
-    <div class="c">${n.slogan || ""}</div>
-  `;
-
-  // Abrir modal con el ticket para imprimir
-  abrirModal("🖨️ Ticket para imprimir", `
-    <div id="ticketPrintArea" style="
-      background:#fff;
-      color:#000;
-      padding:20px;
-      font-family:'Courier New',monospace;
-      font-size:13px;
-      border-radius:12px;
-      border:2px dashed #cbd5e1;
-      max-width:320px;
-      margin:0 auto;
-    ">
-      ${ticketHTML}
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px">
-      <button onclick="cerrarModal()" style="
-        padding:14px;
-        border-radius:12px;
-        border:none;
-        background:#f1f5f9;
-        color:#0f172a;
-        font-weight:700;
-        font-size:14px;
-        cursor:pointer;
-      ">✖️ Cerrar</button>
-      <button onclick="imprimirTicketAhora()" style="
-        padding:14px;
-        border-radius:12px;
-        border:none;
-        background:linear-gradient(135deg,#3b82f6,#2563eb);
-        color:#fff;
-        font-weight:700;
-        font-size:14px;
-        cursor:pointer;
-      ">🖨️ Imprimir</button>
-    </div>
-
-    <button onclick="descargarTicketPDF()" style="
-      width:100%;
-      padding:12px;
-      border-radius:12px;
-      border:2px solid #e2e8f0;
-      background:#fff;
-      color:#0f172a;
-      font-weight:700;
-      font-size:13px;
-      cursor:pointer;
-      margin-top:8px;
-    ">📥 Guardar como PDF</button>
-  `);
-}
-
-/* Imprime el contenido del ticket usando una nueva ventana o iframe */
-function imprimirTicketAhora() {
-  const contenido = document.getElementById("ticketPrintArea");
-  if (!contenido) return;
-
-  const n = DB.negocio;
-
   const html = `
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Ticket</title>
+<title>Ticket ${v.id}</title>
 <style>
   @page { size: 58mm auto; margin: 0; }
-  body {
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
-    width: 58mm;
-    padding: 4mm;
-    margin: 0;
-    background: #fff;
-    color: #000;
-  }
+  body { font-family: 'Courier New', monospace; font-size: 12px; width: 58mm; padding: 4mm; margin: 0 auto; background: #fff; color: #000; }
   .c { text-align: center; } .b { font-weight: bold; } .g { font-size: 14px; }
   .fila { display: flex; justify-content: space-between; padding: 2px 0; }
   hr { border: none; border-top: 1px dashed #000; margin: 4px 0; }
+  .btn-imprimir {
+    display: block;
+    margin: 20px auto;
+    padding: 14px 24px;
+    background: #f97316;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  @media print {
+    .btn-imprimir { display: none !important; }
+    body { width: 100%; padding: 0; }
+  }
 </style>
 </head>
 <body>
-  ${contenido.innerHTML}
+  <div class="c b g">${n.nombre || "POS"}</div>
+  <div class="c">${n.slogan || ""}</div>
+  <div class="c">${n.direccion || ""}</div>
+  <div class="c">Tel: ${n.telefono || ""}</div>
+  <hr>
+  <div>Ticket #${v.id}</div>
+  <div>${new Date(v.fecha).toLocaleString("es-MX")}</div>
+  ${v.mesa ? `<div>Mesa: ${v.mesa}</div>` : ""}
+  <div>Cajero: ${v.usuario}</div>
+  <hr>
+  ${items}
+  <hr>
+  <div class="fila"><span>Subtotal:</span><span>${fmt(v.subtotal)}</span></div>
+  ${v.descuento ? `<div class="fila"><span>Descuento:</span><span>-${fmt(v.descuento)}</span></div>` : ""}
+  ${v.propina ? `<div class="fila"><span>Propina:</span><span>${fmt(v.propina)}</span></div>` : ""}
+  <div class="fila b g"><span>TOTAL:</span><span>${fmt(v.total)}</span></div>
+  <div class="fila"><span>Pago:</span><span>${v.metodo}</span></div>
+  ${v.metodo === "Efectivo" ? `
+    <div class="fila"><span>Recibido:</span><span>${fmt(v.pagoCon)}</span></div>
+    <div class="fila b"><span>Cambio:</span><span>${fmt(v.cambio)}</span></div>
+  ` : ""}
+  <hr>
+  <div class="c">¡Gracias por su preferencia!</div>
+  <div class="c b">${n.nombre || ""}</div>
+  <div class="c">${n.slogan || ""}</div>
+
+  <button class="btn-imprimir" onclick="window.print()">🖨️ Imprimir ahora</button>
+
+  <script>
+    window.addEventListener("load", () => {
+      setTimeout(() => {
+        try { window.print(); } catch(e) {}
+      }, 400);
+    });
+  <\/script>
 </body>
 </html>`;
 
-  // Método 1: intentar window.open
-  let ventana = null;
+  // Método 1: window.open
+  let w = null;
   try {
-    ventana = window.open("", "_blank", "width=320,height=600");
+    w = window.open("", "_blank");
   } catch(e) {
-    ventana = null;
+    w = null;
   }
 
-  if (ventana && !ventana.closed) {
-    ventana.document.open();
-    ventana.document.write(html);
-    ventana.document.close();
-    setTimeout(() => {
-      try {
-        ventana.focus();
-        ventana.print();
-      } catch(e) {
-        console.log("Error print:", e);
-      }
-    }, 500);
+  if (w && !w.closed) {
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
     return;
   }
 
   // Método 2 (fallback): iframe invisible
-  console.log("window.open bloqueado, usando iframe...");
+  console.log("window.open bloqueado, usando iframe");
   const iframe = document.createElement("iframe");
   iframe.style.position = "fixed";
   iframe.style.right = "0";
@@ -1863,13 +1811,13 @@ function imprimirTicketAhora() {
           iframe.contentWindow.print();
         } catch(e) {
           console.log("Error iframe print:", e);
-          toast("⚠️ No se pudo abrir impresión. Intenta con Guardar como PDF");
+          toast("⚠️ No se pudo imprimir");
         }
         setTimeout(() => iframe.remove(), 3000);
       }, 300);
     } catch(e) {
       console.log("Error escribiendo iframe:", e);
-      toast("⚠️ No se pudo imprimir. Usa Guardar como PDF");
+      toast("⚠️ No se pudo imprimir");
       iframe.remove();
     }
   }, 100);
@@ -3501,13 +3449,6 @@ function compartirWhatsAppNumero(ventaId) {
   window.open(url, "_blank");
 }
 
-/* ============ PANTALLA COMPLETA AL COBRAR (sonido) ============ */
-/* Sobrescribir finalizarVenta para agregar sonido */
-const _finalizarVentaOriginal = finalizarVenta;
-finalizarVenta = function(metodo, total, pagoCon, cambio) {
-  _finalizarVentaOriginal(metodo, total, pagoCon, cambio);
-  reproducirSonido("cobro");
-};
 /* ============ SERVICE WORKER ============ */
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
   window.addEventListener("load", () => {
