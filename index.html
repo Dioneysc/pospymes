@@ -1650,6 +1650,7 @@ function finalizarVenta(metodo, total, pagoCon, cambio) {
 
 /* ============ TICKET ============ */
 function mostrarTicketImpresion(v) {
+  window._ventaActual = v; 
   const n = DB.negocio;
   const itemsHTML = v.items.map(it => `
     <div class="fila">
@@ -1688,14 +1689,21 @@ function mostrarTicketImpresion(v) {
       <div class="centro">${n.telefono || ""}</div>
     </div>
 
-        <div class="ticket-acciones" style="grid-template-columns: 1fr 1fr 1fr;">
+      <div class="ticket-acciones" style="grid-template-columns: 1fr 1fr 1fr;">
       <button class="btn-no-imprimir" onclick="cerrarModal()">✖️ Cerrar</button>
-      <button class="btn-imprimir" onclick="imprimirTicket(${JSON.stringify(v).replace(/'/g, "&#39;")})">🖨️ Imprimir</button>
+      <button class="btn-imprimir" onclick="imprimirVentaActual()">🖨️ Imprimir</button>
       <button class="btn-whatsapp" onclick="compartirWhatsApp(${v.id})">📤 WhatsApp</button>
     </div>
   `);
 }
 
+/* Imprime la venta actual (la última cobrada) */
+function imprimirVentaActual() {
+  if (!window._ventaActual) {
+    return toast("⚠️ No hay venta reciente");
+  }
+  imprimirTicket(window._ventaActual);
+}
 function imprimirTicket(v) {
   const n = DB.negocio;
   const items = v.items.map(it =>
