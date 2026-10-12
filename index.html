@@ -1697,15 +1697,40 @@ function imprimirTicket(v) {
   const items = v.items.map(it =>
     `<div class="fila"><span>${it.cantidad}x ${it.nombre}</span><span>${fmt(it.precio*it.cantidad)}</span></div>`
   ).join("");
+
   const html = `
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ticket ${v.id}</title>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ticket ${v.id}</title>
 <style>
   @page { size: 58mm auto; margin: 0; }
-  body { font-family: 'Courier New', monospace; font-size: 11px; width: 58mm; padding: 4mm; margin: 0; }
+  body { font-family: 'Courier New', monospace; font-size: 12px; width: 58mm; padding: 4mm; margin: 0 auto; background: #fff; color: #000; }
   .c { text-align: center; } .b { font-weight: bold; } .g { font-size: 14px; }
   .fila { display: flex; justify-content: space-between; padding: 2px 0; }
   hr { border: none; border-top: 1px dashed #000; margin: 4px 0; }
-</style></head><body>
+  .acciones-imprimir {
+    display: block;
+    margin: 20px auto;
+    padding: 14px 24px;
+    background: #f97316;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+  }
+  @media print {
+    .acciones-imprimir { display: none !important; }
+    body { width: 100%; padding: 0; }
+  }
+</style>
+</head>
+<body>
   <div class="c b g">${n.nombre || "POS"}</div>
   <div class="c">${n.slogan || ""}</div>
   <div class="c">${n.direccion || ""}</div>
@@ -1731,14 +1756,61 @@ function imprimirTicket(v) {
   <div class="c">¡Gracias por su preferencia!</div>
   <div class="c b">${n.nombre || ""}</div>
   <div class="c">${n.slogan || ""}</div>
-</body></html>`;
-  const w = window.open("", "_blank", "width=320,height=600");
-  if (!w) return toast("⚠️ Permite ventanas emergentes");
+
+  <button class="acciones-imprimir" onclick="window.print()">
+    🖨️ Imprimir ahora
+  </button>
+
+  <script>
+    // Auto-abrir diálogo de impresión después de cargar
+    window.addEventListener("load", () => {
+      setTimeout(() => {
+        try { window.print(); } catch(e) { console.log(e); }
+      }, 500);
+    });
+  <\/script>
+</body>
+</html>`;
+
+  // Abrir en la misma pestaña (más confiable en móvil)
+  const w = window.open("", "_blank");
+
+  if (!w) {
+    // Si el navegador bloquea window.open, usar un iframe
+    toast("⚠️ Permite ventanas emergentes para imprimir");
+
+    // Alternativa: crear un iframe invisible
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(html);
+    doc.close();
+
+    setTimeout(() => {
+      try {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      } catch(e) {
+        console.log("Error iframe:", e);
+      }
+      setTimeout(() => iframe.remove(), 5000);
+    }, 500);
+
+    return;
+  }
+
+  w.document.open();
   w.document.write(html);
   w.document.close();
-  setTimeout(() => { w.print(); }, 300);
 }
-
 /* ============ PRODUCTOS ============ */
 function renderProductos() {
   if (!DB.productos.length) {
