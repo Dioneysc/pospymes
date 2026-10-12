@@ -1,4 +1,4 @@
-const CACHE = "pos-polleria-v24";
+const CACHE = "pos-polleria-v25";
 const ARCHIVOS = [
   "./index.html",
   "./manifest.json",

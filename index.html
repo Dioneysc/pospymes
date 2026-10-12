@@ -535,6 +535,159 @@ tr:last-child td { border-bottom: none; }
 #btnInstalar { animation: pulseInstall 2s infinite; }
 @keyframes pulseInstall { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
 
+/* ============================================
+   CARRITO FLOTANTE (solo móvil)
+   ============================================ */
+.carrito-flotante {
+  display: none;
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 400px;
+  background: linear-gradient(135deg, var(--naranja), var(--naranja2));
+  color: #fff;
+  border: none;
+  padding: 14px 18px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 15px;
+  box-shadow: 0 8px 24px rgba(249,115,22,.4);
+  cursor: pointer;
+  z-index: 500;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  transition: all .2s ease;
+}
+
+.carrito-flotante:active {
+  transform: translateX(-50%) scale(.96);
+}
+
+.carrito-flotante.visible {
+  display: flex;
+}
+
+.carrito-flotante.oculto {
+  display: none !important;
+}
+
+.carrito-flotante-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.carrito-flotante-count {
+  background: #fff;
+  color: var(--naranja);
+  min-width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 0 6px;
+}
+
+.carrito-flotante-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.carrito-flotante-total {
+  background: var(--gris-oscuro);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+/* Ocultar el carrito lateral completo en móvil por defecto */
+@media (max-width: 900px) {
+  .carrito-panel {
+    display: none !important;
+  }
+
+  .carrito-panel.modal-abierto {
+    display: flex !important;
+  }
+}
+
+/* Carrito como modal en móvil */
+@media (max-width: 900px) {
+  .carrito-panel.modal-abierto {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    border-radius: 24px 24px 0 0;
+    max-height: 92vh;
+    padding: 20px 16px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    top: auto;
+    bottom: 0;
+    animation: slideUp .25s ease;
+    box-shadow: 0 -10px 40px rgba(0,0,0,.3);
+  }
+
+  .carrito-panel.modal-abierto::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(15,23,42,.5);
+    backdrop-filter: blur(4px);
+    z-index: -1;
+    animation: fadeIn .2s ease;
+  }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* Botón de cerrar dentro del carrito móvil */
+.carrito-cerrar-movil {
+  display: none;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #f1f5f9;
+  border: none;
+  font-size: 16px;
+  color: var(--texto-suave);
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 900px) {
+  .carrito-cerrar-movil {
+    display: flex;
+  }
+}
+
+body.modo-oscuro .carrito-flotante-count {
+  background: #fff;
+  color: var(--naranja);
+}
+
+body.modo-oscuro .carrito-flotante-total {
+  background: #020617;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
 /* RESPONSIVE */
 @media (max-width: 900px) {
   .caja-layout { grid-template-columns: 1fr; height: auto; gap: 12px; }
@@ -613,7 +766,8 @@ tr:last-child td { border-bottom: none; }
           </div>
           <div class="productos-grid" id="gridProductos"></div>
         </div>
-        <aside class="carrito-panel">
+        <aside class="carrito-panel" id="carritoPanel">
+          <button class="carrito-cerrar-movil" onclick="cerrarCarritoModal()">✖</button>
           <div class="carrito-header">
             <h3>🛒 Carrito de venta</h3>
             <button class="btn-trash" onclick="limpiarCarrito()" title="Vaciar">🗑️</button>
@@ -680,6 +834,15 @@ tr:last-child td { border-bottom: none; }
           <button class="btn-cobrar" onclick="cobrarEfectivoRapido()">
             <span>💳 COBRAR</span>
             <span class="total-cobrar" id="totalCobrar">$0</span>
+          </button>
+
+                    <!-- BOTÓN FLOTANTE CARRITO (solo móvil) -->
+          <button id="carritoFlotante" class="carrito-flotante" onclick="abrirCarritoModal()">
+            <span class="carrito-flotante-info">
+              <span class="carrito-flotante-count" id="carritoFlotanteCount">0</span>
+              <span class="carrito-flotante-label">Ver carrito</span>
+            </span>
+            <span class="carrito-flotante-total" id="carritoFlotanteTotal">$0</span>
           </button>
 
           <input id="mesaActual" type="hidden" value="">
@@ -1104,6 +1267,54 @@ function agregarAlCarrito(id) {
   renderCarrito();
 }
 
+/* ============ CARRITO FLOTANTE (MÓVIL) ============ */
+function actualizarCarritoFlotante() {
+  const btn = document.getElementById("carritoFlotante");
+  const count = document.getElementById("carritoFlotanteCount");
+  const total = document.getElementById("carritoFlotanteTotal");
+  if (!btn) return;
+
+  // Solo se muestra en móvil
+  if (window.innerWidth > 900) {
+    btn.classList.add("oculto");
+    return;
+  }
+
+  const cantidadTotal = carrito.reduce((s, i) => s + i.cantidad, 0);
+  const totalMonto = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0) - descuento + propina;
+
+  if (count) count.textContent = cantidadTotal;
+  if (total) total.textContent = fmt(totalMonto);
+
+  if (carrito.length > 0) {
+    btn.classList.add("visible");
+    btn.classList.remove("oculto");
+  } else {
+    btn.classList.remove("visible");
+    btn.classList.add("oculto");
+  }
+}
+
+function abrirCarritoModal() {
+  const panel = document.getElementById("carritoPanel");
+  const btn = document.getElementById("carritoFlotante");
+  if (!panel) return;
+
+  panel.classList.add("modal-abierto");
+  if (btn) btn.classList.add("oculto");
+  document.body.style.overflow = "hidden";
+}
+
+function cerrarCarritoModal() {
+  const panel = document.getElementById("carritoPanel");
+  const btn = document.getElementById("carritoFlotante");
+  if (!panel) return;
+
+  panel.classList.remove("modal-abierto");
+  if (btn && carrito.length > 0) btn.classList.remove("oculto");
+  document.body.style.overflow = "";
+}
+
 function renderCarrito() {
   const c = $("#carrito");
   if (!carrito.length) {
@@ -1137,6 +1348,7 @@ function renderCarrito() {
   if (elTotCobrar) elTotCobrar.textContent = fmt(total);
 
   actualizarToggleValores();
+  actualizarCarritoFlotante();
 }
 
 function cambiarCantidad(i, d) {
@@ -1159,6 +1371,7 @@ function limpiarCarrito() {
   if (tD) tD.classList.remove("activo");
   if (tP) tP.classList.remove("activo");
 
+  cerrarCarritoModal();
   renderCarrito();
 }
 
@@ -1410,6 +1623,7 @@ function finalizarVenta(metodo, total, pagoCon, cambio) {
   if (tD) tD.classList.remove("activo");
   if (tP) tP.classList.remove("activo");
 
+  cerrarCarritoModal();
   renderCarrito();
   renderEstadoCaja();
   mostrarTicketImpresion(venta);
@@ -3170,6 +3384,17 @@ document.addEventListener("keydown", e => {
       btnPrincipal.click();
     }
   }
+});
+
+/* ============ RESIZE (adaptar a cambios de pantalla) ============ */
+window.addEventListener("resize", () => {
+  if (window.innerWidth > 900) {
+    // Si vuelve a desktop, cerrar el modal del carrito
+    const panel = document.getElementById("carritoPanel");
+    if (panel) panel.classList.remove("modal-abierto");
+    document.body.style.overflow = "";
+  }
+  actualizarCarritoFlotante();
 });
 
 /* ============ INICIALIZACIÓN ============ */
