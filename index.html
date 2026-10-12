@@ -1255,43 +1255,48 @@ function filtrarProductos() { renderCaja(); }
 
 function agregarAlCarrito(id) {
   const p = DB.productos.find(x => x.id === id);
+  if (!p) return;
   const ex = carrito.find(i => i.productoId === id);
-  if (ex) ex.cantidad++;
-  else carrito.push({
-    productoId: id,
-    nombre: p.nombre,
-    precio: p.precio,
-    emoji: p.emoji || "🍽️",
-    cantidad: 1
-  });
+  if (ex) {
+    ex.cantidad++;
+  } else {
+    carrito.push({
+      productoId: id,
+      nombre: p.nombre,
+      precio: p.precio,
+      emoji: p.emoji || "🍽️",
+      cantidad: 1
+    });
+  }
   renderCarrito();
+  actualizarCarritoFlotante(); // ← fuerza actualización
 }
 
 /* ============ CARRITO FLOTANTE (MÓVIL) ============ */
 function actualizarCarritoFlotante() {
   const btn = document.getElementById("carritoFlotante");
   const count = document.getElementById("carritoFlotanteCount");
-  const total = document.getElementById("carritoFlotanteTotal");
+  const totalEl = document.getElementById("carritoFlotanteTotal");
+
   if (!btn) return;
 
-  // Solo se muestra en móvil
-  if (window.innerWidth > 900) {
-    btn.classList.add("oculto");
-    return;
-  }
-
+  // Calcular totales
   const cantidadTotal = carrito.reduce((s, i) => s + i.cantidad, 0);
   const totalMonto = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0) - descuento + propina;
 
+  // Actualizar contenido
   if (count) count.textContent = cantidadTotal;
-  if (total) total.textContent = fmt(totalMonto);
+  if (totalEl) totalEl.textContent = fmt(totalMonto);
 
-  if (carrito.length > 0) {
+  // Mostrar u ocultar según carrito y ancho
+  if (carrito.length > 0 && window.innerWidth <= 900) {
     btn.classList.add("visible");
     btn.classList.remove("oculto");
+    btn.style.display = "flex";
   } else {
     btn.classList.remove("visible");
     btn.classList.add("oculto");
+    btn.style.display = "";
   }
 }
 
