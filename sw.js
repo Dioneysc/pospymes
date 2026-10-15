@@ -1,43 +1,81 @@
-const CACHE = "pos-polleria-v38";
-const ARCHIVOS = [
+// Sube este número cada vez que publiques cambios (v39 → v40 …)
+const VERSION = "v40";
+const CACHE = `pos-polleria-${VERSION}`;
+
+// Sin estos archivos la app no funciona: si falta alguno, la instalación falla y se conserva la versión anterior
+const NUCLEO = [
   "./index.html",
   "./manifest.json",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "./css/base.css",
+  "./css/componentes.css",
+  "./css/venta.css",
+  "./css/admin.css",
+  "./css/modo-oscuro.css",
+  "./js/utils.js",
+  "./js/db.js",
+  "./js/config.js",
+  "./js/auth.js",
+  "./js/ui.js",
+  "./js/productos.js",
+  "./js/inventario.js",
+  "./js/venta.js",
+  "./js/impresion.js",
+  "./js/whatsapp.js",
+  "./js/gastos.js",
+  "./js/caja.js",
+  "./js/reportes.js",
+  "./js/historial.js",
+  "./js/config-ui.js",
+  "./js/modo-oscuro.js",
+  "./js/sonido.js",
+  "./js/app.js"
 ];
 
-// Instalar: cachear todo
+// Imágenes: si alguna falta no se rompe la instalación
+const OPCIONALES = ["./logo.png", "./icons/icon-192.png", "./icons/icon-512.png"];
+
 self.addEventListener("install", e => {
   e.waitUntil(
-    caches.open(CACHE)
-      .then(c => c.addAll(ARCHIVOS))
-      .then(() => self.skipWaiting())
+    caches.open(CACHE).then(async c => {
+      await c.addAll(NUCLEO);
+      await Promise.all(OPCIONALES.map(u => c.add(u).catch(() => console.warn("No se pudo cachear:", u))));
+    }).then(() => self.skipWaiting())
   );
 });
 
-// Activar: limpiar cachés viejos
 self.addEventListener("activate", e => {
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(
-        keys.filter(k => k !== CACHE).map(k => caches.delete(k))
-      ))
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
 
-// Fetch: cache primero, red después
+// Red primero (siempre la versión más nueva); sin internet o con red lenta, usa lo guardado
 self.addEventListener("fetch", e => {
-  if (e.request.method !== "GET") return;
-  e.respondWith(
-    caches.match(e.request).then(res => {
-      if (res) return res;
-      return fetch(e.request).then(netRes => {
-        return caches.open(CACHE).then(c => {
-          c.put(e.request, netRes.clone());
-          return netRes;
-        });
-      }).catch(() => caches.match("./index.html"));
-    })
-  );
+  const req = e.request;
+  if (req.method !== "GET") return;
+  if (new URL(req.url).origin !== location.origin) return; // WhatsApp y otros sitios: no interceptar
+  e.respondWith(redPrimero(req));
 });
+
+async function redPrimero(req) {
+  const cache = await caches.open(CACHE);
+  try {
+    const res = await Promise.race([
+      fetch(req, { cache: "no-cache" }),
+      new Promise((_, rechazar) => setTimeout(() => rechazar(new Error("timeout")), 4000))
+    ]);
+    if (res.ok) {
+      cache.put(req, res.clone());
+      return res;
+    }
+    const guardado = await cache.match(req, { ignoreSearch: true });
+    return guardado || res;
+  } catch (err) {
+    const guardado = await cache.match(req, { ignoreSearch: true });
+    if (guardado) return guardado;
+    if (req.mode === "navigate") return cache.match("./index.html");
+    return Response.error();
+  }
+}

@@ -1,0 +1,110 @@
+/* ============================================
+   BASE.CSS — Variables, reset, login, topbar, vistas y navegación
+   ============================================ */
+
+* { box-sizing: border-box; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; }
+
+:root {
+  --naranja: #f97316;
+  --naranja2: #ea580c;
+  --amarillo: #f59e0b;
+  --amarillo2: #d97706;
+  --rojo: #ef4444;
+  --rojo2: #dc2626;
+  --verde: #10b981;
+  --verde2: #059669;
+  --azul: #3b82f6;
+  --azul2: #2563eb;
+  --morado: #8b5cf6;
+  --morado2: #7c3aed;
+  --gris-oscuro: #0f172a;
+  --gris-medio: #1e293b;
+  --gris: #f8fafc;
+  --gris-card: #ffffff;
+  --borde: #e2e8f0;
+  --texto: #0f172a;
+  --texto-suave: #64748b;
+  --ok: #10b981;
+  --warn: #f59e0b;
+}
+
+.oculto { display: none !important; }
+
+html, body { height: 100%; overflow-x: hidden; }
+
+body {
+  background: var(--gris);
+  color: var(--texto);
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+@supports (-webkit-touch-callout: none) {
+  input, select, textarea { font-size: 16px !important; }
+}
+
+#login { min-height: 100vh; min-height: 100dvh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f172a, #1e293b); padding: 20px; }
+
+.login-box { background: #fff; padding: 36px 28px; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,.25); width: 100%; max-width: 380px; text-align: center; }
+
+.login-logo { width: 72px; height: 72px; object-fit: contain; margin: 0 auto 16px; display: block; }
+
+.login-box h1 { font-size: 22px; margin-bottom: 6px; color: var(--gris-oscuro); font-weight: 800; }
+
+.login-box .sub { color: var(--texto-suave); margin-bottom: 24px; font-size: 13px; }
+
+.login-box input { width: 100%; padding: 14px; margin: 8px 0; border: 2px solid var(--borde); border-radius: 12px; font-size: 16px; transition: border-color .2s; background: #f8fafc; }
+
+.login-box input:focus { outline: none; border-color: var(--naranja); background: #fff; }
+
+.login-box button { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--naranja), var(--naranja2)); color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 12px; box-shadow: 0 4px 14px rgba(249,115,22,.35); }
+
+.login-box button:active { transform: scale(.98); }
+
+.login-box .hint { font-size: 12px; color: var(--texto-suave); margin-top: 16px; }
+
+.topbar { background: linear-gradient(135deg, #0f172a, #1e293b); color: #fff; padding: 10px 16px; display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 8px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,.15); }
+
+.topbar .btn-icon { background: rgba(255,255,255,.08); border: none; color: #fff; font-size: 20px; cursor: pointer; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; transition: background .15s; }
+
+.topbar .btn-icon:active { background: rgba(255,255,255,.2); }
+
+.topbar .brand-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 44px; gap: 1px; }
+
+.topbar .brand-logo { width: 34px; height: 34px; object-fit: contain; }
+
+.topbar .brand-name { font-size: 15px; font-weight: 800; letter-spacing: .5px; color: #fff; text-transform: uppercase; line-height: 1.1; }
+
+.topbar .brand-slogan { font-size: 9px; color: var(--amarillo); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+
+main { padding: 14px; padding-bottom: 96px; max-width: 1600px; margin: 0 auto; }
+
+.vista { display: none; }
+
+.vista.activa { display: block; }
+
+.vista-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+
+.vista-header h2 { font-size: 20px; color: var(--gris-oscuro); font-weight: 800; }
+
+.nav-inferior { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--borde); display: grid; grid-template-columns: repeat(4, 1fr); z-index: 200; box-shadow: 0 -4px 20px rgba(0,0,0,.06); padding-bottom: env(safe-area-inset-bottom); }
+
+.nav-inferior button { background: transparent; border: none; padding: 10px 4px; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; color: var(--texto-suave); cursor: pointer; font-weight: 700; transition: all .15s; border-radius: 0; }
+
+.nav-inferior button .ico { font-size: 22px; line-height: 1; }
+
+.nav-inferior button.activo { color: var(--naranja); }
+
+.nav-inferior button.activo .ico { transform: scale(1.15); }
+
+.tabs { display: none; }
+
+@media (max-width: 900px) {
+  .vista-header { flex-direction: column; align-items: stretch; }
+  .vista-header button { width: 100%; }
+}

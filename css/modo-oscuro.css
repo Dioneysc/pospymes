@@ -1,0 +1,202 @@
+/* ============================================
+   MODO-OSCURO.CSS — Tema oscuro (cargar al final)
+   ============================================ */
+
+body.modo-oscuro {
+  --gris: #0f172a;
+  --gris-card: #1e293b;
+  --borde: #334155;
+  --texto: #f1f5f9;
+  --texto-suave: #94a3b8;
+  --gris-oscuro: #f8fafc;
+}
+
+body.modo-oscuro {
+  background: #0f172a;
+  color: #f1f5f9;
+}
+
+body.modo-oscuro .topbar {
+  background: linear-gradient(135deg, #020617, #0f172a);
+}
+
+body.modo-oscuro .login-box {
+  background: #1e293b;
+  color: #f1f5f9;
+}
+
+body.modo-oscuro .login-box h1 { color: #f1f5f9; }
+
+body.modo-oscuro .login-box input {
+  background: #0f172a;
+  color: #f1f5f9;
+  border-color: #334155;
+}
+
+body.modo-oscuro .prod-btn,
+body.modo-oscuro .carrito-panel,
+body.modo-oscuro .card,
+body.modo-oscuro .card-config,
+body.modo-oscuro .tabla-wrap,
+body.modo-oscuro .hist-item,
+body.modo-oscuro .grafica-7dias,
+body.modo-oscuro .modal-contenido {
+  background: #1e293b;
+  color: #f1f5f9;
+  border-color: #334155;
+}
+
+body.modo-oscuro .prod-nombre,
+body.modo-oscuro .prod-precio,
+body.modo-oscuro .card .big,
+body.modo-oscuro .hist-item .hist-id,
+body.modo-oscuro #modalTitulo {
+  color: #f1f5f9;
+}
+
+body.modo-oscuro .barra-busqueda input,
+body.modo-oscuro #modalBody input,
+body.modo-oscuro #modalBody select,
+body.modo-oscuro .card-config input,
+body.modo-oscuro #modalBody textarea {
+  background: #0f172a;
+  color: #f1f5f9;
+  border-color: #334155;
+}
+
+body.modo-oscuro .categorias button,
+body.modo-oscuro .btn-secondary,
+body.modo-oscuro .btn-mini {
+  background: #1e293b;
+  color: #f1f5f9;
+  border-color: #334155;
+}
+
+body.modo-oscuro .categorias button.activo {
+  background: var(--naranja);
+  color: #fff;
+  border-color: var(--naranja);
+}
+
+body.modo-oscuro .total-box {
+  background: #020617;
+}
+
+body.modo-oscuro .totales-sec .fila-sec,
+body.modo-oscuro .cat-item,
+body.modo-oscuro .arqueo-fila .sub {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+body.modo-oscuro .totales-sec .fila-sec .val,
+body.modo-oscuro .cat-item b {
+  color: #f1f5f9;
+}
+
+body.modo-oscuro .modal-cerrar {
+  background: #334155;
+  color: #f1f5f9;
+}
+
+body.modo-oscuro .tabla-wrap table thead th {
+  background: #0f172a;
+  color: #94a3b8;
+}
+
+body.modo-oscuro tr:hover {
+  background: #0f172a;
+}
+
+body.modo-oscuro td {
+  border-color: #334155;
+}
+
+body.modo-oscuro .carrito-item {
+  border-color: #334155;
+}
+
+body.modo-oscuro .item-controles button {
+  background: #0f172a;
+  color: #f1f5f9;
+  border-color: #334155;
+}
+
+body.modo-oscuro .nav-inferior {
+  background: #1e293b;
+  border-top-color: #334155;
+}
+
+body.modo-oscuro .nav-inferior button {
+  color: #94a3b8;
+}
+
+body.modo-oscuro .nav-inferior button.activo {
+  color: var(--naranja);
+}
+
+body.modo-oscuro .toggle-btn {
+  background: #1e293b;
+  color: #94a3b8;
+  border-color: #334155;
+}
+
+body.modo-oscuro .carrito-header {
+  border-bottom-color: #334155;
+}
+
+body.modo-oscuro .total-final {
+  border-top-color: #334155;
+}
+
+body.modo-oscuro .ticket-preview {
+  background: #fff;
+  color: #000;
+}
+
+body.modo-oscuro .card-config.peligro {
+  background: #451a1a;
+  border-color: #7f1d1d;
+}
+
+body.modo-oscuro .hist-item.cancelada {
+  background: #451a1a;
+}
+
+body.modo-oscuro .estado-caja .card.destacado {
+  background: linear-gradient(135deg, var(--naranja), var(--naranja2));
+}
+
+body.modo-oscuro .grafica-7dias h3 {
+  color: #f1f5f9;
+}
+
+body.modo-oscuro .barra-dia .barra {
+  background: linear-gradient(180deg, var(--naranja), var(--amarillo));
+}
+
+body.modo-oscuro .barra-dia .dia-sem {
+  color: #94a3b8;
+}
+
+body.modo-oscuro .barra-dia .valor {
+  color: #f1f5f9;
+}
+
+body.modo-oscuro .toggle-modo {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+body.modo-oscuro .toggle-modo .label {
+  color: #f1f5f9;
+}
+
+body.modo-oscuro .carrito-flotante-count {
+  background: #fff;
+  color: var(--naranja);
+}
+
+body.modo-oscuro .carrito-flotante-total {
+  background: #020617;
+}

@@ -1,0 +1,76 @@
+/* ============================================
+   ADMIN.CSS — Caja, inventario, historial, alertas y gráfica
+   ============================================ */
+
+.estado-caja { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+
+.cat-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: #f8fafc; border-radius: 12px; margin-bottom: 8px; font-size: 14px; border: 1px solid var(--borde); }
+
+.cat-item button { background: transparent; border: none; color: var(--rojo); cursor: pointer; font-size: 16px; padding: 4px; }
+
+.arqueo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.arqueo-grid label { font-size: 11px; color: var(--texto-suave); font-weight: 700; }
+
+.arqueo-fila { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+
+.arqueo-fila input { flex: 1; padding: 10px !important; font-size: 16px !important; margin: 0 !important; }
+
+.arqueo-fila .sub { width: 75px; text-align: right; font-weight: 700; padding: 10px 6px; background: #f1f5f9; border-radius: 8px; font-size: 12px; }
+
+.alerta-stock { background: linear-gradient(135deg, #f59e0b, #ea580c); color: #fff; padding: 14px 18px; border-radius: 16px; margin-bottom: 14px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 14px rgba(245,158,11,.3); font-size: 14px; font-weight: 700; cursor: pointer; }
+
+.alerta-stock .ico { font-size: 22px; }
+
+.alerta-stock .texto { flex: 1; }
+
+.alerta-stock .badge-count { background: #fff; color: #ea580c; padding: 3px 10px; border-radius: 20px; font-size: 13px; font-weight: 800; }
+
+.hist-item { background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.04); border: 1px solid var(--borde); border-left-width: 5px; border-left-color: var(--naranja); }
+
+.hist-item .hist-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
+
+.hist-item .hist-id { font-weight: 800; font-size: 15px; color: var(--gris-oscuro); }
+
+.hist-item .hist-fecha { font-size: 12px; color: var(--texto-suave); }
+
+.hist-item .hist-meta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--texto-suave); margin-bottom: 8px; font-weight: 600; }
+
+.hist-item .hist-total { font-size: 20px; font-weight: 800; color: var(--naranja); }
+
+.hist-item .hist-items { font-size: 13px; color: var(--texto-suave); margin-bottom: 12px; line-height: 1.4; }
+
+.hist-item .hist-acciones { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.hist-item.cancelada { opacity: .6; border-left-color: var(--rojo); background: #fef2f2; }
+
+.hist-item.cancelada .hist-total { text-decoration: line-through; color: var(--rojo); }
+
+.badge-cancelada { background: var(--rojo); color: #fff; padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+
+.grafica-7dias { background: #fff; border-radius: 20px; padding: 18px; margin-top: 16px; box-shadow: 0 4px 16px rgba(0,0,0,.04); border: 1px solid var(--borde); }
+
+.grafica-7dias h3 { font-size: 15px; margin-bottom: 16px; color: var(--gris-oscuro); font-weight: 800; }
+
+.barras-7d { display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; height: 140px; }
+
+.barra-dia { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+
+.barra-dia .valor { font-size: 10px; font-weight: 700; color: var(--gris-oscuro); }
+
+.barra-dia .barra { width: 100%; background: linear-gradient(180deg, var(--naranja), var(--amarillo)); border-radius: 8px 8px 0 0; min-height: 6px; transition: height .3s; }
+
+.barra-dia .dia-sem { font-size: 10px; color: var(--texto-suave); font-weight: 700; text-transform: uppercase; }
+
+.barra-dia.hoy .barra { background: linear-gradient(180deg, var(--verde), #059669); }
+
+.motivo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+
+.motivo-grid button { padding: 10px; border: 2px solid var(--borde); background: #fff; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
+
+.motivo-grid button:active { background: #fee2e2; border-color: var(--rojo); }
+
+@media (max-width: 900px) {
+  .estado-caja { grid-template-columns: repeat(2, 1fr); }
+  .arqueo-grid { grid-template-columns: 1fr; }
+}

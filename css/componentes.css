@@ -1,0 +1,170 @@
+/* ============================================
+   COMPONENTES.CSS — Botones, tablas, modales, tarjetas, toasts y ajustes
+   ============================================ */
+
+.toggle-modo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid var(--borde);
+  margin-top: 12px;
+  cursor: pointer;
+}
+
+.toggle-modo .label {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--texto);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toggle-modo .switch {
+  width: 46px;
+  height: 26px;
+  background: #cbd5e1;
+  border-radius: 13px;
+  position: relative;
+  transition: background .2s;
+}
+
+.toggle-modo .switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform .2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,.2);
+}
+
+.toggle-modo.activo .switch {
+  background: var(--naranja);
+}
+
+.toggle-modo.activo .switch::after {
+  transform: translateX(20px);
+}
+
+button { cursor: pointer; border-radius: 12px; font-size: 14px; font-family: inherit; -webkit-tap-highlight-color: transparent; }
+
+.btn-primary { background: linear-gradient(135deg, var(--naranja), var(--naranja2)); color: #fff; border: none; padding: 12px 20px; font-weight: 700; box-shadow: 0 3px 10px rgba(249,115,22,.3); }
+
+.btn-primary:active { transform: scale(.97); }
+
+.btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+
+.btn-secondary { background: #fff; color: var(--texto); border: 2px solid var(--borde); padding: 12px 20px; font-weight: 600; }
+
+.btn-secondary:active { background: #f1f5f9; }
+
+.btn-danger { background: linear-gradient(135deg, var(--rojo), var(--rojo2)); color: #fff; border: none; padding: 12px 20px; font-weight: 700; }
+
+.btn-danger:active { transform: scale(.97); }
+
+.btn-mini { padding: 6px 12px; font-size: 12px; border: 1px solid var(--borde); background: #fff; border-radius: 8px; margin-right: 4px; font-weight: 600; }
+
+.btn-mini:active { background: #f1f5f9; }
+
+.tabla-wrap { background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,.04); border: 1px solid var(--borde); }
+
+table { width: 100%; border-collapse: collapse; }
+
+th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+
+th { background: #f8fafc; font-weight: 700; color: var(--texto-suave); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+
+tr:last-child td { border-bottom: none; }
+
+.badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+
+.badge.ok { background: #d1fae5; color: var(--ok); }
+
+.badge.warn { background: #fef3c7; color: var(--warn); }
+
+.badge.danger { background: #fee2e2; color: #dc2626; }
+
+.modal { position: fixed; inset: 0; background: rgba(15,23,42,.6); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; backdrop-filter: blur(4px); }
+
+.modal-contenido { background: #fff; border-radius: 24px; padding: 24px; max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,.35); }
+
+.modal-cerrar { position: absolute; top: 16px; right: 16px; background: #f1f5f9; border: none; font-size: 16px; color: var(--texto-suave); cursor: pointer; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+.modal-cerrar:active { background: #e2e8f0; }
+
+#modalTitulo { font-size: 18px; margin-bottom: 14px; color: var(--gris-oscuro); font-weight: 800; }
+
+#modalBody input, #modalBody select, #modalBody textarea { width: 100%; padding: 12px 14px; margin: 6px 0 12px 0; border: 2px solid var(--borde); border-radius: 12px; font-size: 16px; background: #f8fafc; }
+
+#modalBody input:focus, #modalBody select:focus { outline: none; border-color: var(--naranja); background: #fff; }
+
+#modalBody label { display: block; font-size: 11px; color: var(--texto-suave); margin-top: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+
+#modalBody .acciones { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 18px; }
+
+.card { background: #fff; border-radius: 20px; padding: 18px; box-shadow: 0 4px 16px rgba(0,0,0,.04); border: 1px solid var(--borde); border-left-width: 5px; border-left-color: var(--naranja); }
+
+.card h4 { font-size: 11px; text-transform: uppercase; color: var(--texto-suave); letter-spacing: .5px; font-weight: 700; }
+
+.card .big { font-size: 24px; font-weight: 800; margin: 6px 0; color: var(--gris-oscuro); }
+
+.card small { color: var(--texto-suave); font-size: 12px; }
+
+.card.destacado { background: linear-gradient(135deg, var(--naranja), var(--naranja2)); color: #fff; border-left: none; border: none; }
+
+.card.destacado h4, .card.destacado .big { color: #fff; }
+
+.card.verde { border-left-color: var(--verde); }
+
+.card.azul { border-left-color: var(--azul); }
+
+.card.morado { border-left-color: var(--morado); }
+
+.card.rojo { border-left-color: var(--rojo); }
+
+.config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+
+.card-config { background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 4px 16px rgba(0,0,0,.04); border: 1px solid var(--borde); }
+
+.card-config h3 { margin-bottom: 14px; font-size: 16px; color: var(--gris-oscuro); font-weight: 800; }
+
+.card-config input { width: 100%; padding: 12px; margin: 6px 0 10px 0; border: 2px solid var(--borde); border-radius: 10px; font-size: 16px; background: #f8fafc; }
+
+.card-config.peligro { border: 2px solid #fecaca; background: #fff5f5; }
+
+.toast { position: fixed; top: 24px; left: 50%; transform: translateX(-50%); background: var(--gris-oscuro); color: #fff; padding: 14px 22px; border-radius: 14px; z-index: 2000; box-shadow: 0 10px 25px rgba(0,0,0,.3); animation: fadeIn .25s ease; font-weight: 700; font-size: 14px; max-width: 90%; text-align: center; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+#btnInstalar { animation: pulseInstall 2s infinite; }
+
+@keyframes pulseInstall { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+@media (max-width: 900px) {
+  table, thead, tbody, th, td, tr { display: block; }
+  thead { display: none; }
+  tr { background: #fff; margin-bottom: 12px; border-radius: 16px; padding: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.03); border: 1px solid var(--borde); }
+  td { border: none; padding: 6px 0; display: flex; justify-content: space-between; font-size: 14px; }
+  td::before { content: attr(data-label); font-weight: 700; color: var(--texto-suave); margin-right: 8px; font-size: 12px; }
+  .tabla-wrap { background: transparent; box-shadow: none; border: none; }
+  .modal { padding: 0; align-items: flex-end; }
+  .modal-contenido { border-radius: 24px 24px 0 0; max-width: 100%; width: 100%; max-height: 92vh; padding: 24px 18px; padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
+  input, select, textarea { font-size: 16px !important; }
+  #modalBody .acciones { flex-direction: column-reverse; }
+  #modalBody .acciones button { width: 100%; padding: 14px; }
+  .cards { grid-template-columns: repeat(2, 1fr); }
+  .config-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 380px) {
+  .cards { grid-template-columns: 1fr; }
+}
