@@ -29,6 +29,9 @@ const msgSync = e => ({
   "auth/invalid-credential": "Correo o contraseña incorrectos", "auth/wrong-password": "Contraseña incorrecta",
   "auth/user-not-found": "Ese correo no existe en tu proyecto de Firebase", "auth/invalid-email": "Correo inválido",
   "auth/network-request-failed": "Sin conexión a internet", "auth/too-many-requests": "Demasiados intentos, espera un momento",
+  "auth/popup-closed-by-user": "Cerraste la ventana de Google antes de terminar", "auth/cancelled-popup-request": "Inicio de sesión cancelado",
+  "auth/unauthorized-domain": "Este dominio no está autorizado: agrégalo en Firebase → Authentication → Configuración → Dominios autorizados",
+  "auth/operation-not-allowed": "Activa Google en Firebase → Authentication → Método de acceso",
   "permission-denied": "Sin permiso: publica las reglas de Firestore (archivo firestore.rules)"
 }[e.code] || e.message || String(e));
 
@@ -177,29 +180,45 @@ async function descargarTodo() {
 }
 
 async function conectarSync() {
-  if (!FIREBASE_CONFIG.apiKey) return toast("⚠️ Falta pegar tu configuración en js/firebase-config.js");
-  const email = $("#syncEmail").value.trim(), pass = $("#syncPass").value, slot = +$("#syncSlot").value;
-  if (!email || !pass) return toast("⚠️ Escribe el correo y la contraseña");
+  if (!FIREBASE_CONFIG.apiKey) return toast("⚠️ Falta la configuración en js/firebase-config.js");
+  const slot = +$("#syncSlot").value;
   try {
-    pintarEstadoSync("Conectando...");
+    pintarEstadoSync("Abriendo Google...");
     await cargarFirebase(); iniciarFirebase();
-    const cred = await firebase.auth().signInWithEmailAndPassword(email, pass);
-    syncUid = cred.user.uid; syncDb = firebase.firestore();
-    const hayNube = !(await ref("config").limit(1).get()).empty;
-    const primera = !syncMeta.activo || syncMeta.uid !== syncUid;
-    if (primera && hayNube) {
-      if (!confirm("La nube ya tiene datos de este negocio.\n\n¿Reemplazar los datos de ESTE dispositivo por los de la nube?\n\nSe descargará un respaldo de lo que hay aquí antes de reemplazar.")) {
-        await firebase.auth().signOut(); syncDb = null; syncUid = null; return pintarEstadoSync();
+    const auth = firebase.auth();
+    auth.useDeviceLanguage();
+    const proveedor = new firebase.auth.GoogleAuthProvider();
+    proveedor.setCustomParameters({ prompt: "select_account" });
+    let cred;
+    try { cred = await auth.signInWithPopup(proveedor); }
+    catch (e) {
+      // En algunas apps instaladas el popup no funciona: se usa redirección y se termina al volver (ver iniciarSync)
+      if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment"].includes(e.code)) {
+        LS.set("syncPendiente", { slot });
+        return auth.signInWithRedirect(proveedor);
       }
-      exportarBackup();
-      await descargarTodo();
-    } else if (primera) { syncMeta.synced = {}; syncMeta.cfgT = {}; }
-    syncMeta = { ...syncMeta, activo: true, slot, email, uid: syncUid };
-    SYNC_SLOT = slot; guardarMeta();
-    escucharNube(); programarSync(); refrescarUI();
-    $("#syncPass").value = "";
-    toast("☁️ Sincronización activada"); pintarEstadoSync();
+      throw e;
+    }
+    await finalizarConexion(cred.user, slot);
   } catch (e) { console.warn(e); pintarEstadoSync(); toast("❌ " + msgSync(e)); }
+}
+
+// Se ejecuta cuando Google ya identificó al usuario (por popup o al volver de la redirección)
+async function finalizarConexion(user, slot) {
+  syncUid = user.uid; syncDb = firebase.firestore();
+  const hayNube = !(await ref("config").limit(1).get()).empty;
+  const primera = !syncMeta.activo || syncMeta.uid !== syncUid;
+  if (primera && hayNube) {
+    if (!confirm("La nube ya tiene datos de este negocio.\n\n¿Reemplazar los datos de ESTE dispositivo por los de la nube?\n\nSe descargará un respaldo de lo que hay aquí antes de reemplazar.")) {
+      await firebase.auth().signOut(); syncDb = null; syncUid = null; return pintarEstadoSync();
+    }
+    exportarBackup();
+    await descargarTodo();
+  } else if (primera) { syncMeta.synced = {}; syncMeta.cfgT = {}; }
+  syncMeta = { ...syncMeta, activo: true, slot, email: user.email || "", uid: syncUid };
+  SYNC_SLOT = slot; guardarMeta();
+  escucharNube(); programarSync(); refrescarUI();
+  toast("☁️ Sincronización activada"); pintarEstadoSync();
 }
 
 async function desconectarSync() {
@@ -224,7 +243,6 @@ function pintarEstadoSync(msg) {
     : "No conectado. Tus datos solo están en este dispositivo.");
   $("#syncForm").classList.toggle("oculto", on);
   $("#syncAcciones").classList.toggle("oculto", !on);
-  if (syncMeta.email && !$("#syncEmail").value) $("#syncEmail").value = syncMeta.email;
   if (syncMeta.slot) $("#syncSlot").value = String(syncMeta.slot);
 }
 
@@ -232,6 +250,16 @@ function pintarEstadoSync(msg) {
 function iniciarSync() {
   pintarEstadoSync();
   window.addEventListener("online", programarSync);
+  const pend = LS.get("syncPendiente", null);
+  if (pend && FIREBASE_CONFIG.apiKey) { // volvemos de iniciar sesión con Google por redirección
+    LS.set("syncPendiente", null);
+    cargarFirebase().then(async () => {
+      iniciarFirebase();
+      const r = await firebase.auth().getRedirectResult();
+      if (r && r.user) await finalizarConexion(r.user, pend.slot);
+    }).catch(e => { pintarEstadoSync(); toast("❌ " + msgSync(e)); });
+    return;
+  }
   if (!syncMeta.activo || !FIREBASE_CONFIG.apiKey) return;
   cargarFirebase().then(() => {
     iniciarFirebase();
