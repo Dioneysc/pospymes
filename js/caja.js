@@ -37,6 +37,7 @@ function abrirCajaFuerte() {
   const retiros = estadoCajaHoy.retiros.reduce((s,r) => s + r.monto, 0);
   const depositos = estadoCajaHoy.depositos.reduce((s,d) => s + d.monto, 0);
   abrirModal("🔐 Caja fuerte", `
+    ${CORTE_INCLUYE_CAJA_FUERTE ? "" : `<p style="font-size:12px;color:#64748b;margin-bottom:10px">Solo es un registro: estos movimientos no afectan el corte de caja.</p>`}
     <div style="background:#f8fafc;border-radius:12px;padding:12px;margin-bottom:14px;border:1px solid var(--borde)">
       <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px">
         <span>Total retirado hoy:</span><b>${fmt(retiros)}</b>
@@ -107,24 +108,40 @@ function borrarMovimientoCajaFuerte(tipo, idx) {
   }, 150);
 }
 
+/* ============ RESUMEN DEL DÍA (una sola fuente para estado y corte) ============ */
+// false = la caja fuerte NO afecta el corte. Pon true si quieres que depósitos y retiros vuelvan a sumar/restar.
+const CORTE_INCLUYE_CAJA_FUERTE = false;
+
+// Un movimiento es "del turno" si es de hoy y posterior al último corte (cada corte reinicia la caja)
+const delTurno = fecha => fechaLocal(fecha) === hoy() && (!estadoCajaHoy.desde || new Date(fecha) > new Date(estadoCajaHoy.desde));
+
+function resumenDia() {
+  const ventasHoy = DB.ventas.filter(v => delTurno(v.fecha) && !v.cancelada);
+  const sumaVentas = m => ventasHoy.filter(v => v.metodo === m).reduce((s, v) => s + v.total, 0);
+  const efectivoVentas = sumaVentas("Efectivo");
+  const tarjetaVentas = sumaVentas("Tarjeta");
+  const transfVentas = sumaVentas("Transferencia");
+  const gastosDia = DB.gastos.filter(g => delTurno(g.fecha));
+  const gastosEfectivo = gastosDia.filter(g => g.metodo !== "Transferencia").reduce((s, g) => s + g.monto, 0);
+  const gastosTransf = gastosDia.filter(g => g.metodo === "Transferencia").reduce((s, g) => s + g.monto, 0);
+  const retiros = estadoCajaHoy.retiros.reduce((s, r) => s + r.monto, 0);
+  const depositos = estadoCajaHoy.depositos.reduce((s, d) => s + d.monto, 0);
+  const fondo = estadoCajaHoy.fondoInicial || 0;
+  const cajaFuerte = CORTE_INCLUYE_CAJA_FUERTE ? depositos - retiros : 0;
+  const esperado = fondo + efectivoVentas + cajaFuerte - gastosEfectivo;
+  return { ventasHoy, efectivoVentas, tarjetaVentas, transfVentas, totalVentas: efectivoVentas + tarjetaVentas + transfVentas,
+           gastosEfectivo, gastosTransf, retiros, depositos, fondo, esperado };
+}
+
 /* ============ ESTADO DE CAJA ============ */
 function renderEstadoCaja() {
   const elEstado = $("#estadoCaja");
   if (!elEstado) return;
 
   initDia();
-  const hoyStr = hoy();
-  const ventasHoy = DB.ventas.filter(v => fechaLocal(v.fecha) === hoyStr && !v.cancelada);
-  const efectivoVentas = ventasHoy.filter(v => v.metodo === "Efectivo").reduce((s,v) => s + v.total, 0);
-  const tarjetaVentas = ventasHoy.filter(v => v.metodo === "Tarjeta").reduce((s,v) => s + v.total, 0);
-  const transfVentas = ventasHoy.filter(v => v.metodo === "Transferencia").reduce((s,v) => s + v.total, 0);
-  const totalVentas = efectivoVentas + tarjetaVentas + transfVentas;
-  const retiros = estadoCajaHoy.retiros.reduce((s,r) => s + r.monto, 0);
-  const depositos = estadoCajaHoy.depositos.reduce((s,d) => s + d.monto, 0);
-  const gastosEfectivo = DB.gastos.filter(g => fechaLocal(g.fecha) === hoyStr && g.metodo !== "Transferencia").reduce((s,g) => s + g.monto, 0);
-
-  const fondo = estadoCajaHoy.fondoInicial || 0;
-  const esperadoEnCaja = fondo + efectivoVentas + depositos - retiros - gastosEfectivo;
+  const r = resumenDia();
+  const { ventasHoy, efectivoVentas, tarjetaVentas, transfVentas, totalVentas, gastosEfectivo, gastosTransf, fondo } = r;
+  const esperadoEnCaja = r.esperado;
 
   elEstado.innerHTML = `
     ${estadoCajaHoy.fondoInicial === null ? `
@@ -155,24 +172,26 @@ function renderEstadoCaja() {
         <p class="big">${fmt(transfVentas)}</p>
       </div>
       <div class="card rojo">
-        <h4>Retiros caja fuerte</h4>
-        <p class="big">-${fmt(retiros)}</p>
-      </div>
-      <div class="card">
         <h4>Gastos en efectivo</h4>
         <p class="big">-${fmt(gastosEfectivo)}</p>
+        <small>Salen de la caja</small>
+      </div>
+      <div class="card">
+        <h4>Gastos por transferencia</h4>
+        <p class="big">${fmt(gastosTransf)}</p>
+        <small>No afectan la caja</small>
       </div>
     </div>
 
     <div class="card destacado" style="padding:20px;text-align:center">
       <h4 style="font-size:11px;text-transform:uppercase;letter-spacing:.5px">💵 Efectivo esperado en caja</h4>
       <p style="font-size:36px;font-weight:800;margin:8px 0">${fmt(esperadoEnCaja)}</p>
-      <small style="opacity:.9">Fondo + ventas efectivo + depósitos − retiros − gastos</small>
+      <small style="opacity:.9">Fondo + ventas en efectivo − gastos en efectivo</small>
     </div>
 
     <div class="cards" style="margin-top:14px">
       <div class="card">
-        <h4>Total ventas del día</h4>
+        <h4>${estadoCajaHoy.desde ? "Ventas desde el último corte" : "Total ventas del día"}</h4>
         <p class="big">${fmt(totalVentas)}</p>
         <small>${ventasHoy.length} tickets</small>
       </div>
@@ -185,28 +204,28 @@ function renderEstadoCaja() {
 /* ============ CORTE ============ */
 function abrirCorteDiario() {
   initDia();
-  const hoyStr = hoy();
-  const ventasHoy = DB.ventas.filter(v => fechaLocal(v.fecha) === hoyStr && !v.cancelada);
-  const efectivoVentas = ventasHoy.filter(v => v.metodo === "Efectivo").reduce((s,v) => s + v.total, 0);
-  const tarjetaVentas = ventasHoy.filter(v => v.metodo === "Tarjeta").reduce((s,v) => s + v.total, 0);
-  const transfVentas = ventasHoy.filter(v => v.metodo === "Transferencia").reduce((s,v) => s + v.total, 0);
-  const totalVentas = efectivoVentas + tarjetaVentas + transfVentas;
-  const retiros = estadoCajaHoy.retiros.reduce((s,r) => s + r.monto, 0);
-  const depositos = estadoCajaHoy.depositos.reduce((s,d) => s + d.monto, 0);
-  const gastosDia = DB.gastos.filter(g => fechaLocal(g.fecha) === hoyStr);
-  const gastosEfectivo = gastosDia.filter(g => g.metodo !== "Transferencia").reduce((s,g) => s + g.monto, 0);
-  const fondo = estadoCajaHoy.fondoInicial || 0;
-  const esperado = fondo + efectivoVentas + depositos - retiros - gastosEfectivo;
+  const r = resumenDia();
+  const { efectivoVentas, tarjetaVentas, transfVentas, totalVentas, gastosEfectivo, gastosTransf, retiros, depositos, fondo, esperado } = r;
 
   abrirModal("📋 Corte de caja", `
     <div style="background:#f8fafc;border-radius:12px;padding:12px;margin-bottom:14px;font-size:13px;border:1px solid var(--borde)">
       <div style="display:flex;justify-content:space-between;padding:3px 0"><span>Fondo inicial:</span><b>${fmt(fondo)}</b></div>
       <div style="display:flex;justify-content:space-between;padding:3px 0"><span>+ Ventas efectivo:</span><b>${fmt(efectivoVentas)}</b></div>
+      ${CORTE_INCLUYE_CAJA_FUERTE ? `
       <div style="display:flex;justify-content:space-between;padding:3px 0"><span>+ Depósitos:</span><b>${fmt(depositos)}</b></div>
-      <div style="display:flex;justify-content:space-between;padding:3px 0"><span>− Retiros:</span><b>-${fmt(retiros)}</b></div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0"><span>− Retiros:</span><b>-${fmt(retiros)}</b></div>` : ""}
       <div style="display:flex;justify-content:space-between;padding:3px 0"><span>− Gastos efectivo:</span><b>-${fmt(gastosEfectivo)}</b></div>
       <hr style="border:none;border-top:1px solid #cbd5e1;margin:6px 0">
       <div style="display:flex;justify-content:space-between;font-size:15px"><b>Efectivo esperado:</b><b style="color:var(--naranja)">${fmt(esperado)}</b></div>
+    </div>
+
+    <div style="background:#f8fafc;border-radius:12px;padding:12px;margin-bottom:14px;font-size:13px;border:1px solid var(--borde)">
+      <div style="font-size:11px;color:#64748b;text-transform:uppercase;font-weight:700;margin-bottom:4px">Otros movimientos (no afectan el efectivo)</div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0"><span>Ventas tarjeta:</span><b>${fmt(tarjetaVentas)}</b></div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0"><span>Ventas transferencia:</span><b>${fmt(transfVentas)}</b></div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0"><span>Gastos por transferencia:</span><b>-${fmt(gastosTransf)}</b></div>
+      <hr style="border:none;border-top:1px solid #cbd5e1;margin:6px 0">
+      <div style="display:flex;justify-content:space-between;padding:3px 0"><b>Total ventas del día:</b><b>${fmt(totalVentas)}</b></div>
     </div>
 
     <h4 style="font-size:13px;margin-bottom:8px">Arqueo (conteo físico)</h4>
@@ -275,6 +294,7 @@ function calcArqueo() {
 }
 
 function guardarCorte(esperado, efectivo, tarjeta, transf, total) {
+  if (!confirm("El corte reinicia la caja: fondo inicial y movimientos de caja fuerte.\n\nLas ventas y gastos se conservan en Historial y Reportes.\n\n¿Guardar el corte?")) return;
   const contado = +$("#totalContado").textContent.replace(/[^0-9.-]/g, "");
   const nota = $("#corteNota").value.trim();
   const diferencia = contado - esperado;
@@ -284,10 +304,12 @@ function guardarCorte(esperado, efectivo, tarjeta, transf, total) {
     fecha: new Date().toISOString(),
     dia: hoy(),
     fondo: estadoCajaHoy.fondoInicial || 0,
-    ventas: { efectivo, tarjeta, transf, total, tickets: DB.ventas.filter(v => fechaLocal(v.fecha) === hoy() && !v.cancelada).length },
-    gastos: DB.gastos.filter(g => fechaLocal(g.fecha) === hoy()).reduce((s,g) => s + g.monto, 0),
-    retiros: estadoCajaHoy.retiros.reduce((s,r) => s + r.monto, 0),
-    depositos: estadoCajaHoy.depositos.reduce((s,d) => s + d.monto, 0),
+    ventas: { efectivo, tarjeta, transf, total, tickets: resumenDia().ventasHoy.length },
+    gastos: resumenDia().gastosEfectivo,
+    gastosTransf: resumenDia().gastosTransf,
+    retiros: CORTE_INCLUYE_CAJA_FUERTE ? resumenDia().retiros : 0,
+    depositos: CORTE_INCLUYE_CAJA_FUERTE ? resumenDia().depositos : 0,
+    movCajaFuerte: { retiros: estadoCajaHoy.retiros, depositos: estadoCajaHoy.depositos },
     esperado, contado, diferencia, nota,
     usuario: JSON.parse(sessionStorage.getItem("sesion") || "{}").nombre || "admin"
   };
@@ -296,8 +318,12 @@ function guardarCorte(esperado, efectivo, tarjeta, transf, total) {
   cortes.push(corte);
   LS.set("cortes", cortes);
 
+  // Reiniciar la caja: lo anterior queda en el corte, el Historial y los Reportes
+  estadoCajaHoy = { fecha: hoy(), fondoInicial: null, retiros: [], depositos: [], desde: new Date().toISOString() };
+  LS.set("cajaHoy", estadoCajaHoy);
+
   cerrarModal();
-  toast(`✅ Corte guardado · Diferencia: ${fmt(diferencia)}`);
+  toast(`✅ Corte guardado · Diferencia: ${fmt(diferencia)} · Caja reiniciada`);
   renderEstadoCaja();
   renderHistorialCortes();
   mostrarAlertaStock();
@@ -330,44 +356,32 @@ function renderHistorialCortes() {
 
 function imprimirCorte(c) {
   const n = DB.negocio;
-  const html = `
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Corte</title>
-<style>
-  @page { size: 58mm auto; margin: 0; }
-  body { font-family: 'Courier New', monospace; font-size: 11px; width: 58mm; padding: 4mm; margin: 0; }
-  .c { text-align: center; } .b { font-weight: bold; } .g { font-size: 13px; }
-  .fila { display: flex; justify-content: space-between; padding: 2px 0; }
-  hr { border: none; border-top: 1px dashed #000; margin: 4px 0; }
-</style></head><body>
-  <div class="c b g">${n.nombre || "POS"}</div>
-  <div class="c">${n.slogan || ""}</div>
-  <div class="c">CORTE DE CAJA</div>
-  <hr>
-  <div>Fecha: ${new Date(c.fecha).toLocaleString("es-MX")}</div>
-  <div>Cajero: ${c.usuario}</div>
-  <hr>
-  <div class="b">VENTAS</div>
-  <div class="fila"><span>Efectivo:</span><span>${fmt(c.ventas.efectivo)}</span></div>
-  <div class="fila"><span>Tarjeta:</span><span>${fmt(c.ventas.tarjeta)}</span></div>
-  <div class="fila"><span>Transferencia:</span><span>${fmt(c.ventas.transf)}</span></div>
-  <div class="fila b"><span>TOTAL:</span><span>${fmt(c.ventas.total)}</span></div>
-  <div class="fila"><span>Tickets:</span><span>${c.ventas.tickets}</span></div>
-  <hr>
-  <div class="b">EFECTIVO</div>
-  <div class="fila"><span>Fondo inicial:</span><span>${fmt(c.fondo)}</span></div>
-  <div class="fila"><span>Depósitos:</span><span>+${fmt(c.depositos)}</span></div>
-  <div class="fila"><span>Retiros:</span><span>-${fmt(c.retiros)}</span></div>
-  <div class="fila"><span>Gastos efectivo:</span><span>-${fmt(c.gastos)}</span></div>
-  <div class="fila b"><span>Esperado:</span><span>${fmt(c.esperado)}</span></div>
-  <div class="fila b"><span>Contado:</span><span>${fmt(c.contado)}</span></div>
-  <div class="fila b g"><span>DIFERENCIA:</span><span>${fmt(c.diferencia)}</span></div>
-  <hr>
-  ${c.nota ? `<div>Nota: ${c.nota}</div><hr>` : ""}
-  <div class="c">Firma: _____________</div>
-</body></html>`;
-  const w = window.open("", "_blank", "width=320,height=600");
-  if (!w) return;
-  w.document.write(html);
-  w.document.close();
-  setTimeout(() => w.print(), 300);
+  imprimirHTML(`
+    <div class="c b g">${escapeHTML(n.nombre || "POS")}</div>
+    <div class="c">${escapeHTML(n.slogan || "")}</div>
+    <div class="c">CORTE DE CAJA</div>
+    <hr>
+    <div>Fecha: ${new Date(c.fecha).toLocaleString("es-MX")}</div>
+    <div>Cajero: ${escapeHTML(c.usuario)}</div>
+    <hr>
+    <div class="b">VENTAS</div>
+    <div class="fila"><span>Efectivo:</span><span>${fmt(c.ventas.efectivo)}</span></div>
+    <div class="fila"><span>Tarjeta:</span><span>${fmt(c.ventas.tarjeta)}</span></div>
+    <div class="fila"><span>Transferencia:</span><span>${fmt(c.ventas.transf)}</span></div>
+    <div class="fila b"><span>TOTAL:</span><span>${fmt(c.ventas.total)}</span></div>
+    <div class="fila"><span>Tickets:</span><span>${c.ventas.tickets}</span></div>
+    <hr>
+    <div class="b">EFECTIVO</div>
+    <div class="fila"><span>Fondo inicial:</span><span>${fmt(c.fondo)}</span></div>
+    ${c.depositos || c.retiros ? `<div class="fila"><span>Depósitos:</span><span>+${fmt(c.depositos)}</span></div>
+    <div class="fila"><span>Retiros:</span><span>-${fmt(c.retiros)}</span></div>` : ""}
+    <div class="fila"><span>Gastos efectivo:</span><span>-${fmt(c.gastos)}</span></div>
+    ${c.gastosTransf ? `<div class="fila"><span>Gastos transf. (no caja):</span><span>${fmt(c.gastosTransf)}</span></div>` : ""}
+    <div class="fila b"><span>Esperado:</span><span>${fmt(c.esperado)}</span></div>
+    <div class="fila b"><span>Contado:</span><span>${fmt(c.contado)}</span></div>
+    <div class="fila b g"><span>DIFERENCIA:</span><span>${fmt(c.diferencia)}</span></div>
+    <hr>
+    ${c.nota ? `<div>Nota: ${escapeHTML(c.nota)}</div><hr>` : ""}
+    <div class="c">Firma: _____________</div>
+  `, "corte");
 }
