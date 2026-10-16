@@ -66,14 +66,36 @@ function imprimirHTML(html, clase) {
   if (!zona) {
     zona = document.createElement("div");
     zona.id = "zonaImpresion";
+    zona.hidden = true; // oculta aunque el CSS no haya cargado
     document.body.appendChild(zona);
   }
   zona.className = clase || "";
   zona.innerHTML = html;
-  const limpiar = () => { zona.innerHTML = ""; window.removeEventListener("afterprint", limpiar); };
+  zona.hidden = false;
+  document.body.classList.add("imprimiendo"); // el CSS de impresión solo actúa con esta clase
+
+  // Limpieza: devuelve la pantalla a la normalidad al terminar (o al volver / tocar), aunque el navegador no avise
+  let hecho = false, tope;
+  const limpiar = () => {
+    if (hecho) return;
+    hecho = true;
+    document.body.classList.remove("imprimiendo");
+    zona.hidden = true;
+    zona.innerHTML = "";
+    window.removeEventListener("afterprint", limpiar);
+    window.removeEventListener("focus", limpiar);
+    document.removeEventListener("pointerdown", limpiar);
+    clearTimeout(tope);
+  };
   window.addEventListener("afterprint", limpiar);
+  tope = setTimeout(limpiar, 120000);
+
   setTimeout(() => {
-    try { window.print(); } catch (e) { toast("⚠️ No se pudo imprimir"); limpiar(); }
+    try { window.print(); } catch (e) { toast("⚠️ No se pudo imprimir"); return limpiar(); }
+    setTimeout(() => {
+      window.addEventListener("focus", limpiar);
+      document.addEventListener("pointerdown", limpiar);
+    }, 1500);
   }, 150);
 }
 

@@ -28,6 +28,8 @@ const NUCLEO = [
   "./js/config-ui.js",
   "./js/modo-oscuro.js",
   "./js/sonido.js",
+  "./js/firebase-config.js",
+  "./js/sync.js",
   "./js/app.js"
 ];
 
@@ -55,9 +57,23 @@ self.addEventListener("activate", e => {
 self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET") return;
-  if (new URL(req.url).origin !== location.origin) return; // WhatsApp y otros sitios: no interceptar
+  const url = new URL(req.url);
+  if (url.origin !== location.origin) {
+    // Librerías de Firebase: se guardan para poder abrir la sincronización sin internet
+    if (url.hostname === "www.gstatic.com" && url.pathname.startsWith("/firebasejs/")) e.respondWith(cachePrimero(req));
+    return; // WhatsApp, Firestore y otros sitios: no interceptar
+  }
   e.respondWith(redPrimero(req));
 });
+
+async function cachePrimero(req) {
+  const cache = await caches.open(CACHE);
+  const guardado = await cache.match(req);
+  if (guardado) return guardado;
+  const res = await fetch(req);
+  if (res.ok || res.type === "opaque") cache.put(req, res.clone());
+  return res;
+}
 
 async function redPrimero(req) {
   const cache = await caches.open(CACHE);

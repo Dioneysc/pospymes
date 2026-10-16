@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<title>POS PyMes</title>
+<title>🧮 POS</title>
 
 <!-- CSS modular -->
 <link rel="stylesheet" href="css/base.css">
@@ -25,7 +25,7 @@
 <div id="login">
   <div class="login-box">
     <img src="logo.png" alt="Logo" class="login-logo" onerror="this.style.display='none'">
-    <h1 id="loginNombre">POS PyMes</h1>
+    <h1 id="loginNombre">🍗 POS PyMes</h1>
     <p class="sub" id="loginSlogan">Sistema punto de venta</p>
     <form id="formLogin" autocomplete="off" onsubmit="event.preventDefault(); hacerLogin();">
       <input id="user" placeholder="Usuario" value="admin" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" name="pos_u">
@@ -250,6 +250,26 @@
         </div>
 
         <div class="card-config">
+          <h3>☁️ Sincronización (Firebase)</h3>
+          <p id="syncEstado" style="font-size:13px;color:#64748b;margin-bottom:10px">No conectado.</p>
+          <div id="syncForm">
+            <input id="syncEmail" type="email" placeholder="Correo de la cuenta del negocio" autocomplete="off">
+            <input id="syncPass" type="password" placeholder="Contraseña de la cuenta" autocomplete="off">
+            <label style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase">Número de este dispositivo</label>
+            <select id="syncSlot">
+              <option value="1">1 (caja principal)</option><option value="2">2</option><option value="3">3</option>
+              <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+              <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+            </select>
+            <button class="btn-primary" onclick="conectarSync()" style="width:100%">Conectar</button>
+          </div>
+          <div id="syncAcciones" class="oculto" style="display:flex;gap:8px">
+            <button class="btn-secondary" onclick="sincronizarAhora()" style="flex:1">🔄 Sincronizar ahora</button>
+            <button class="btn-danger" onclick="desconectarSync()">Desconectar</button>
+          </div>
+        </div>
+
+        <div class="card-config">
           <h3>💾 Respaldo de datos</h3>
           <p style="color:#64748b;font-size:13px;margin-bottom:12px">Exporta todos los datos a un archivo JSON.</p>
           <div style="display:flex;gap:8px">
@@ -340,6 +360,8 @@
 <script src="js/config-ui.js"></script>
 <script src="js/modo-oscuro.js"></script>
 <script src="js/sonido.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/sync.js"></script>
 <script src="js/app.js"></script>
 
 </body>

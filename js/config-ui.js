@@ -101,23 +101,24 @@ function borrarTodo() {
   location.reload();
 }
 
-function cambiarPassword() {
+async function cambiarPassword() {
   const actual = $("#passActual").value;
   const nueva = $("#passNueva").value;
   const confirm = $("#passConfirm").value;
 
   if (!actual || !nueva || !confirm) return toast("⚠️ Completa todos los campos");
-  if (nueva.length < 4) return toast("⚠️ Mínimo 4 caracteres");
+  if (nueva.length < 6) return toast("⚠️ Mínimo 6 caracteres");
   if (nueva !== confirm) return toast("❌ Las contraseñas no coinciden");
 
   const sesion = JSON.parse(sessionStorage.getItem("sesion") || "{}");
   const user = DB.usuarios.find(u => u.id === sesion.id);
   if (!user) return toast("⚠️ Usuario no encontrado");
-  if (user.password !== actual) return toast("❌ Contraseña actual incorrecta");
+  if (!(await verificarPassword(user, actual))) return toast("❌ Contraseña actual incorrecta");
 
-  user.password = nueva;
+  await fijarPassword(user, nueva);
+  delete user.cambiarPass;
   guardar();
-  sessionStorage.setItem("sesion", JSON.stringify({ ...user, password: undefined }));
+  sessionStorage.setItem("sesion", sesionSegura(user));
 
   $("#passActual").value = "";
   $("#passNueva").value = "";
