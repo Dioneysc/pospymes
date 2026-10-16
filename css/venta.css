@@ -307,15 +307,14 @@
 
 /* ============================================
    IMPRESIÓN (tickets y corte, sin salir de la app)
-   Solo actúa mientras body tiene la clase "imprimiendo"
    ============================================ */
 #zonaImpresion { display: none; }
 
 @media print {
   @page { size: 58mm auto; margin: 0; }
-  body.imprimiendo { background: #fff !important; color: #000 !important; height: auto !important; min-height: 0 !important; overflow: visible !important; padding: 0 !important; }
-  body.imprimiendo > *:not(#zonaImpresion) { display: none !important; }
-  body.imprimiendo #zonaImpresion { display: block !important; width: 58mm; margin: 0 auto; padding: 4mm; background: #fff; color: #000; font-family: "Courier New", monospace; font-size: 12px; }
+  html, body { background: #fff !important; color: #000 !important; height: auto !important; min-height: 0 !important; overflow: visible !important; padding: 0 !important; }
+  body > *:not(#zonaImpresion) { display: none !important; }
+  #zonaImpresion { display: block; width: 58mm; margin: 0 auto; padding: 4mm; background: #fff; color: #000; font-family: "Courier New", monospace; font-size: 12px; }
   #zonaImpresion * { font-family: inherit; }
   #zonaImpresion.corte { font-size: 11px; }
   #zonaImpresion .c { text-align: center; }

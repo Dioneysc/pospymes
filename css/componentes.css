@@ -137,7 +137,6 @@ tr:last-child td { border-bottom: none; }
 
 .card-config h3 { margin-bottom: 14px; font-size: 16px; color: var(--gris-oscuro); font-weight: 800; }
 
-.card-config select { width: 100%; padding: 12px; margin: 6px 0 10px 0; border: 2px solid var(--borde); border-radius: 10px; font-size: 16px; background: #f8fafc; }
 .card-config input { width: 100%; padding: 12px; margin: 6px 0 10px 0; border: 2px solid var(--borde); border-radius: 10px; font-size: 16px; background: #f8fafc; }
 
 .card-config.peligro { border: 2px solid #fecaca; background: #fff5f5; }
