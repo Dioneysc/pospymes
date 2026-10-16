@@ -200,3 +200,53 @@ body.modo-oscuro .carrito-flotante-count {
 body.modo-oscuro .carrito-flotante-total {
   background: #020617;
 }
+/* ============================================
+   FIX: Botón COBRAR — modo oscuro
+   Evita que el total se vea en blanco sobre blanco
+   ============================================ */
+body.modo-oscuro .btn-cobrar {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  color: #0f172a !important;
+}
+
+body.modo-oscuro .btn-cobrar > span:first-child {
+  color: #0f172a !important;
+}
+
+body.modo-oscuro .btn-cobrar .total-cobrar,
+body.modo-oscuro #totalCobrar {
+  background-color: #0f172a !important;
+  color: #f59e0b !important;
+  border: 2px solid #0f172a !important;
+}
+
+/* Botones de pago con colores vivos en oscuro */
+body.modo-oscuro .btn-pago {
+  color: #fff !important;
+}
+
+body.modo-oscuro .btn-pago.efectivo {
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+}
+
+body.modo-oscuro .btn-pago.tarjeta {
+  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+}
+
+body.modo-oscuro .btn-pago.transf {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;
+}
+
+/* Total box del carrito también */
+body.modo-oscuro .total-box {
+  background: #020617 !important;
+  color: #fff !important;
+}
+
+body.modo-oscuro .total-box .monto {
+  color: #f59e0b !important;
+}
+
+body.modo-oscuro .total-box .label {
+  color: #fff !important;
+}
