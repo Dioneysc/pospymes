@@ -30,7 +30,10 @@ const msgSync = e => ({
   "auth/user-not-found": "Ese correo no existe en tu proyecto de Firebase", "auth/invalid-email": "Correo inválido",
   "auth/network-request-failed": "Sin conexión a internet", "auth/too-many-requests": "Demasiados intentos, espera un momento",
   "auth/popup-closed-by-user": "Cerraste la ventana de Google antes de terminar", "auth/cancelled-popup-request": "Inicio de sesión cancelado",
-  "auth/unauthorized-domain": "Este dominio no está autorizado: agrégalo en Firebase → Authentication → Configuración → Dominios autorizados",
+  "auth/unauthorized-domain": `El dominio "${location.hostname}" no está autorizado: agrégalo en Firebase → Authentication → Configuración → Dominios autorizados`,
+  "auth/invalid-api-key": "La apiKey de js/firebase-config.js no es válida", "auth/api-key-not-valid.-please-pass-a-valid-api-key.": "La apiKey no es válida",
+  "auth/web-storage-unsupported": "El navegador bloquea el almacenamiento (modo privado o cookies bloqueadas)",
+  "auth/internal-error": "Error interno de Firebase: revisa que Google esté habilitado y que la apiKey no tenga restricciones que bloqueen este dominio",
   "auth/operation-not-allowed": "Activa Google en Firebase → Authentication → Método de acceso",
   "permission-denied": "Sin permiso: publica las reglas de Firestore (archivo firestore.rules)"
 }[e.code] || e.message || String(e));
@@ -182,6 +185,8 @@ async function descargarTodo() {
 async function conectarSync() {
   if (!FIREBASE_CONFIG.apiKey) return toast("⚠️ Falta la configuración en js/firebase-config.js");
   const slot = +$("#syncSlot").value;
+  if (!/^https?:$/.test(location.protocol)) return toast("⚠️ Abre la app desde http://localhost o https://, no como archivo. Google no funciona desde file://");
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(location.hostname)) toast(`⚠️ Estás en ${location.hostname}: Firebase no acepta direcciones IP. Abre la app con http://localhost`);
   try {
     pintarEstadoSync("Abriendo Google...");
     await cargarFirebase(); iniciarFirebase();
@@ -241,6 +246,8 @@ function pintarEstadoSync(msg) {
   const hora = syncMeta.ultima ? new Date(syncMeta.ultima).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" }) : "—";
   est.textContent = msg || (on ? `✅ Conectado (${syncMeta.email}) · Dispositivo ${syncMeta.slot} · Última sincronización: ${hora}`
     : "No conectado. Tus datos solo están en este dispositivo.");
+  const dom = document.getElementById("syncDominio");
+  if (dom) dom.textContent = location.hostname || location.protocol;
   $("#syncForm").classList.toggle("oculto", on);
   $("#syncAcciones").classList.toggle("oculto", !on);
   if (syncMeta.slot) $("#syncSlot").value = String(syncMeta.slot);
