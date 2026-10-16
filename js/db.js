@@ -27,7 +27,10 @@ function guardar() {
 }
 
 function nuevoId(arr) {
-  return arr.length ? Math.max(...arr.map(x => x.id)) + 1 : 1;
+  const max = arr.length ? Math.max(...arr.map(x => x.id)) : 0;
+  const slot = typeof SYNC_SLOT !== "undefined" ? SYNC_SLOT : 0;
+  if (!slot) return max + 1;                     // sin sincronización: consecutivo, como siempre
+  return Math.floor(max / 10) * 10 + 10 + slot;  // con varios dispositivos: cada uno usa su terminación (1-9) y nunca chocan
 }
 
 /* ============ SEED LIMPIO ============ */

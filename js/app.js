@@ -93,6 +93,7 @@ window.addEventListener("resize", () => {
 /* ============ INICIALIZACIÓN ============ */
 document.addEventListener("DOMContentLoaded", () => {
   seed();
+  if (typeof iniciarSync === "function") iniciarSync();
   migrarPasswords().catch(e => console.warn("Migración de contraseñas:", e));
   initDia();
   aplicarModoGuardado();
