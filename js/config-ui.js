@@ -25,14 +25,38 @@ function guardarNegocio() {
   actualizarHeader();
   toast("💾 Datos guardados");
 }
-
 function exportarBackup() {
-  const data = JSON.stringify({ version: 2, DB, extras: { cortes: LS.get("cortes", []), catsGasto: CATS_GASTO, cajaHoy: estadoCajaHoy } }, null, 2);
+  const data = JSON.stringify(DB, null, 2);
+  const nombre = `backup_pos_${hoy()}.json`;
+
+  // Detectar si estamos en Android (APK)
+  const enAndroid = typeof Android !== "undefined" && Android !== null;
+
+  if (enAndroid && typeof Android.guardarArchivo === "function") {
+    // Método nativo Android: guarda en Descargas
+    try {
+      const resultado = Android.guardarArchivo(nombre, data);
+      if (resultado) {
+        toast("📥 Respaldo guardado en Descargas");
+      } else {
+        toast("❌ Error guardando archivo");
+      }
+    } catch (e) {
+      toast("❌ Error: " + e.message);
+    }
+    return;
+  }
+
+  // Método web tradicional (funciona en PC y navegador)
   const blob = new Blob([data], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `backup_pos_${hoy()}.json`;
+  a.href = url;
+  a.download = nombre;
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
   toast("📥 Respaldo descargado");
 }
 
