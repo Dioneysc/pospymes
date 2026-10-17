@@ -65,45 +65,40 @@ function androidEstaConectada() {
 // ============================================
 
 function androidImprimirTicket(venta) {
-  if (!EN_ANDROID) {
-    return { success: false, error: "No estás en la app Android" };
-  }
+    if (!EN_ANDROID) return false;
+    if (!Android.isConnected()) return false;
 
-  if (!Android.isConnected()) {
-    return { success: false, error: "No hay impresora conectada" };
-  }
+    const n = DB.negocio;
+    const ticket = {
+        negocio: n.nombre || "POS",
+        slogan: n.slogan || "",
+        direccion: n.direccion || "",
+        telefono: n.telefono || "",
+        id: venta.id,
+        fecha: new Date(venta.fecha).toLocaleString("es-MX"),
+        mesa: venta.mesa || "",
+        cajero: venta.usuario || "admin",
+        items: venta.items.map(it => ({
+            cantidad: it.cantidad,
+            nombre: it.nombre,
+            precio: it.precio
+        })),
+        subtotal: venta.subtotal,
+        descuento: venta.descuento || 0,
+        propina: venta.propina || 0,
+        total: venta.total,
+        metodo: venta.metodo,
+        pagoCon: venta.pagoCon || 0,
+        cambio: venta.cambio || 0
+    };
 
-  // Construir JSON del ticket
-  const n = DB.negocio;
-  const ticket = {
-    negocio: n.nombre || "POS",
-    slogan: n.slogan || "",
-    direccion: n.direccion || "",
-    telefono: n.telefono || "",
-    id: venta.id,
-    fecha: new Date(venta.fecha).toLocaleString("es-MX"),
-    mesa: venta.mesa || "",
-    cajero: venta.usuario || "admin",
-    items: venta.items.map(it => ({
-      cantidad: it.cantidad,
-      nombre: it.nombre,
-      precio: it.precio
-    })),
-    subtotal: venta.subtotal,
-    descuento: venta.descuento || 0,
-    propina: venta.propina || 0,
-    total: venta.total,
-    metodo: venta.metodo,
-    pagoCon: venta.pagoCon || 0,
-    cambio: venta.cambio || 0
-  };
-
-  try {
-    const result = Android.printTicket(JSON.stringify(ticket));
-    return { success: result };
-  } catch (e) {
-    return { success: false, error: e.message };
-  }
+    try {
+        Android.printTicket(JSON.stringify(ticket));
+        return true;
+    } catch (e) {
+        console.error("Error al imprimir ticket:", e);
+        return false;
+    }
 }
 
 // ============================================
