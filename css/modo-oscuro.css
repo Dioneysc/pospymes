@@ -203,25 +203,53 @@ body.modo-oscuro .carrito-flotante-total {
 
 body.modo-oscuro .card-config select { background: #0f172a; color: #f1f5f9; border-color: #334155; }
 
-/* Elementos que deben ser oscuros siempre (en modo oscuro --gris-oscuro es claro) */
-body.modo-oscuro .toast { background: #334155; color: #fff; border: 1px solid #475569; }
-body.modo-oscuro .btn-cobrar .total-cobrar { background: #0f172a; color: var(--amarillo) !important; }
-body.modo-oscuro .carrito-flotante-total { background: #020617; color: #fff; }
-body.modo-oscuro .total-box { background: #020617; color: #fff; }
+/* ============================================
+   FIX: Botón COBRAR — modo oscuro
+   Evita que el total se vea en blanco sobre blanco
+   ============================================ */
+body.modo-oscuro .btn-cobrar {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  color: #0f172a !important;
+}
 
-/* Cajas con fondo claro escrito en línea dentro de ventanas (resúmenes, avisos, receta) */
-body.modo-oscuro #modalBody [style*="background:#f8fafc"],
-body.modo-oscuro #modalBody [style*="background:#fff;"] { background: #0f172a !important; border-color: #334155 !important; color: #f1f5f9 !important; }
-body.modo-oscuro #modalBody [style*="background:#fef3c7"] { background: #422006 !important; color: #fde68a !important; }
-body.modo-oscuro [style*="background:#fff7ed"] { background: #431407 !important; color: #fed7aa !important; }
-body.modo-oscuro [style*="color:#0f172a"] { color: #f1f5f9 !important; }
-body.modo-oscuro .btn-no-imprimir { background: #334155; color: #f1f5f9; }
-body.modo-oscuro #mesaActual { background: #0f172a; color: #f1f5f9; border-color: #334155; }
-body.modo-oscuro .cambio-box { background: #052e2b; }
-body.modo-oscuro .cambio-box p, body.modo-oscuro .cambio-box .monto { color: #6ee7b7; }
-body.modo-oscuro .falta-box { background: #450a0a; }
-body.modo-oscuro .falta-box p, body.modo-oscuro .falta-box .monto { color: #fca5a5; }
-body.modo-oscuro .badge.ok { background: #064e3b; color: #6ee7b7; }
-body.modo-oscuro .badge.warn { background: #422006; color: #fcd34d; }
-body.modo-oscuro .badge.danger { background: #450a0a; color: #fca5a5; }
-body.modo-oscuro .categorias button.activo { background: #c2410c; border-color: #c2410c; color: #fff; }
+body.modo-oscuro .btn-cobrar > span:first-child {
+  color: #0f172a !important;
+}
+
+body.modo-oscuro .btn-cobrar .total-cobrar,
+body.modo-oscuro #totalCobrar {
+  background-color: #0f172a !important;
+  color: #f59e0b !important;
+  border: 2px solid #0f172a !important;
+}
+
+/* Botones de pago con colores vivos en oscuro */
+body.modo-oscuro .btn-pago {
+  color: #fff !important;
+}
+
+body.modo-oscuro .btn-pago.efectivo {
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+}
+
+body.modo-oscuro .btn-pago.tarjeta {
+  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+}
+
+body.modo-oscuro .btn-pago.transf {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;
+}
+
+/* Total box del carrito también */
+body.modo-oscuro .total-box {
+  background: #020617 !important;
+  color: #fff !important;
+}
+
+body.modo-oscuro .total-box .monto {
+  color: #f59e0b !important;
+}
+
+body.modo-oscuro .total-box .label {
+  color: #fff !important;
+}

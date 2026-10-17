@@ -2,8 +2,7 @@
    VENTA.CSS — Pantalla de venta, carrito, cobro y ticket
    ============================================ */
 
-.caja-layout { display: grid; grid-template-columns: 1fr 380px; gap: 14px; height: calc(100dvh - 175px); min-height: 500px; }
-body.con-alerta-stock .caja-layout { height: calc(100dvh - 245px); }
+.caja-layout { display: grid; grid-template-columns: 1fr 380px; gap: 14px; height: calc(100dvh - 150px); min-height: 500px; }
 
 .productos-wrap { display: flex; flex-direction: column; gap: 10px; overflow: hidden; min-height: 0; }
 
@@ -19,7 +18,7 @@ body.con-alerta-stock .caja-layout { height: calc(100dvh - 245px); }
 
 .categorias button { background: #fff; border: 2px solid var(--borde); padding: 9px 18px; border-radius: 22px; white-space: nowrap; font-weight: 700; font-size: 13px; color: var(--texto-suave); box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 
-.categorias button.activo { background: #c2410c; color: #fff; border-color: #c2410c; box-shadow: 0 3px 10px rgba(249,115,22,.35); }
+.categorias button.activo { background: var(--naranja); color: #fff; border-color: var(--naranja); box-shadow: 0 3px 10px rgba(249,115,22,.35); }
 
 .productos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; overflow-y: auto; padding-bottom: 12px; align-content: start; }
 
@@ -111,15 +110,15 @@ body.con-alerta-stock .caja-layout { height: calc(100dvh - 245px); }
 
 .cambio-box { background: #d1fae5; border-radius: 14px; padding: 16px; text-align: center; margin: 14px 0; }
 
-.cambio-box p { font-size: 11px; text-transform: uppercase; color: #047857; letter-spacing: .5px; font-weight: 800; }
+.cambio-box p { font-size: 11px; text-transform: uppercase; color: var(--ok); letter-spacing: .5px; font-weight: 800; }
 
-.cambio-box .monto { font-size: 32px; font-weight: 800; color: #047857; }
+.cambio-box .monto { font-size: 32px; font-weight: 800; color: var(--ok); }
 
 .falta-box { background: #fee2e2; }
 
-.falta-box p { color: #b91c1c; }
+.falta-box p { color: #dc2626; }
 
-.falta-box .monto { color: #b91c1c; }
+.falta-box .monto { color: #dc2626; }
 
 .billetes-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
 
@@ -250,9 +249,17 @@ body.con-alerta-stock .caja-layout { height: calc(100dvh - 245px); }
     top: auto;
     bottom: 0;
     animation: slideUp .25s ease;
-    box-shadow: 0 0 0 100vmax rgba(15,23,42,.5); /* oscurece el fondo sin tapar la hoja */
+    box-shadow: 0 -10px 40px rgba(0,0,0,.3);
   }
-  .carrito-panel.modal-abierto .carrito-header { padding-right: 52px; } /* deja espacio al botón ✖ */
+  .carrito-panel.modal-abierto::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(15,23,42,.5);
+    backdrop-filter: blur(4px);
+    z-index: -1;
+    animation: fadeIn .2s ease;
+  }
 }
 
 @keyframes slideUp {

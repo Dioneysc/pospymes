@@ -85,11 +85,11 @@ tr:last-child td { border-bottom: none; }
 
 .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
 
-.badge.ok { background: #d1fae5; color: #047857; }
+.badge.ok { background: #d1fae5; color: var(--ok); }
 
-.badge.warn { background: #fef3c7; color: #b45309; }
+.badge.warn { background: #fef3c7; color: var(--warn); }
 
-.badge.danger { background: #fee2e2; color: #b91c1c; }
+.badge.danger { background: #fee2e2; color: #dc2626; }
 
 .modal { position: fixed; inset: 0; background: rgba(15,23,42,.6); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; backdrop-filter: blur(4px); }
 

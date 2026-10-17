@@ -26,42 +26,58 @@ function guardarNegocio() {
   toast("💾 Datos guardados");
 }
 
-function exportarBackup() {
-  const data = JSON.stringify({ version: 2, DB, extras: { cortes: LS.get("cortes", []), catsGasto: CATS_GASTO, cajaHoy: estadoCajaHoy } }, null, 2);
-  const blob = new Blob([data], { type: "application/json" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `backup_pos_${hoy()}.json`;
-  a.click();
-  toast("📥 Respaldo descargado");
-}
-
 function importarBackup(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    try {
-      const raw = JSON.parse(ev.target.result);
-      const data = raw.DB || raw;
-      if (!Array.isArray(data.productos) || !Array.isArray(data.ventas) || !Array.isArray(data.usuarios)) throw new Error("formato");
-      data.insumos = data.insumos || []; data.gastos = data.gastos || [];
-      data.negocio = data.negocio || { nombre: "POS", slogan: "", direccion: "", telefono: "" };
-      if (!confirm("Esto reemplazará todos los datos actuales. ¿Continuar?")) return;
-      DB = data;
-      guardar();
-      if (raw.extras) {
-        LS.set("cortes", raw.extras.cortes || []);
-        LS.set("catsGasto", raw.extras.catsGasto || []);
-        if (raw.extras.cajaHoy) LS.set("cajaHoy", raw.extras.cajaHoy);
-      }
-      toast("✅ Respaldo importado");
-      location.reload();
-    } catch (err) {
-      toast("❌ Archivo inválido");
+    const file = e.target.files ? e.target.files[0] : null;
+    if (!file) {
+        return toast("⚠️ No se seleccionó ningún archivo");
     }
-  };
-  reader.readAsText(file);
+
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+        try {
+            const raw = JSON.parse(ev.target.result);
+            const data = raw.DB || raw;
+
+            // Validación básica de la estructura del respaldo
+            if (!Array.isArray(data.productos) || !Array.isArray(data.ventas) || !Array.isArray(data.usuarios)) {
+                throw new Error("El archivo no tiene el formato correcto del POS");
+            }
+
+            data.insumos = data.insumos || [];
+            data.gastos = data.gastos || [];
+            data.negocio = data.negocio || { nombre: "POS", slogan: "", direccion: "", telefono: "" };
+
+            if (!confirm("⚠️ Esto reemplazará todos los datos actuales. ¿Deseas continuar?")) {
+                e.target.value = ""; // Limpiar input
+                return;
+            }
+
+            // Aplicar datos
+            DB = data;
+            guardar();
+
+            if (raw.extras) {
+                if (typeof LS !== "undefined") {
+                    LS.set("cortes", raw.extras.cortes || []);
+                    LS.set("catsGasto", raw.extras.catsGasto || []);
+                    if (raw.extras.cajaHoy) LS.set("cajaHoy", raw.extras.cajaHoy);
+                }
+            }
+
+            toast("✅ Respaldo importado correctamente");
+            setTimeout(() => location.reload(), 1000);
+        } catch (err) {
+            console.error("Error importando respaldo:", err);
+            toast("❌ Archivo inválido o dañado");
+            e.target.value = ""; // Limpiar input
+        }
+    };
+
+    reader.onerror = function () {
+        toast("❌ Error al leer el archivo seleccionado");
+    };
+
+    reader.readAsText(file);
 }
 
 function borrarProductosInsumos() {
