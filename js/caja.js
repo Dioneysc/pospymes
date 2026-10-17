@@ -173,7 +173,7 @@ function renderEstadoCaja() {
       </div>
       <div class="card rojo">
         <h4>Gastos en efectivo</h4>
-        <p class="big">-${fmt(gastosEfectivo)}</p>
+        <p class="big">${gastosEfectivo ? "-" : ""}${fmt(gastosEfectivo)}</p>
         <small>Salen de la caja</small>
       </div>
       <div class="card">

@@ -50,33 +50,13 @@ function mostrarTicketImpresion(v) {
     </div>
   `);
 }
+
+/* Imprime la venta actual (la última cobrada) */
 function imprimirVentaActual() {
-    if (!window._ventaActual) {
-        return toast("⚠️ No hay venta reciente");
-    }
-
-    // Si estamos en la app Android
-    if (typeof EN_ANDROID !== "undefined" && EN_ANDROID) {
-        if (typeof Android !== "undefined" && Android.isConnected && Android.isConnected()) {
-            const enviado = androidImprimirTicket(window._ventaActual);
-            if (enviado) {
-                toast("🖨️ Impresión enviada");
-                return;
-            } else {
-                toast("⚠️ Error al enviar ticket a la impresora");
-                return;
-            }
-        } else {
-            toast("⚠️ No hay impresora Bluetooth conectada");
-            if (typeof abrirModalImpresora === "function") {
-                abrirModalImpresora();
-            }
-            return;
-        }
-    }
-
-    // Fallback tradicional para PC / Navegador web
-    imprimirTicket(window._ventaActual);
+  if (!window._ventaActual) {
+    return toast("⚠️ No hay venta reciente");
+  }
+  imprimirTicket(window._ventaActual);
 }
 /* ============ IMPRESIÓN (sin salir de la app) ============ */
 // Antes se abría una ventana nueva (window.open): en la app instalada no había cómo volver y se perdía la sesión.

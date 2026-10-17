@@ -211,6 +211,7 @@ function agregarItemReceta(productoId) {
   }
 
   guardar();
+  renderProductos();
   const scrollY = document.querySelector(".modal-contenido")?.scrollTop || 0;
   abrirReceta(productoId);
   setTimeout(() => {
@@ -231,6 +232,7 @@ function borrarItemReceta(idx) {
   if (!p || !p.insumos) return;
   p.insumos.splice(idx, 1);
   guardar();
+  renderProductos();
   abrirReceta(productoId);
   toast("🗑️ Insumo quitado");
 }
@@ -247,6 +249,7 @@ function guardarReceta(productoId) {
   }
 
   guardar();
+  renderProductos();
   cerrarModal();
   toast("💾 Receta guardada");
 }

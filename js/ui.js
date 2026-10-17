@@ -72,6 +72,7 @@ function revisarStockBajo() {
 
 function mostrarAlertaStock() {
   const bajos = revisarStockBajo();
+  document.body.classList.toggle("con-alerta-stock", bajos.length > 0);
   const el = document.getElementById("alertaStock");
   if (!el) return;
 
