@@ -60,7 +60,7 @@ function renderHistorial() {
         <div class="hist-items">${itemsTxt}</div>
         <div class="hist-acciones">
           <button class="btn-mini" onclick='verTicketHistorial(${JSON.stringify(v).replace(/'/g, "&#39;")})'>👁️ Ver</button>
-          <button class="btn-mini" onclick='imprimirTicket(${JSON.stringify(v).replace(/'/g, "&#39;")})'>🖨️ Reimprimir</button>
+         <button class="btn-mini" onclick="reimprimirVenta(${v.id})">🖨️ Reimprimir</button>
           <button class="btn-mini" style="color:#25d366;border-color:#25d366" onclick="compartirWhatsApp(${v.id})">📤 WhatsApp</button>
           ${!cancelada ? `<button class="btn-mini" style="color:var(--rojo);border-color:var(--rojo)" onclick="abrirCancelarVenta(${v.id})">↩️ Cancelar</button>` : ""}
         </div>
@@ -113,7 +113,7 @@ function verTicketHistorial(v) {
     </div>
     <div class="acciones">
       <button class="btn-secondary" onclick="cerrarModal()">Cerrar</button>
-      <button class="btn-primary" onclick='cerrarModal();imprimirTicket(${JSON.stringify(v).replace(/'/g, "&#39;")})'>🖨️ Reimprimir</button>
+      <button class="btn-primary" onclick='cerrarModal();reimprimirVenta(${v.id})'>🖨️ Reimprimir</button>
     </div>
   `);
 }
@@ -213,4 +213,27 @@ function confirmarCancelarVenta(id) {
   renderHistorial();
   renderEstadoCaja();
   mostrarAlertaStock();
+
+  // ============================================
+// REIMPRIMIR VENTA (usa Bluetooth nativo si está disponible)
+// ============================================
+function reimprimirVenta(ventaId) {
+  const venta = DB.ventas.find(v => v.id === ventaId);
+  if (!venta) return toast("⚠️ Venta no encontrada");
+
+  // Si estamos en la APK Android con impresora conectada
+  if (typeof EN_ANDROID !== "undefined" && EN_ANDROID &&
+      typeof Android !== "undefined" && Android.isConnected()) {
+    const result = androidImprimirTicket(venta);
+    if (result.success) {
+      toast("🖨️ Reimprimiendo...");
+      return;
+    } else {
+      toast("⚠️ Error Bluetooth, usando método tradicional");
+    }
+  }
+
+  // Fallback: método tradicional (abre ventana)
+  imprimirTicket(venta);
+}
 }
