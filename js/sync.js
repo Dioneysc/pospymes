@@ -182,31 +182,85 @@ async function descargarTodo() {
   guardarMeta();
 }
 
+
 async function conectarSync() {
-  if (!FIREBASE_CONFIG.apiKey) return toast("⚠️ Falta la configuración en js/firebase-config.js");
+  if (!FIREBASE_CONFIG.apiKey) {
+    return toast("⚠️ Falta la configuración en js/firebase-config.js");
+  }
+
   const slot = +$("#syncSlot").value;
-  if (!/^https?:$/.test(location.protocol)) return toast("⚠️ Abre la app desde http://localhost o https://, no como archivo. Google no funciona desde file://");
-  if (/^\d+\.\d+\.\d+\.\d+$/.test(location.hostname)) toast(`⚠️ Estás en ${location.hostname}: Firebase no acepta direcciones IP. Abre la app con http://localhost`);
+
+  if (!/^https?:$/.test(location.protocol)) {
+    return toast("⚠️ Abre la app desde HTTPS o localhost.");
+  }
+
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(location.hostname)) {
+    toast(`⚠️ Estás en ${location.hostname}: usa un dominio válido.`);
+  }
+
   try {
     pintarEstadoSync("Abriendo Google...");
-    await cargarFirebase(); iniciarFirebase();
+    await cargarFirebase();
+    iniciarFirebase();
+
+    // En Android, solicitar inicio de sesión nativo
+    if (
+      window.Android &&
+      typeof window.Android.signInWithGoogle === "function"
+    ) {
+      window.Android.signInWithGoogle(String(slot));
+      return;
+    }
+
+    // En navegador web, conservar el inicio de sesión habitual
     const auth = firebase.auth();
     auth.useDeviceLanguage();
+
     const proveedor = new firebase.auth.GoogleAuthProvider();
     proveedor.setCustomParameters({ prompt: "select_account" });
+
     let cred;
-    try { cred = await auth.signInWithPopup(proveedor); }
-    catch (e) {
-      // En algunas apps instaladas el popup no funciona: se usa redirección y se termina al volver (ver iniciarSync)
-      if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment"].includes(e.code)) {
+
+    try {
+      cred = await auth.signInWithPopup(proveedor);
+    } catch (e) {
+      if (
+        ["auth/popup-blocked",
+         "auth/operation-not-supported-in-this-environment"
+        ].includes(e.code)
+      ) {
         LS.set("syncPendiente", { slot });
         return auth.signInWithRedirect(proveedor);
       }
+
       throw e;
     }
+
     await finalizarConexion(cred.user, slot);
-  } catch (e) { console.warn(e); pintarEstadoSync(); toast("❌ " + msgSync(e)); }
+
+  } catch (e) {
+    console.warn("Error de sincronización:", e);
+    pintarEstadoSync();
+    toast("❌ " + msgSync(e));
+  }
 }
+window.onNativeGoogleToken = async function (idToken, slot) {
+  try {
+    await cargarFirebase();
+    iniciarFirebase();
+
+    const proveedor = new firebase.auth.GoogleAuthProvider();
+    const credencial = proveedor.credential(idToken);
+
+    const resultado = await firebase.auth().signInWithCredential(credencial);
+
+    await finalizarConexion(resultado.user, Number(slot) || 0);
+  } catch (e) {
+    console.warn("Error de autenticación nativa:", e);
+    pintarEstadoSync();
+    toast("❌ " + msgSync(e));
+  }
+};
 
 // Se ejecuta cuando Google ya identificó al usuario (por popup o al volver de la redirección)
 async function finalizarConexion(user, slot) {
