@@ -1,8 +1,8 @@
 /* ============================================
-   CAJA.JS — CAJA FUERTE, ESTADO DE CAJA Y CORTE
+   CAJA.JS — GASTOS PERSONALES, ESTADO DE CAJA Y CORTE
    ============================================ */
 
-/* ============ CAJA FUERTE ============ */
+/* ============ GESTOR PERSONAL Y APERTURA DE CAJA ============ */
 
 function initDia() {
   if (estadoCajaHoy.fecha !== hoy()) {
@@ -32,80 +32,64 @@ function guardarFondo() {
   toast("✅ Caja abierta con fondo de " + fmt(monto));
 }
 
-function abrirCajaFuerte() {
-  initDia();
-  const retiros = estadoCajaHoy.retiros.reduce((s,r) => s + r.monto, 0);
-  const depositos = estadoCajaHoy.depositos.reduce((s,d) => s + d.monto, 0);
-  abrirModal("🔐 Caja fuerte", `
-    ${CORTE_INCLUYE_CAJA_FUERTE ? "" : `<p style="font-size:12px;color:#64748b;margin-bottom:10px">Solo es un registro: estos movimientos no afectan el corte de caja.</p>`}
-    <div style="background:#f8fafc;border-radius:12px;padding:12px;margin-bottom:14px;border:1px solid var(--borde)">
-      <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px">
-        <span>Total retirado hoy:</span><b>${fmt(retiros)}</b>
-      </div>
-      <div style="display:flex;justify-content:space-between;font-size:14px">
-        <span>Total depositado hoy:</span><b>${fmt(depositos)}</b>
-      </div>
+// Gestor personal independiente: no modifica ventas, gastos del negocio ni corte de caja.
+function abrirCajaFuerte() { abrirGestorGastosPersonales(); }
+
+function obtenerGastosPersonales() {
+  const lista = LS.get("gastosPersonales", []);
+  return Array.isArray(lista) ? lista : [];
+}
+
+function abrirGestorGastosPersonales() {
+  const gastos = obtenerGastosPersonales().sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+  const total = gastos.reduce((s, g) => s + (Number(g.monto) || 0), 0);
+  abrirModal("👛 Gestor de gastos personales", `
+    <p style="font-size:13px;color:#64748b;margin-bottom:12px">Registra tus gastos personales por separado. No afectan la caja ni los reportes del negocio.</p>
+    <div style="background:var(--fondo-card,#f8fafc);border:1px solid var(--borde);border-radius:12px;padding:14px;margin-bottom:14px">
+      <div style="font-size:12px;color:#64748b">Total registrado</div>
+      <div style="font-size:26px;font-weight:800">${fmt(total)}</div>
+      <div style="font-size:12px;color:#64748b">${gastos.length} movimientos</div>
     </div>
-
-    <label>Tipo de movimiento</label>
-    <select id="cfTipo">
-      <option value="retiro">⬆️ Retiro (a caja fuerte)</option>
-      <option value="deposito">⬇️ Depósito (a caja)</option>
-    </select>
-    <label>Monto</label>
-    <input id="cfMonto" type="number" step="0.01">
-    <label>Nota (opcional)</label>
-    <input id="cfNota" placeholder="Motivo del movimiento">
-
-    <div class="acciones">
-      <button class="btn-secondary" onclick="cerrarModal()">Cerrar</button>
-      <button class="btn-primary" onclick="guardarCajaFuerte()">Registrar</button>
+    <label>Concepto</label><input id="gpConcepto" maxlength="80" placeholder="Ej. comida, transporte, casa">
+    <label>Categoría</label>
+    <select id="gpCategoria"><option>Comida</option><option>Transporte</option><option>Casa</option><option>Salud</option><option>Familia</option><option>Servicios</option><option>Otro</option></select>
+    <label>Monto</label><input id="gpMonto" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00">
+    <label>Nota (opcional)</label><input id="gpNota" maxlength="160" placeholder="Detalle del gasto">
+    <div class="acciones"><button class="btn-secondary" onclick="cerrarModal()">Cerrar</button><button class="btn-primary" onclick="guardarGastoPersonal()">＋ Guardar gasto</button></div>
+    <h4 style="margin:16px 0 8px;font-size:13px">Movimientos recientes</h4>
+    <div style="max-height:230px;overflow:auto">
+      ${gastos.length ? gastos.map(g => `
+        <div class="cat-item" style="align-items:flex-start;gap:8px">
+          <div style="flex:1;min-width:0"><b>${escapeHTML(g.concepto || "Gasto personal")}</b><div style="font-size:12px;color:#64748b">${escapeHTML(g.categoria || "Otro")} · ${new Date(g.fecha).toLocaleDateString("es-MX")}${g.nota ? " · "+escapeHTML(g.nota) : ""}</div></div>
+          <b style="white-space:nowrap">${fmt(g.monto)}</b>
+          <button onclick="borrarGastoPersonal('${String(g.id).replace(/'/g,"\\'")}')" title="Eliminar" style="background:transparent;border:0;color:#dc2626;padding:4px">🗑️</button>
+        </div>`).join("") : `<p style="text-align:center;padding:16px;color:#94a3b8">Aún no hay gastos personales.</p>`}
     </div>
-
-    ${estadoCajaHoy.retiros.concat(estadoCajaHoy.depositos).length ? `
-      <h4 style="margin-top:16px;font-size:13px;color:#64748b;text-transform:uppercase">Movimientos de hoy</h4>
-      <div style="max-height:200px;overflow-y:auto;margin-top:8px">
-        ${[...estadoCajaHoy.retiros.map((r,i)=>({...r,tipo:"retiro",idx:i})), ...estadoCajaHoy.depositos.map((d,i)=>({...d,tipo:"deposito",idx:i}))]
-          .sort((a,b)=>new Date(b.hora)-new Date(a.hora))
-          .map(m => `
-            <div class="cat-item">
-              <span style="flex:1">${new Date(m.hora).toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"})} · ${m.tipo==="retiro"?"⬆️":"⬇️"} ${m.nota||"—"}</span>
-              <b style="color:${m.tipo==="retiro"?"#dc2626":"#059669"}">${m.tipo==="retiro"?"-":"+"}${fmt(m.monto)}</b>
-              <button onclick="borrarMovimientoCajaFuerte('${m.tipo}',${m.idx})" style="background:transparent;border:none;color:#dc2626;cursor:pointer;font-size:16px;padding:4px">🗑️</button>
-            </div>
-          `).join("")}
-      </div>
-    ` : ""}
   `);
 }
 
-function guardarCajaFuerte() {
-  const tipo = $("#cfTipo").value;
-  const monto = +$("#cfMonto").value;
-  const nota = $("#cfNota").value.trim();
-  if (!monto || monto <= 0) return toast("Monto inválido");
-  const mov = { monto, nota, hora: new Date().toISOString() };
-  if (tipo === "retiro") estadoCajaHoy.retiros.push(mov);
-  else estadoCajaHoy.depositos.push(mov);
-  LS.set("cajaHoy", estadoCajaHoy);
-  cerrarModal();
-  renderEstadoCaja();
-  toast(tipo === "retiro" ? "⬆️ Retiro registrado" : "⬇️ Depósito registrado");
+function guardarGastoPersonal() {
+  const concepto = document.getElementById("gpConcepto")?.value.trim();
+  const categoria = document.getElementById("gpCategoria")?.value || "Otro";
+  const monto = Number(document.getElementById("gpMonto")?.value);
+  const nota = document.getElementById("gpNota")?.value.trim() || "";
+  if (!concepto) return toast("Escribe el concepto del gasto");
+  if (!Number.isFinite(monto) || monto <= 0) return toast("Ingresa un monto válido");
+  const gastos = obtenerGastosPersonales();
+  gastos.push({ id: (globalThis.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2), fecha: new Date().toISOString(), concepto, categoria, monto, nota });
+  LS.set("gastosPersonales", gastos);
+  toast("✅ Gasto personal guardado");
+  abrirGestorGastosPersonales();
 }
 
-function borrarMovimientoCajaFuerte(tipo, idx) {
-  const arr = tipo === "retiro" ? estadoCajaHoy.retiros : estadoCajaHoy.depositos;
-  const mov = arr[idx];
-  if (!mov) return;
-  if (!confirm(`¿Borrar ${tipo} de ${fmt(mov.monto)}${mov.nota ? " ("+mov.nota+")" : ""}?`)) return;
-  arr.splice(idx, 1);
-  LS.set("cajaHoy", estadoCajaHoy);
-  cerrarModal();
-  setTimeout(() => {
-    abrirCajaFuerte();
-    renderEstadoCaja();
-    toast("🗑️ Movimiento eliminado");
-  }, 150);
+function borrarGastoPersonal(id) {
+  const gastos = obtenerGastosPersonales();
+  const gasto = gastos.find(g => String(g.id) === String(id));
+  if (!gasto) return toast("Gasto no encontrado");
+  if (!confirm(`¿Eliminar el gasto personal "${gasto.concepto}" por ${fmt(gasto.monto)}?`)) return;
+  LS.set("gastosPersonales", gastos.filter(g => String(g.id) !== String(id)));
+  toast("🗑️ Gasto eliminado");
+  abrirGestorGastosPersonales();
 }
 
 /* ============ RESUMEN DEL DÍA (una sola fuente para estado y corte) ============ */
@@ -173,7 +157,7 @@ function renderEstadoCaja() {
       </div>
       <div class="card rojo">
         <h4>Gastos en efectivo</h4>
-        <p class="big">-${fmt(gastosEfectivo)}</p>
+        <p class="big">${fmt(gastosEfectivo)}</p>
         <small>Salen de la caja</small>
       </div>
       <div class="card">
@@ -214,7 +198,7 @@ function abrirCorteDiario() {
       ${CORTE_INCLUYE_CAJA_FUERTE ? `
       <div style="display:flex;justify-content:space-between;padding:3px 0"><span>+ Depósitos:</span><b>${fmt(depositos)}</b></div>
       <div style="display:flex;justify-content:space-between;padding:3px 0"><span>− Retiros:</span><b>-${fmt(retiros)}</b></div>` : ""}
-      <div style="display:flex;justify-content:space-between;padding:3px 0"><span>− Gastos efectivo:</span><b>-${fmt(gastosEfectivo)}</b></div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0"><span>Gastos efectivo:</span><b>${fmt(gastosEfectivo)}</b></div>
       <hr style="border:none;border-top:1px solid #cbd5e1;margin:6px 0">
       <div style="display:flex;justify-content:space-between;font-size:15px"><b>Efectivo esperado:</b><b style="color:var(--naranja)">${fmt(esperado)}</b></div>
     </div>
@@ -223,7 +207,7 @@ function abrirCorteDiario() {
       <div style="font-size:11px;color:#64748b;text-transform:uppercase;font-weight:700;margin-bottom:4px">Otros movimientos (no afectan el efectivo)</div>
       <div style="display:flex;justify-content:space-between;padding:3px 0"><span>Ventas tarjeta:</span><b>${fmt(tarjetaVentas)}</b></div>
       <div style="display:flex;justify-content:space-between;padding:3px 0"><span>Ventas transferencia:</span><b>${fmt(transfVentas)}</b></div>
-      <div style="display:flex;justify-content:space-between;padding:3px 0"><span>Gastos por transferencia:</span><b>-${fmt(gastosTransf)}</b></div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0"><span>Gastos por transferencia:</span><b>${fmt(gastosTransf)}</b></div>
       <hr style="border:none;border-top:1px solid #cbd5e1;margin:6px 0">
       <div style="display:flex;justify-content:space-between;padding:3px 0"><b>Total ventas del día:</b><b>${fmt(totalVentas)}</b></div>
     </div>
@@ -375,7 +359,7 @@ function imprimirCorte(c) {
     <div class="fila"><span>Fondo inicial:</span><span>${fmt(c.fondo)}</span></div>
     ${c.depositos || c.retiros ? `<div class="fila"><span>Depósitos:</span><span>+${fmt(c.depositos)}</span></div>
     <div class="fila"><span>Retiros:</span><span>-${fmt(c.retiros)}</span></div>` : ""}
-    <div class="fila"><span>Gastos efectivo:</span><span>-${fmt(c.gastos)}</span></div>
+    <div class="fila"><span>Gastos efectivo:</span><span>${fmt(c.gastos)}</span></div>
     ${c.gastosTransf ? `<div class="fila"><span>Gastos transf. (no caja):</span><span>${fmt(c.gastosTransf)}</span></div>` : ""}
     <div class="fila b"><span>Esperado:</span><span>${fmt(c.esperado)}</span></div>
     <div class="fila b"><span>Contado:</span><span>${fmt(c.contado)}</span></div>

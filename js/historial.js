@@ -213,27 +213,23 @@ function confirmarCancelarVenta(id) {
   renderHistorial();
   renderEstadoCaja();
   mostrarAlertaStock();
+}
 
-  // ============================================
-// REIMPRIMIR VENTA (usa Bluetooth nativo si está disponible)
-// ============================================
+// Reimprime una venta existente tanto desde historial como desde la vista previa.
 function reimprimirVenta(ventaId) {
-  const venta = DB.ventas.find(v => v.id === ventaId);
+  const venta = DB.ventas.find(v => String(v.id) === String(ventaId));
   if (!venta) return toast("⚠️ Venta no encontrada");
 
-  // Si estamos en la APK Android con impresora conectada
   if (typeof EN_ANDROID !== "undefined" && EN_ANDROID &&
-      typeof Android !== "undefined" && Android.isConnected()) {
-    const result = androidImprimirTicket(venta);
-    if (result.success) {
-      toast("🖨️ Reimprimiendo...");
+      typeof Android !== "undefined" && typeof Android.isConnected === "function" && Android.isConnected()) {
+    const enviado = androidImprimirTicket(venta);
+    if (enviado) {
+      toast("🖨️ Ticket enviado a la impresora");
       return;
-    } else {
-      toast("⚠️ Error Bluetooth, usando método tradicional");
     }
+    toast("⚠️ No se pudo enviar por Bluetooth; se abrirá la impresión normal");
   }
 
-  // Fallback: método tradicional (abre ventana)
+  // Usa la misma zona de impresión que funciona al terminar una venta.
   imprimirTicket(venta);
-}
 }

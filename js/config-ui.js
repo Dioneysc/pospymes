@@ -26,58 +26,77 @@ function guardarNegocio() {
   toast("💾 Datos guardados");
 }
 
+function exportarBackup() {
+  try {
+    // Leer las claves persistentes actuales para no omitir datos auxiliares.
+    const extras = {
+      cortes: LS.get("cortes", []),
+      catsGasto: LS.get("catsGasto", []),
+      cajaHoy: LS.get("cajaHoy", { fecha: hoy(), fondoInicial: null, retiros: [], depositos: [] }),
+      gastosPersonales: LS.get("gastosPersonales", [])
+    };
+    const respaldo = {
+      app: "POS Pollería Pro",
+      version: 1,
+      fechaExportacion: new Date().toISOString(),
+      DB: JSON.parse(JSON.stringify(DB)),
+      extras
+    };
+    const blob = new Blob([JSON.stringify(respaldo, null, 2)], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `respaldo-pos-polleria-${hoy()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+    toast("✅ Respaldo exportado correctamente");
+  } catch (err) {
+    console.error("Error exportando respaldo:", err);
+    toast("❌ No se pudo exportar el respaldo");
+  }
+}
+
 function importarBackup(e) {
-    const file = e.target.files ? e.target.files[0] : null;
-    if (!file) {
-        return toast("⚠️ No se seleccionó ningún archivo");
+  const input = e?.target;
+  const file = input?.files?.[0];
+  if (!file) return toast("⚠️ No se seleccionó ningún archivo");
+  const reader = new FileReader();
+  reader.onload = function (ev) {
+    try {
+      const raw = JSON.parse(ev.target.result);
+      const data = raw.DB || raw;
+      if (!data || !Array.isArray(data.productos) || !Array.isArray(data.ventas) || !Array.isArray(data.usuarios)) {
+        throw new Error("El archivo no tiene la estructura de respaldo del POS");
+      }
+      // Completar campos opcionales para admitir respaldos de versiones anteriores.
+      data.insumos = Array.isArray(data.insumos) ? data.insumos : [];
+      data.gastos = Array.isArray(data.gastos) ? data.gastos : [];
+      data.negocio = data.negocio && typeof data.negocio === "object" ? data.negocio : { nombre: "POS", slogan: "", direccion: "", telefono: "" };
+      if (!confirm("⚠️ Importar reemplazará los datos actuales de ventas, productos, gastos y usuarios. Se recomienda exportar un respaldo antes. ¿Continuar?")) return;
+
+      DB = data;
+      guardar();
+      const extras = raw.extras || {};
+      LS.set("cortes", Array.isArray(extras.cortes) ? extras.cortes : []);
+      LS.set("catsGasto", Array.isArray(extras.catsGasto) ? extras.catsGasto : LS.get("catsGasto", []));
+      LS.set("cajaHoy", extras.cajaHoy && typeof extras.cajaHoy === "object" ? extras.cajaHoy : { fecha: hoy(), fondoInicial: null, retiros: [], depositos: [] });
+      LS.set("gastosPersonales", Array.isArray(extras.gastosPersonales) ? extras.gastosPersonales : []);
+      toast("✅ Respaldo importado. Reiniciando aplicación…");
+      setTimeout(() => location.reload(), 700);
+    } catch (err) {
+      console.error("Error importando respaldo:", err);
+      toast("❌ Respaldo inválido o dañado: revisa que sea un JSON exportado por el POS");
+    } finally {
+      if (input) input.value = "";
     }
-
-    const reader = new FileReader();
-    reader.onload = function (ev) {
-        try {
-            const raw = JSON.parse(ev.target.result);
-            const data = raw.DB || raw;
-
-            // Validación básica de la estructura del respaldo
-            if (!Array.isArray(data.productos) || !Array.isArray(data.ventas) || !Array.isArray(data.usuarios)) {
-                throw new Error("El archivo no tiene el formato correcto del POS");
-            }
-
-            data.insumos = data.insumos || [];
-            data.gastos = data.gastos || [];
-            data.negocio = data.negocio || { nombre: "POS", slogan: "", direccion: "", telefono: "" };
-
-            if (!confirm("⚠️ Esto reemplazará todos los datos actuales. ¿Deseas continuar?")) {
-                e.target.value = ""; // Limpiar input
-                return;
-            }
-
-            // Aplicar datos
-            DB = data;
-            guardar();
-
-            if (raw.extras) {
-                if (typeof LS !== "undefined") {
-                    LS.set("cortes", raw.extras.cortes || []);
-                    LS.set("catsGasto", raw.extras.catsGasto || []);
-                    if (raw.extras.cajaHoy) LS.set("cajaHoy", raw.extras.cajaHoy);
-                }
-            }
-
-            toast("✅ Respaldo importado correctamente");
-            setTimeout(() => location.reload(), 1000);
-        } catch (err) {
-            console.error("Error importando respaldo:", err);
-            toast("❌ Archivo inválido o dañado");
-            e.target.value = ""; // Limpiar input
-        }
-    };
-
-    reader.onerror = function () {
-        toast("❌ Error al leer el archivo seleccionado");
-    };
-
-    reader.readAsText(file);
+  };
+  reader.onerror = function () {
+    toast("❌ No se pudo leer el archivo seleccionado");
+    if (input) input.value = "";
+  };
+  reader.readAsText(file);
 }
 
 function borrarProductosInsumos() {
