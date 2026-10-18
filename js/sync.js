@@ -248,9 +248,8 @@ window.onNativeGoogleToken = async function (idToken, slot) {
   try {
     await cargarFirebase();
     iniciarFirebase();
-
-    const proveedor = new firebase.auth.GoogleAuthProvider();
-    const credencial = proveedor.credential(idToken);
+const credencial =
+  firebase.auth.GoogleAuthProvider.credential(idToken);
 
     const resultado = await firebase.auth().signInWithCredential(credencial);
 
