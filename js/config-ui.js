@@ -38,7 +38,8 @@ function exportarBackup() {
         retiros: [],
         depositos: []
       }),
-      gastosPersonales: LS.get("gastosPersonales", [])
+      gastosPersonales: LS.get("gastosPersonales", []),
+      cajaFuerteMovimientos: LS.get("cajaFuerteMovimientos", [])
     };
 
     const respaldo = {
@@ -252,6 +253,13 @@ function importarBackup(e) {
         "gastosPersonales",
         Array.isArray(extras.gastosPersonales)
           ? extras.gastosPersonales
+          : []
+      );
+
+      LS.set(
+        "cajaFuerteMovimientos",
+        Array.isArray(extras.cajaFuerteMovimientos)
+          ? extras.cajaFuerteMovimientos
           : []
       );
 

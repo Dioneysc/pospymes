@@ -330,3 +330,119 @@ body.modo-oscuro .ticket-preview * { color: inherit; }
   body.modo-oscuro #zonaImpresion * { color: #000 !important; background: transparent !important; }
 }
 
+
+
+/* =========================================================
+   CORRECCIÓN DE CONTRASTE — MODO OSCURO
+   Evita textos negros heredados o con color fijo sobre fondos oscuros.
+   No modifica la vista de impresión ni el ticket.
+   ========================================================= */
+body.modo-oscuro {
+  color: #e2e8f0;
+  color-scheme: dark;
+}
+body.modo-oscuro main,
+body.modo-oscuro main section,
+body.modo-oscuro main .vista,
+body.modo-oscuro main .vista-header,
+body.modo-oscuro main .card,
+body.modo-oscuro main .card-config,
+body.modo-oscuro main .tabla-wrap,
+body.modo-oscuro main .carrito-panel,
+body.modo-oscuro main .hist-item,
+body.modo-oscuro main .grafica-7dias,
+body.modo-oscuro #modal .modal-contenido,
+body.modo-oscuro #modal #modalBody {
+  color: #e2e8f0;
+}
+body.modo-oscuro main h1,
+body.modo-oscuro main h2,
+body.modo-oscuro main h3,
+body.modo-oscuro main h4,
+body.modo-oscuro main h5,
+body.modo-oscuro main p,
+body.modo-oscuro main label,
+body.modo-oscuro main li,
+body.modo-oscuro main td,
+body.modo-oscuro main th,
+body.modo-oscuro main legend,
+body.modo-oscuro main .label,
+body.modo-oscuro main .hint,
+body.modo-oscuro main .sub,
+body.modo-oscuro main .descripcion,
+body.modo-oscuro main .texto-secundario,
+body.modo-oscuro #modal #modalBody h1,
+body.modo-oscuro #modal #modalBody h2,
+body.modo-oscuro #modal #modalBody h3,
+body.modo-oscuro #modal #modalBody p,
+body.modo-oscuro #modal #modalBody label,
+body.modo-oscuro #modal #modalBody small,
+body.modo-oscuro #modal #modalBody td,
+body.modo-oscuro #modal #modalBody th {
+  color: #e2e8f0;
+}
+/* Los textos secundarios deben seguir siendo legibles, sin llegar a negro. */
+body.modo-oscuro main small,
+body.modo-oscuro main .muted,
+body.modo-oscuro main .texto-suave,
+body.modo-oscuro main .card-config p,
+body.modo-oscuro main .hint,
+body.modo-oscuro #modal #modalBody small {
+  color: #b6c2d1;
+}
+/* Campos y listas desplegables: texto, placeholder y opciones legibles. */
+body.modo-oscuro input,
+body.modo-oscuro select,
+body.modo-oscuro textarea {
+  background-color: #0f172a;
+  color: #f1f5f9;
+  border-color: #475569;
+}
+body.modo-oscuro select option,
+body.modo-oscuro optgroup {
+  background: #1e293b;
+  color: #f1f5f9;
+}
+body.modo-oscuro input::placeholder,
+body.modo-oscuro textarea::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+/* Corrige algunos estilos inline negros usados en ajustes y mensajes. */
+body.modo-oscuro main [style*="color:#3c4043"],
+body.modo-oscuro main [style*="color: #3c4043"],
+body.modo-oscuro main [style*="color:#000"],
+body.modo-oscuro main [style*="color: #000"],
+body.modo-oscuro main [style*="color:black"],
+body.modo-oscuro main [style*="color: black"],
+body.modo-oscuro #modal [style*="color:#000"],
+body.modo-oscuro #modal [style*="color: #000"],
+body.modo-oscuro #modal [style*="color:black"],
+body.modo-oscuro #modal [style*="color: black"] {
+  color: #e2e8f0 !important;
+}
+/* No cambiar los botones de acción, la barra superior ni la vista del ticket. */
+body.modo-oscuro .topbar,
+body.modo-oscuro .topbar *,
+body.modo-oscuro .nav-inferior,
+body.modo-oscuro .nav-inferior *,
+body.modo-oscuro .btn-cobrar,
+body.modo-oscuro .btn-cobrar *,
+body.modo-oscuro .ticket-preview,
+body.modo-oscuro .ticket-preview * {
+  /* Se conservan los colores definidos por sus propios componentes. */
+}
+
+/* Caja Fuerte: contraste reforzado en modo oscuro */
+body.modo-oscuro .cf-panel{color:#e5edf6}
+body.modo-oscuro .cf-saldo{background:linear-gradient(135deg,#102b25,#1b4538);border:1px solid #355c4e}
+body.modo-oscuro .cf-saldo-etiqueta,body.modo-oscuro .cf-resumen span{color:#c9ddd4}
+body.modo-oscuro .cf-ayuda,body.modo-oscuro .cf-form-ayuda,body.modo-oscuro .cf-historial-cabecera small,body.modo-oscuro .cf-mov-info small,body.modo-oscuro .cf-vacio small{color:#b6c2d1!important}
+body.modo-oscuro .cf-boton,body.modo-oscuro .cf-lista{background:#172334;color:#e5edf6;border-color:#3a4a5e}
+body.modo-oscuro .cf-boton-ingreso{border-color:#315f49}body.modo-oscuro .cf-boton-gasto{border-color:#70463f}
+body.modo-oscuro .cf-boton-ingreso>span,body.modo-oscuro .cf-mov-icono.es-ingreso{background:#173d2b;color:#9ce9b8}
+body.modo-oscuro .cf-boton-gasto>span,body.modo-oscuro .cf-mov-icono.es-gasto{background:#482923;color:#ffb8aa}
+body.modo-oscuro .cf-ingreso{color:#78e2a0!important}body.modo-oscuro .cf-gasto{color:#ff9d8c!important}
+body.modo-oscuro .cf-saldo .cf-ingreso{color:#a8f0c2!important}body.modo-oscuro .cf-saldo .cf-gasto{color:#ffc0b5!important}
+body.modo-oscuro .cf-movimiento{border-color:#344357}body.modo-oscuro .cf-eliminar{color:#b6c2d1}
+body.modo-oscuro .cf-formulario label{color:#e5edf6}

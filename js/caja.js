@@ -32,7 +32,8 @@ function guardarFondo() {
   toast("✅ Caja abierta con fondo de " + fmt(monto));
 }
 
-// Gestor personal independiente: no modifica ventas, gastos del negocio ni corte de caja.
+// Caja Fuerte: movimientos personales separados de las ventas y gastos del negocio.
+// Los gastos personales antiguos se conservan y aparecen como egresos en el historial.
 function abrirCajaFuerte() { abrirGestorGastosPersonales(); }
 
 function obtenerGastosPersonales() {
@@ -40,57 +41,100 @@ function obtenerGastosPersonales() {
   return Array.isArray(lista) ? lista : [];
 }
 
+function obtenerMovimientosCajaFuerte() {
+  const lista = LS.get("cajaFuerteMovimientos", []);
+  return Array.isArray(lista) ? lista : [];
+}
+
+function listarMovimientosCajaFuerte() {
+  const antiguos = obtenerGastosPersonales().map(g => ({
+    id: String(g.id), fecha: g.fecha, concepto: g.concepto || "Gasto personal",
+    monto: Number(g.monto) || 0, tipo: "gasto", nota: g.nota || "", origen: "antiguo"
+  }));
+  const nuevos = obtenerMovimientosCajaFuerte().map(m => ({ ...m, origen: "nuevo" }));
+  return [...antiguos, ...nuevos].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+}
+
 function abrirGestorGastosPersonales() {
-  const gastos = obtenerGastosPersonales().sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-  const total = gastos.reduce((s, g) => s + (Number(g.monto) || 0), 0);
-  abrirModal("👛 Gestor de gastos personales", `
-    <p style="font-size:13px;color:#64748b;margin-bottom:12px">Registra tus gastos personales por separado. No afectan la caja ni los reportes del negocio.</p>
-    <div style="background:var(--fondo-card,#f8fafc);border:1px solid var(--borde);border-radius:12px;padding:14px;margin-bottom:14px">
-      <div style="font-size:12px;color:#64748b">Total registrado</div>
-      <div style="font-size:26px;font-weight:800">${fmt(total)}</div>
-      <div style="font-size:12px;color:#64748b">${gastos.length} movimientos</div>
-    </div>
-    <label>Concepto</label><input id="gpConcepto" maxlength="80" placeholder="Ej. comida, transporte, casa">
-    <label>Categoría</label>
-    <select id="gpCategoria"><option>Comida</option><option>Transporte</option><option>Casa</option><option>Salud</option><option>Familia</option><option>Servicios</option><option>Otro</option></select>
-    <label>Monto</label><input id="gpMonto" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00">
-    <label>Nota (opcional)</label><input id="gpNota" maxlength="160" placeholder="Detalle del gasto">
-    <div class="acciones"><button class="btn-secondary" onclick="cerrarModal()">Cerrar</button><button class="btn-primary" onclick="guardarGastoPersonal()">＋ Guardar gasto</button></div>
-    <h4 style="margin:16px 0 8px;font-size:13px">Movimientos recientes</h4>
-    <div style="max-height:230px;overflow:auto">
-      ${gastos.length ? gastos.map(g => `
-        <div class="cat-item" style="align-items:flex-start;gap:8px">
-          <div style="flex:1;min-width:0"><b>${escapeHTML(g.concepto || "Gasto personal")}</b><div style="font-size:12px;color:#64748b">${escapeHTML(g.categoria || "Otro")} · ${new Date(g.fecha).toLocaleDateString("es-MX")}${g.nota ? " · "+escapeHTML(g.nota) : ""}</div></div>
-          <b style="white-space:nowrap">${fmt(g.monto)}</b>
-          <button onclick="borrarGastoPersonal('${String(g.id).replace(/'/g,"\\'")}')" title="Eliminar" style="background:transparent;border:0;color:#dc2626;padding:4px">🗑️</button>
-        </div>`).join("") : `<p style="text-align:center;padding:16px;color:#94a3b8">Aún no hay gastos personales.</p>`}
+  const movimientos = listarMovimientosCajaFuerte();
+  const ingresos = movimientos.filter(m => m.tipo === "ingreso").reduce((s, m) => s + (Number(m.monto) || 0), 0);
+  const gastos = movimientos.filter(m => m.tipo !== "ingreso").reduce((s, m) => s + (Number(m.monto) || 0), 0);
+  const saldo = ingresos - gastos;
+  abrirModal("🔐 Caja Fuerte", `
+    <div class="cf-panel">
+      <div class="cf-saldo">
+        <div class="cf-saldo-etiqueta">Saldo actual</div>
+        <div class="cf-saldo-cantidad">${fmt(saldo)}</div>
+        <div class="cf-resumen">
+          <div><span>Ingresos</span><b class="cf-ingreso">+${fmt(ingresos)}</b></div>
+          <div><span>Gastos</span><b class="cf-gasto">−${fmt(gastos)}</b></div>
+        </div>
+      </div>
+      <p class="cf-ayuda">Dinero personal, separado de la caja del negocio.</p>
+      <div class="cf-acciones">
+        <button class="cf-boton cf-boton-ingreso" onclick="abrirFormularioCajaFuerte('ingreso')"><span>＋</span><b>Nuevo ingreso</b></button>
+        <button class="cf-boton cf-boton-gasto" onclick="abrirFormularioCajaFuerte('gasto')"><span>−</span><b>Nuevo gasto</b></button>
+      </div>
+      <div class="cf-historial-cabecera"><div><b>Historial</b><small>${movimientos.length} movimientos</small></div><span>📊</span></div>
+      <div class="cf-lista">
+        ${movimientos.length ? movimientos.map(m => `
+          <div class="cf-movimiento">
+            <div class="cf-mov-icono ${m.tipo === 'ingreso' ? 'es-ingreso' : 'es-gasto'}">${m.tipo === 'ingreso' ? '↙' : '↗'}</div>
+            <div class="cf-mov-info"><b>${escapeHTML(m.concepto || (m.tipo === 'ingreso' ? 'Ingreso personal' : 'Gasto personal'))}</b><small>${m.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'} · ${m.fecha ? new Date(m.fecha).toLocaleDateString('es-MX') : 'Sin fecha'}${m.nota ? ' · ' + escapeHTML(m.nota) : ''}</small></div>
+            <b class="cf-mov-monto ${m.tipo === 'ingreso' ? 'cf-ingreso' : 'cf-gasto'}">${m.tipo === 'ingreso' ? '+' : '−'}${fmt(m.monto)}</b>
+            <button class="cf-eliminar" onclick="borrarMovimientoCajaFuerte('${String(m.id).replace(/'/g,"\\'")}', '${m.origen}')" title="Eliminar movimiento" aria-label="Eliminar movimiento">×</button>
+          </div>`).join('') : `<div class="cf-vacio"><span>📊</span><b>Aún no hay movimientos</b><small>Registra un ingreso o gasto para comenzar.</small></div>`}
+      </div>
+      <div class="acciones"><button class="btn-secondary" onclick="cerrarModal()">Cerrar</button></div>
     </div>
   `);
 }
 
-function guardarGastoPersonal() {
-  const concepto = document.getElementById("gpConcepto")?.value.trim();
-  const categoria = document.getElementById("gpCategoria")?.value || "Otro";
-  const monto = Number(document.getElementById("gpMonto")?.value);
-  const nota = document.getElementById("gpNota")?.value.trim() || "";
-  if (!concepto) return toast("Escribe el concepto del gasto");
+function abrirFormularioCajaFuerte(tipo) {
+  const esIngreso = tipo === "ingreso";
+  abrirModal(esIngreso ? "＋ Nuevo ingreso" : "− Nuevo gasto", `
+    <div class="cf-formulario">
+      <p class="cf-form-ayuda">${esIngreso ? 'Registra el dinero que recibiste.' : 'Registra el dinero que utilizaste.'}</p>
+      <label>Concepto</label><input id="cfConcepto" maxlength="80" placeholder="Ej. ahorro, compra, transporte" autocomplete="off">
+      <label>Monto</label><input id="cfMonto" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00">
+      <label>Nota (opcional)</label><input id="cfNota" maxlength="160" placeholder="Detalle adicional">
+      <div class="acciones"><button class="btn-secondary" onclick="abrirGestorGastosPersonales()">Cancelar</button><button class="btn-primary" onclick="guardarMovimientoCajaFuerte('${tipo}')">${esIngreso ? '＋ Guardar ingreso' : '− Guardar gasto'}</button></div>
+    </div>
+  `);
+}
+
+function guardarMovimientoCajaFuerte(tipo) {
+  const concepto = document.getElementById("cfConcepto")?.value.trim();
+  const monto = Number(document.getElementById("cfMonto")?.value);
+  const nota = document.getElementById("cfNota")?.value.trim() || "";
+  if (!concepto) return toast("Escribe el concepto del movimiento");
   if (!Number.isFinite(monto) || monto <= 0) return toast("Ingresa un monto válido");
-  const gastos = obtenerGastosPersonales();
-  gastos.push({ id: (globalThis.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2), fecha: new Date().toISOString(), concepto, categoria, monto, nota });
-  LS.set("gastosPersonales", gastos);
-  toast("✅ Gasto personal guardado");
+  const movimientos = obtenerMovimientosCajaFuerte();
+  movimientos.push({
+    id: (globalThis.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2),
+    fecha: new Date().toISOString(), concepto, tipo, monto, nota
+  });
+  LS.set("cajaFuerteMovimientos", movimientos);
+  toast(tipo === "ingreso" ? "✅ Ingreso guardado" : "✅ Gasto guardado");
   abrirGestorGastosPersonales();
 }
 
-function borrarGastoPersonal(id) {
-  const gastos = obtenerGastosPersonales();
-  const gasto = gastos.find(g => String(g.id) === String(id));
-  if (!gasto) return toast("Gasto no encontrado");
-  if (!confirm(`¿Eliminar el gasto personal "${gasto.concepto}" por ${fmt(gasto.monto)}?`)) return;
-  LS.set("gastosPersonales", gastos.filter(g => String(g.id) !== String(id)));
-  toast("🗑️ Gasto eliminado");
+function borrarMovimientoCajaFuerte(id, origen) {
+  const esAntiguo = origen === "antiguo";
+  const lista = esAntiguo ? obtenerGastosPersonales() : obtenerMovimientosCajaFuerte();
+  const movimiento = lista.find(m => String(m.id) === String(id));
+  if (!movimiento) return toast("Movimiento no encontrado");
+  const tipo = esAntiguo ? "gasto" : movimiento.tipo;
+  if (!confirm(`¿Eliminar este ${tipo === "ingreso" ? "ingreso" : "gasto"} por ${fmt(movimiento.monto)}?`)) return;
+  if (esAntiguo) LS.set("gastosPersonales", lista.filter(m => String(m.id) !== String(id)));
+  else LS.set("cajaFuerteMovimientos", lista.filter(m => String(m.id) !== String(id)));
+  toast("🗑️ Movimiento eliminado");
   abrirGestorGastosPersonales();
 }
+
+// Compatibilidad con registros anteriores que usaban esta función.
+function guardarGastoPersonal() { guardarMovimientoCajaFuerte("gasto"); }
+function borrarGastoPersonal(id) { borrarMovimientoCajaFuerte(id, "antiguo"); }
 
 /* ============ RESUMEN DEL DÍA (una sola fuente para estado y corte) ============ */
 // false = la caja fuerte NO afecta el corte. Pon true si quieres que depósitos y retiros vuelvan a sumar/restar.

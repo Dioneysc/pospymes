@@ -223,3 +223,26 @@ tr:last-child td { border-bottom: none; }
   .card { padding: 14px; border-radius: 15px; }
 }
 
+
+/* Caja Fuerte: interfaz compacta y adaptable */
+.cf-panel{display:flex;flex-direction:column;gap:14px;color:var(--texto,#1f2937)}
+.cf-saldo{background:linear-gradient(135deg,#173b32,#245747);color:#fff;border-radius:16px;padding:18px 18px 15px;box-shadow:0 8px 20px #173b321c}
+.cf-saldo-etiqueta{font-size:13px;color:#d2e5dc;font-weight:600}
+.cf-saldo-cantidad{font-size:clamp(28px,7vw,36px);font-weight:850;letter-spacing:-.7px;line-height:1.25;margin:7px 0 16px;overflow-wrap:anywhere}
+.cf-resumen{display:grid;grid-template-columns:1fr 1fr;gap:12px;border-top:1px solid #ffffff2c;padding-top:12px}
+.cf-resumen>div{display:flex;flex-direction:column;gap:4px;min-width:0}.cf-resumen span{font-size:12px;color:#d2e5dc}.cf-resumen b{font-size:14px;overflow-wrap:anywhere}
+.cf-ingreso{color:#16834b!important}.cf-gasto{color:#c24132!important}
+.cf-saldo .cf-ingreso{color:#a8f0c2!important}.cf-saldo .cf-gasto{color:#ffc0b5!important}
+.cf-ayuda,.cf-form-ayuda{margin:0;color:var(--texto-suave,#64748b);font-size:13px;line-height:1.45}
+.cf-acciones{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cf-boton{display:flex;align-items:center;gap:10px;min-height:58px;padding:12px;border-radius:12px;border:1px solid var(--borde,#e2e8f0);background:var(--fondo-card,#fff);color:var(--texto,#1f2937);text-align:left;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.cf-boton:active{transform:scale(.98)}.cf-boton>span{display:grid;place-items:center;flex:0 0 34px;width:34px;height:34px;border-radius:10px;font-size:24px;font-weight:600}
+.cf-boton b{font-size:13px;line-height:1.2}.cf-boton-ingreso{border-color:#b8e3c8}.cf-boton-ingreso>span{background:#e0f5e7;color:#187547}.cf-boton-gasto{border-color:#f0d0c8}.cf-boton-gasto>span{background:#ffebe6;color:#b64730}
+.cf-historial-cabecera{display:flex;align-items:center;justify-content:space-between;padding-top:4px}.cf-historial-cabecera>div{display:flex;flex-direction:column;gap:3px}.cf-historial-cabecera b{font-size:15px}.cf-historial-cabecera small{font-size:12px;color:var(--texto-suave,#64748b)}.cf-historial-cabecera>span{font-size:20px}
+.cf-lista{display:flex;flex-direction:column;max-height:270px;overflow:auto;border:1px solid var(--borde,#e2e8f0);border-radius:12px;background:var(--fondo-card,#fff)}
+.cf-movimiento{display:flex;align-items:center;gap:9px;padding:11px 9px;border-bottom:1px solid var(--borde,#e2e8f0);min-width:0}.cf-movimiento:last-child{border-bottom:0}
+.cf-mov-icono{display:grid;place-items:center;flex:0 0 34px;width:34px;height:34px;border-radius:10px;font-size:20px;font-weight:800}.cf-mov-icono.es-ingreso{background:#e0f5e7;color:#187547}.cf-mov-icono.es-gasto{background:#ffebe6;color:#b64730}
+.cf-mov-info{display:flex;flex:1;flex-direction:column;gap:4px;min-width:0}.cf-mov-info b{font-size:13px;overflow-wrap:anywhere}.cf-mov-info small{font-size:11px;line-height:1.35;color:var(--texto-suave,#64748b);overflow-wrap:anywhere}.cf-mov-monto{font-size:12px;white-space:nowrap}.cf-eliminar{border:0;background:transparent;color:#94a3b8;font-size:22px;line-height:1;padding:3px 4px;cursor:pointer}.cf-eliminar:hover{color:#dc2626}
+.cf-vacio{display:flex;flex-direction:column;align-items:center;gap:6px;padding:25px 12px;text-align:center}.cf-vacio>span{font-size:25px}.cf-vacio b{font-size:13px}.cf-vacio small{font-size:12px;color:var(--texto-suave,#64748b)}
+.cf-formulario{display:flex;flex-direction:column;gap:9px}.cf-formulario label{margin-top:3px}.cf-formulario input{width:100%;box-sizing:border-box}.cf-formulario .acciones{margin-top:10px}
+@media(max-width:380px){.cf-boton{padding:9px;gap:7px}.cf-boton b{font-size:12px}.cf-movimiento{gap:6px;padding:9px 6px}.cf-mov-icono{flex-basis:29px;width:29px;height:29px}.cf-mov-monto{font-size:11px}}
