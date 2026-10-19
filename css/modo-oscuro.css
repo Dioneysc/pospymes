@@ -446,3 +446,21 @@ body.modo-oscuro .cf-ingreso{color:#78e2a0!important}body.modo-oscuro .cf-gasto{
 body.modo-oscuro .cf-saldo .cf-ingreso{color:#a8f0c2!important}body.modo-oscuro .cf-saldo .cf-gasto{color:#ffc0b5!important}
 body.modo-oscuro .cf-movimiento{border-color:#344357}body.modo-oscuro .cf-eliminar{color:#b6c2d1}
 body.modo-oscuro .cf-formulario label{color:#e5edf6}
+
+/* CONTRASTE DEL PANEL DE VENTAS */
+body.modo-oscuro .panel-resumen-cabecera h3,
+body.modo-oscuro .panel-tickets strong,
+body.modo-oscuro .panel-metrica strong,
+body.modo-oscuro .panel-seccion-titulo h3,
+body.modo-oscuro .panel-pagos strong,
+body.modo-oscuro .panel-aviso-info strong,
+body.modo-oscuro .panel-total-semana b { color:#f1f5f9; }
+body.modo-oscuro .panel-tickets,
+body.modo-oscuro .panel-metrica,
+body.modo-oscuro .panel-pagos > div,
+body.modo-oscuro .panel-aviso-info,
+body.modo-oscuro .panel-tabla-wrap { background:#1e293b; border-color:#334155; }
+body.modo-oscuro .panel-metrica-principal { background:linear-gradient(135deg,#173b32,#245c49); border-color:#245c49; }
+body.modo-oscuro .panel-metrica-principal strong { color:#fff; }
+body.modo-oscuro .panel-aviso-amarillo { background:#422f0a; color:#fde68a; border-color:#785b17; }
+body.modo-oscuro .panel-barra-fondo { background:#334155; }

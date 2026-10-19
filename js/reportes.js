@@ -1,190 +1,172 @@
 /* ============================================
-   REPORTES.JS — REPORTES, GRÁFICA DE 7 DÍAS Y CSV
+   REPORTES.JS — PANEL DE VENTAS, GANANCIA ESTIMADA Y CSV
+   Lee DB existente; no crea ni modifica registros.
    ============================================ */
 
-/* ============ REPORTES ============ */
+function fechaInicioLocal(fecha) {
+  const d = new Date(fecha);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function obtenerRangoReporte(tipo) {
+  const ahora = new Date();
+  const desde = new Date(ahora);
+  const hasta = new Date(ahora);
+  hasta.setHours(23, 59, 59, 999);
+
+  if (tipo === "dia") {
+    desde.setHours(0, 0, 0, 0);
+  } else if (tipo === "semana") {
+    desde.setDate(ahora.getDate() - 6);
+    desde.setHours(0, 0, 0, 0);
+  } else if (tipo === "mes") {
+    desde.setDate(1);
+    desde.setHours(0, 0, 0, 0);
+  }
+  return { desde, hasta };
+}
+
 function reporteRango(tipo) {
   const btns = $$("#rangoBotones button");
-  if (btns.length >= 3) {
-    btns.forEach(b => { b.classList.remove("activo"); b.style.background = "transparent"; });
-    if (tipo === "dia") { btns[0].classList.add("activo"); btns[0].style.background = "#fff"; }
-    if (tipo === "semana") { btns[1].classList.add("activo"); btns[1].style.background = "#fff"; }
-    if (tipo === "mes") { btns[2].classList.add("activo"); btns[2].style.background = "#fff"; }
-  }
+  btns.forEach((b, i) => {
+    const activo = (tipo === "dia" && i === 0) || (tipo === "semana" && i === 1) || (tipo === "mes" && i === 2);
+    b.classList.toggle("activo", activo);
+    b.setAttribute("aria-pressed", activo ? "true" : "false");
+  });
 
-  const ahora = new Date();
-  let desde = new Date();
-  if (tipo === "dia") desde.setHours(0,0,0,0);
-  if (tipo === "semana") { desde.setDate(ahora.getDate() - 6); desde.setHours(0,0,0,0); }
-  if (tipo === "mes") desde.setMonth(ahora.getMonth() - 1);
+  const { desde, hasta } = obtenerRangoReporte(tipo);
+  const dentroDelRango = registro => {
+    const fecha = new Date(registro.fecha);
+    return !Number.isNaN(fecha.getTime()) && fecha >= desde && fecha <= hasta;
+  };
+  const ventas = (DB.ventas || []).filter(v => !v.cancelada && dentroDelRango(v));
+  const gastos = (DB.gastos || []).filter(dentroDelRango);
 
-  const ventas = DB.ventas.filter(v => new Date(v.fecha) >= desde && !v.cancelada);
-  const gastos = DB.gastos.filter(g => new Date(g.fecha) >= desde);
+  const totalV = ventas.reduce((s, v) => s + (Number(v.total) || 0), 0);
+  const totalG = gastos.reduce((s, g) => s + (Number(g.monto) || 0), 0);
+  let costoRecetas = 0;
+  let unidadesConReceta = 0;
+  let unidadesSinReceta = 0;
+  const porProd = {};
+  let cantidadUnidades = 0;
 
-  const totalV = ventas.reduce((s,v) => s + v.total, 0);
-  const totalG = gastos.reduce((s,g) => s + g.monto, 0);
-
-  let costoReal = 0;
   ventas.forEach(v => {
-    v.items.forEach(it => {
-      const prod = DB.productos.find(p => p.id === it.productoId);
-      if (!prod || !prod.insumos) return;
-      prod.insumos.forEach(ing => {
-        const ins = DB.insumos.find(x => x.id === ing.insumoId);
-        if (ins) costoReal += ins.costo * ing.cantidad * it.cantidad;
-      });
+    (Array.isArray(v.items) ? v.items : []).forEach(it => {
+      const cantidad = Number(it.cantidad) || 0;
+      const precio = Number(it.precio) || 0;
+      cantidadUnidades += cantidad;
+      const nombre = String(it.nombre || "Producto");
+      if (!porProd[nombre]) porProd[nombre] = { qty: 0, total: 0 };
+      porProd[nombre].qty += cantidad;
+      porProd[nombre].total += precio * cantidad;
+
+      const prod = (DB.productos || []).find(p => String(p.id) === String(it.productoId));
+      const receta = prod && Array.isArray(prod.insumos) ? prod.insumos : [];
+      const recetaCompleta = receta.length > 0 && receta.every(ing =>
+        (DB.insumos || []).some(ins => String(ins.id) === String(ing.insumoId) && Number.isFinite(Number(ins.costo)))
+      );
+      if (recetaCompleta) {
+        unidadesConReceta += cantidad;
+        receta.forEach(ing => {
+          const ins = (DB.insumos || []).find(x => String(x.id) === String(ing.insumoId));
+          if (ins) costoRecetas += (Number(ins.costo) || 0) * (Number(ing.cantidad) || 0) * cantidad;
+        });
+      } else {
+        unidadesSinReceta += cantidad;
+      }
     });
   });
 
-  const ganancia = totalV - totalG - costoReal;
-
-  const efectivoV = ventas.filter(v => v.metodo === "Efectivo").reduce((s,v) => s + v.total, 0);
-  const tarjetaV = ventas.filter(v => v.metodo === "Tarjeta").reduce((s,v) => s + v.total, 0);
-  const transfV = ventas.filter(v => v.metodo === "Transferencia").reduce((s,v) => s + v.total, 0);
-
-  const porProd = {};
-  ventas.forEach(v => v.items.forEach(it => {
-    porProd[it.nombre] = porProd[it.nombre] || { qty: 0, total: 0 };
-    porProd[it.nombre].qty += it.cantidad;
-    porProd[it.nombre].total += it.precio * it.cantidad;
-  }));
-
+  // Es una estimación: si un gasto ya incluye los mismos insumos calculados por receta,
+  // restarlo en ambos conceptos duplicaría ese costo. La interfaz lo advierte explícitamente.
+  const gananciaEstimada = totalV - totalG - costoRecetas;
   const maxTotal = Math.max(...Object.values(porProd).map(p => p.total), 1);
+  const totalEfectivo = ventas.filter(v => v.metodo === "Efectivo").reduce((s, v) => s + (Number(v.total) || 0), 0);
+  const totalTarjeta = ventas.filter(v => v.metodo === "Tarjeta").reduce((s, v) => s + (Number(v.total) || 0), 0);
+  const totalTransferencia = ventas.filter(v => v.metodo === "Transferencia").reduce((s, v) => s + (Number(v.total) || 0), 0);
+  const periodo = tipo === "dia" ? "Hoy" : tipo === "semana" ? "Últimos 7 días" : "Este mes";
+  const cobertura = cantidadUnidades ? Math.round(unidadesConReceta / cantidadUnidades * 100) : 0;
+  const tieneCostosIncompletos = unidadesSinReceta > 0;
 
-  $("#reporteContenido").innerHTML = `
-    <div class="cards">
-      <div class="card verde">
-        <h4>🛒 Total ventas</h4>
-        <p class="big">${fmt(totalV)}</p>
-        <small>${ventas.length} tickets</small>
-      </div>
-      <div class="card rojo">
-        <h4>💸 Gastos</h4>
-        <p class="big">${fmt(totalG)}</p>
-      </div>
-      <div class="card azul">
-        <h4>📦 Costo mercancía</h4>
-        <p class="big">${fmt(costoReal)}</p>
-      </div>
-      <div class="card destacado">
-        <h4>💰 Ganancia neta</h4>
-        <p class="big">${fmt(ganancia)}</p>
-      </div>
+  const contenedor = $("#reporteContenido");
+  if (!contenedor) return;
+  contenedor.innerHTML = `
+    <div class="panel-resumen-cabecera">
+      <div><span class="panel-eyebrow">RESUMEN DEL NEGOCIO</span><h3>${periodo}</h3><p>${desde.toLocaleDateString("es-MX")} – ${hasta.toLocaleDateString("es-MX")}</p></div>
+      <div class="panel-tickets"><span>Tickets cobrados</span><strong>${ventas.length}</strong></div>
     </div>
 
-    <div class="cards">
-      <div class="card verde">
-        <h4>💵 Efectivo</h4>
-        <p class="big">${fmt(efectivoV)}</p>
-      </div>
-      <div class="card azul">
-        <h4>💳 Tarjeta</h4>
-        <p class="big">${fmt(tarjetaV)}</p>
-      </div>
-      <div class="card morado">
-        <h4>🏦 Transferencia</h4>
-        <p class="big">${fmt(transfV)}</p>
-      </div>
+    <div class="panel-metricas">
+      <article class="panel-metrica panel-metrica-principal">
+        <span class="panel-metrica-icono">💰</span><span class="panel-metrica-label">Ganancia estimada</span>
+        <strong>${fmt(gananciaEstimada)}</strong><small>Ventas − gastos − costo de recetas</small>
+      </article>
+      <article class="panel-metrica"><span class="panel-metrica-icono">🛒</span><span class="panel-metrica-label">Ventas totales</span><strong>${fmt(totalV)}</strong><small>${cantidadUnidades} unidades vendidas</small></article>
+      <article class="panel-metrica"><span class="panel-metrica-icono">💸</span><span class="panel-metrica-label">Gastos registrados</span><strong>${fmt(totalG)}</strong><small>${gastos.length} movimientos</small></article>
+      <article class="panel-metrica"><span class="panel-metrica-icono">📦</span><span class="panel-metrica-label">Costo calculado de recetas</span><strong>${fmt(costoRecetas)}</strong><small>${cobertura}% de unidades con receta completa</small></article>
     </div>
 
-    <h3 style="margin:16px 0 8px;font-size:16px;font-weight:800">🍗 Ventas por producto</h3>
-    <div class="tabla-wrap">
-      <table>
-        <thead><tr><th>Producto</th><th>Cantidad</th><th>Total</th></tr></thead>
-        <tbody>
-          ${Object.entries(porProd).sort((a,b)=>b[1].total-a[1].total).map(([n,d]) => `
-            <tr>
-              <td data-label="Producto">${n}</td>
-              <td data-label="Cantidad">
-                <div style="display:flex;align-items:center;gap:6px">
-                  <div style="flex:1;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;min-width:40px">
-                    <div style="height:100%;width:${(d.total/maxTotal*100).toFixed(0)}%;background:linear-gradient(90deg,var(--naranja),var(--amarillo))"></div>
-                  </div>
-                  <span>${d.qty}</span>
-                </div>
-              </td>
-              <td data-label="Total"><b>${fmt(d.total)}</b></td>
-            </tr>
-          `).join("") || `<tr><td colspan="3" style="text-align:center;color:#94a3b8;padding:16px">Sin ventas</td></tr>`}
-        </tbody>
-      </table>
+    ${tieneCostosIncompletos ? `<div class="panel-aviso panel-aviso-amarillo"><strong>⚠️ Faltan costos de productos</strong><span>${unidadesSinReceta} unidad(es) vendidas no tienen una receta de costos completa. La ganancia mostrada puede ser mayor que la real. Completa las recetas en Productos.</span></div>` : ""}
+    <div class="panel-aviso panel-aviso-info"><strong>Cómo interpretar la ganancia</strong><span>Esta cifra es estimada. Si registraste como gasto la compra de un insumo cuyo costo también se calcula mediante recetas, ese costo podría descontarse dos veces. Revisa los conceptos de gastos antes de tomarla como utilidad definitiva.</span></div>
+
+    <div class="panel-seccion-titulo"><div><h3>💳 Formas de pago</h3><p>Importes de ventas cobradas en el periodo</p></div></div>
+    <div class="panel-pagos">
+      <div><span>💵 Efectivo</span><strong>${fmt(totalEfectivo)}</strong></div>
+      <div><span>💳 Tarjeta</span><strong>${fmt(totalTarjeta)}</strong></div>
+      <div><span>🏦 Transferencia</span><strong>${fmt(totalTransferencia)}</strong></div>
     </div>
+
+    <div class="panel-seccion-titulo"><div><h3>🍗 Productos vendidos</h3><p>Ordenados por importe de venta</p></div></div>
+    <div class="tabla-wrap panel-tabla-wrap"><table>
+      <thead><tr><th>Producto</th><th>Unidades</th><th>Ventas</th></tr></thead>
+      <tbody>${Object.entries(porProd).sort((a,b) => b[1].total-a[1].total).map(([nombre, d]) => `
+        <tr><td data-label="Producto">${escapeHTML(nombre)}</td><td data-label="Unidades"><div class="panel-barra-celda"><div class="panel-barra-fondo"><div class="panel-barra-valor" style="width:${Math.max(0,Math.min(100,d.total/maxTotal*100)).toFixed(1)}%"></div></div><b>${d.qty}</b></div></td><td data-label="Ventas"><strong>${fmt(d.total)}</strong></td></tr>
+      `).join("") || `<tr><td colspan="3" class="panel-sin-datos">Todavía no hay ventas en este periodo.</td></tr>`}</tbody>
+    </table></div>
 
     ${tipo === "semana" ? renderGrafica7Dias() : ""}
-
-    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn-secondary" onclick="exportarCSV()">📥 Exportar ventas a CSV</button>
-    </div>
+    <div class="panel-acciones"><button class="btn-secondary" onclick="exportarCSV()">📥 Exportar ventas a CSV</button></div>
   `;
 }
 
 function exportarCSV() {
   const rows = [["ID","Fecha","Cajero","Productos","Subtotal","Descuento","Propina","Total","Método"]];
-  DB.ventas.forEach(v => {
-    rows.push([
-      v.id, new Date(v.fecha).toLocaleString("es-MX"), v.usuario || "",
-      v.items.map(i => `${i.cantidad}x ${i.nombre}`).join(" | "),
-      v.subtotal, v.descuento || 0, v.propina || 0, v.total, v.metodo
-    ]);
-  });
+  DB.ventas.forEach(v => rows.push([
+    v.id, new Date(v.fecha).toLocaleString("es-MX"), v.usuario || "",
+    (v.items || []).map(i => `${i.cantidad}x ${i.nombre}`).join(" | "),
+    v.subtotal || 0, v.descuento || 0, v.propina || 0, v.total || 0, v.metodo || ""
+  ]));
   const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
   const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
+  a.href = url;
   a.download = `ventas_${hoy()}.csv`;
   a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
   toast("📥 CSV descargado");
 }
 
-/* ============ GRÁFICA 7 DÍAS ============ */
 function renderGrafica7Dias() {
   const dias = [];
-  const totales = [];
   const nombresDia = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
-
   for (let i = 6; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     d.setHours(0,0,0,0);
     const finDia = new Date(d);
     finDia.setHours(23,59,59,999);
-
     const ventasDia = DB.ventas.filter(v => {
       if (v.cancelada) return false;
       const f = new Date(v.fecha);
-      return f >= d && f <= finDia;
+      return !Number.isNaN(f.getTime()) && f >= d && f <= finDia;
     });
-
-    const totalDia = ventasDia.reduce((s,v) => s + v.total, 0);
-    dias.push({
-      nombre: nombresDia[d.getDay()],
-      fecha: d.toLocaleDateString("es-MX", { day: "2-digit", month: "short" }),
-      total: totalDia,
-      esHoy: i === 0
-    });
-    totales.push(totalDia);
+    dias.push({ nombre: nombresDia[d.getDay()], fecha: d.toLocaleDateString("es-MX", {day:"2-digit",month:"short"}), total: ventasDia.reduce((s,v) => s + (Number(v.total)||0), 0), esHoy: i === 0 });
   }
-
-  const max = Math.max(...totales, 1);
-
-  return `
-    <div class="grafica-7dias">
-      <h3>📊 Ventas últimos 7 días</h3>
-      <div class="barras-7d">
-        ${dias.map(d => {
-          const altura = d.total > 0 ? Math.max((d.total / max) * 100, 8) : 4;
-          return `
-            <div class="barra-dia ${d.esHoy ? "hoy" : ""}">
-              <div class="valor">${d.total > 0 ? "$" + Math.round(d.total) : ""}</div>
-              <div class="barra" style="height:${altura}%"></div>
-              <div class="dia-sem">${d.nombre}</div>
-            </div>
-          `;
-        }).join("")}
-      </div>
-      <div style="text-align:center;font-size:11px;color:#64748b;margin-top:10px">
-        Total semana: <b>${fmt(totales.reduce((s,t) => s + t, 0))}</b>
-      </div>
-    </div>
-  `;
+  const max = Math.max(...dias.map(d => d.total), 1);
+  return `<div class="grafica-7dias panel-grafica"><h3>📊 Ventas de los últimos 7 días</h3><div class="barras-7d">${dias.map(d => {
+    const altura = d.total > 0 ? Math.max((d.total / max) * 100, 8) : 3;
+    return `<div class="barra-dia ${d.esHoy ? "hoy" : ""}"><div class="valor">${d.total > 0 ? "$" + Math.round(d.total) : ""}</div><div class="barra" style="height:${altura}%"></div><div class="dia-sem">${d.nombre}</div></div>`;
+  }).join("")}</div><div class="panel-total-semana">Total de los 7 días: <b>${fmt(dias.reduce((s,d) => s+d.total,0))}</b></div></div>`;
 }
