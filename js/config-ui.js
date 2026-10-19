@@ -50,7 +50,7 @@ function exportarBackup() {
     };
 
     const contenido = JSON.stringify(respaldo, null, 2);
-    const nombre = `respaldo-pos-polleria-${hoy()}.json`;
+    const nombre = `respaldo-pos-Guardado-${hoy()}.json`;
 
     // Android: guardar directamente el contenido, no la URL blob.
     if (
@@ -89,7 +89,6 @@ function exportarBackup() {
     toast("❌ Error exportando: " + err.message);
   }
 }
-
 
 function borrarProductosInsumos() {
   if (!confirm("⚠️ Se borrarán TODOS los productos e insumos.\n\nLas ventas y gastos NO se borran.\n\n¿Continuar?")) return;
@@ -153,3 +152,133 @@ async function cambiarPassword() {
 
   toast("✅ Contraseña actualizada");
 }
+  
+function importarBackup(e) {
+  const input = e?.target;
+  const archivo = input?.files?.[0];
+
+  if (!archivo) {
+    toast("⚠️ No se seleccionó ningún archivo");
+    return;
+  }
+
+  const lector = new FileReader();
+
+  lector.onload = function (evento) {
+    try {
+      const texto = evento.target.result;
+      const respaldo = JSON.parse(texto);
+
+      // Aceptar el formato actual del POS y respaldos DB directos.
+      const datos = respaldo.DB || respaldo.data || respaldo;
+
+      if (
+        !datos ||
+        typeof datos !== "object" ||
+        !Array.isArray(datos.productos) ||
+        !Array.isArray(datos.ventas) ||
+        !Array.isArray(datos.usuarios)
+      ) {
+        throw new Error(
+          "El JSON no contiene productos, ventas y usuarios con el formato esperado."
+        );
+      }
+
+      // Preparar campos que podrían faltar en respaldos antiguos.
+      const restaurado = {
+        ...datos,
+        productos: datos.productos,
+        ventas: datos.ventas,
+        usuarios: datos.usuarios,
+        insumos: Array.isArray(datos.insumos) ? datos.insumos : [],
+        gastos: Array.isArray(datos.gastos) ? datos.gastos : [],
+        negocio:
+          datos.negocio && typeof datos.negocio === "object"
+            ? datos.negocio
+            : {
+                nombre: "POS",
+                slogan: "",
+                direccion: "",
+                telefono: ""
+              }
+      };
+
+      const extras =
+        respaldo.extras && typeof respaldo.extras === "object"
+          ? respaldo.extras
+          : {};
+
+      if (
+        !confirm(
+          "⚠️ Se reemplazarán los datos actuales del POS por los del respaldo.\n\n" +
+          "Antes de continuar, asegúrate de conservar una copia de seguridad.\n\n" +
+          "¿Deseas restaurar este respaldo?"
+        )
+      ) {
+        return;
+      }
+
+      // Guardar los datos principales mediante la función habitual.
+      DB = restaurado;
+      guardar();
+
+      // Restaurar datos adicionales.
+      LS.set(
+        "cortes",
+        Array.isArray(extras.cortes) ? extras.cortes : []
+      );
+
+      LS.set(
+        "catsGasto",
+        Array.isArray(extras.catsGasto)
+          ? extras.catsGasto
+          : LS.get("catsGasto", [])
+      );
+
+      const caja = extras.cajaHoy;
+      LS.set(
+        "cajaHoy",
+        caja && typeof caja === "object"
+          ? caja
+          : {
+              fecha: hoy(),
+              fondoInicial: null,
+              retiros: [],
+              depositos: []
+            }
+      );
+
+      LS.set(
+        "gastosPersonales",
+        Array.isArray(extras.gastosPersonales)
+          ? extras.gastosPersonales
+          : []
+      );
+
+      estadoCajaHoy = LS.get("cajaHoy");
+
+      toast("✅ Respaldo restaurado. Actualizando aplicación…");
+
+      setTimeout(() => location.reload(), 800);
+
+    } catch (error) {
+      console.error("Error importando respaldo:", error);
+
+      toast(
+        "❌ No se pudo importar: " +
+        (error.message || "archivo inválido")
+      );
+
+    } finally {
+      if (input) input.value = "";
+    }
+  };
+
+  lector.onerror = function () {
+    toast("❌ No se pudo leer el archivo JSON");
+    if (input) input.value = "";
+  };
+
+  lector.readAsText(archivo);
+}
+
