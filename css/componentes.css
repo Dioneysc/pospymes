@@ -170,189 +170,56 @@ tr:last-child td { border-bottom: none; }
   .cards { grid-template-columns: 1fr; }
 }
 
-
-/* ==========================================
-   POS POLLERÍA PRO — COMPONENTES PRO V1
-   Naranja + carbón + blanco
-   ========================================== */
-
-/* Botones */
-.btn-primary,
-.btn-secondary,
-.btn-danger,
-.btn-mini {
-  border-radius: 12px;
-  transition:
-    transform 0.16s ease,
-    box-shadow 0.16s ease,
-    background 0.16s ease;
+/* =========================================================
+   REDISEÑO COMERCIAL 2026 — COMPONENTES
+   ========================================================= */
+.btn-primary, .btn-secondary, .btn-danger, .btn-mini {
+  min-height: 40px; border-radius: 12px; font-weight: 750;
+  transition: transform .14s ease, box-shadow .14s ease, filter .14s ease;
 }
-
 .btn-primary {
-  background: linear-gradient(135deg, #f97316, #ea580c);
-  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2);
+  background: linear-gradient(135deg,#f97316,#ea580c);
+  box-shadow: 0 4px 11px rgba(234,88,12,.17);
 }
-
-.btn-primary:active,
-.btn-danger:active {
-  transform: scale(0.98);
-  box-shadow: none;
+.btn-primary:hover { filter: brightness(1.03); box-shadow: 0 6px 15px rgba(234,88,12,.22); }
+.btn-primary:active, .btn-secondary:active, .btn-danger:active, .btn-mini:active { transform: scale(.98); }
+.btn-secondary { background: #fff; color: #44403c; border: 1px solid #e7e5e4; }
+.btn-secondary:hover { border-color: #fdba74; background: #fff7ed; }
+.btn-danger { box-shadow: 0 3px 9px rgba(220,38,38,.10); }
+.card, .card-config {
+  border: 1px solid #e7e5e4; border-radius: 17px; background: #fff;
+  box-shadow: 0 4px 16px rgba(28,25,23,.045);
 }
-
-.btn-secondary {
-  border: 1px solid #e5e7eb;
-  background: #fff;
+.card { border-left: 4px solid #f97316; }
+.card .big { color: #292524; letter-spacing: -.45px; }
+.card.destacado { background: linear-gradient(135deg,#f97316,#ea580c); border: 0; color: #fff; }
+.card-config { padding: 20px; }
+.card-config h3 { color: #292524; font-weight: 850; letter-spacing: -.2px; }
+.card-config input, .card-config select, .card-config textarea,
+#modalBody input, #modalBody select, #modalBody textarea {
+  border: 1px solid #d6d3d1; border-radius: 11px; background: #fafaf9;
+  color: #292524; transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
 }
-
-.btn-secondary:active,
-.btn-mini:active {
-  background: #fff7ed;
-  border-color: #fdba74;
+.card-config input:focus, .card-config select:focus, .card-config textarea:focus,
+#modalBody input:focus, #modalBody select:focus, #modalBody textarea:focus {
+  outline: none; border-color: #f97316; background: #fff;
+  box-shadow: 0 0 0 3px rgba(249,115,22,.12);
 }
-
-/* Tarjetas de configuración */
-.card-config {
-  border-radius: 16px;
-  padding: 20px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 4px 16px rgba(37, 37, 37, 0.035);
-  transition: box-shadow 0.2s ease;
-}
-
-.card-config h3 {
-  color: #252525;
-  letter-spacing: -0.2px;
-}
-
-.card-config input,
-.card-config select {
-  border: 1px solid #d1d5db;
-  border-radius: 10px;
-  background: #f9fafb;
-  transition: border-color 0.2s, background 0.2s;
-}
-
-.card-config input:focus,
-.card-config select:focus {
-  outline: none;
-  border-color: #f97316;
-  background: #fff;
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
-}
-
-/* Tablas */
-.tabla-wrap {
-  border-radius: 16px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 4px 16px rgba(37, 37, 37, 0.035);
-}
-
-table th {
-  background: #f9fafb;
-  color: #6b7280;
-  font-size: 11px;
-  letter-spacing: 0.6px;
-}
-
-table td {
-  color: #374151;
-}
-
-table tbody tr:hover {
-  background: #fffaf5;
-}
-
-/* Indicadores y tarjetas de reportes */
-.card {
-  border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(37, 37, 37, 0.04);
-  border: 1px solid #e5e7eb;
-  border-left: 4px solid #f97316;
-}
-
-.card .big {
-  letter-spacing: -0.5px;
-}
-
-.card.destacado {
-  background: linear-gradient(135deg, #f97316, #ea580c);
-  box-shadow: 0 8px 20px rgba(249, 115, 22, 0.2);
-}
-
-/* Ventanas modales */
-.modal {
-  background: rgba(20, 20, 20, 0.58);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
-}
-
-.modal-contenido {
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: 20px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
-}
-
-#modalTitulo {
-  color: #252525;
-}
-
-.modal-cerrar {
-  transition: background 0.15s, transform 0.15s;
-}
-
-.modal-cerrar:active {
-  transform: scale(0.94);
-  background: #ffedd5;
-}
-
-/* Interruptores */
-.toggle-modo {
-  border-radius: 12px;
-  background: #f9fafb;
-  transition: background 0.2s, border-color 0.2s;
-}
-
-.toggle-modo.activo {
-  background: #fff7ed;
-  border-color: #fed7aa;
-}
-
-.toggle-modo.activo .switch {
-  background: #f97316;
-}
-
-/* Notificaciones */
-.toast {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
-}
-
-/* Ajustes para pantallas pequeñas */
+.tabla-wrap { border: 1px solid #e7e5e4; border-radius: 15px; background: #fff; box-shadow: 0 4px 16px rgba(28,25,23,.04); }
+.tabla-wrap table { border-collapse: separate; border-spacing: 0; }
+.tabla-wrap table th { background: #fafaf9; color: #78716c; font-size: 11px; font-weight: 800; letter-spacing: .35px; }
+.tabla-wrap table td { border-bottom-color: #f5f5f4; }
+.tabla-wrap table tbody tr:hover { background: #fffaf5; }
+.modal { backdrop-filter: blur(4px); }
+.modal-contenido { border: 1px solid rgba(231,229,228,.9); border-radius: 22px; box-shadow: 0 24px 70px rgba(28,25,23,.25); }
+.modal-cerrar { border-radius: 12px; }
+.toggle-modo { border-radius: 13px; transition: border-color .16s ease, background .16s ease; }
+.toast { border: 1px solid rgba(255,255,255,.12); box-shadow: 0 12px 32px rgba(28,25,23,.22); }
 @media (max-width: 900px) {
-  .card-config {
-    padding: 16px;
-    border-radius: 14px;
-  }
-
-  .tabla-wrap {
-    box-shadow: none;
-  }
-
-  .modal-contenido {
-    border-radius: 22px 22px 0 0;
-  }
-
-  .btn-primary,
-  .btn-secondary,
-  .btn-danger {
-    min-height: 42px;
-  }
+  .card-config { padding: 16px; border-radius: 16px; }
+  .tabla-wrap { border-radius: 14px; }
+  .modal-contenido { border-radius: 22px 22px 0 0; }
+  .cards { gap: 9px; }
+  .card { padding: 14px; border-radius: 15px; }
 }
 
-/* Accesibilidad con teclado */
-button:focus-visible {
-  outline: 2px solid #f97316;
-  outline-offset: 3px;
-}

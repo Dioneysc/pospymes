@@ -74,3 +74,23 @@
   .estado-caja { grid-template-columns: repeat(2, 1fr); }
   .arqueo-grid { grid-template-columns: 1fr; }
 }
+
+/* =========================================================
+   REDISEÑO COMERCIAL 2026 — ADMINISTRACIÓN, INVENTARIO Y REPORTES
+   ========================================================= */
+.vista-header { align-items: center; gap: 14px; margin-bottom: 18px; }
+.vista-header h2 { color: #292524; font-size: clamp(20px,2.2vw,26px); font-weight: 850; letter-spacing: -.5px; line-height: 1.2; }
+.vista-header > button, .vista-header .btn-primary, .vista-header .btn-secondary { min-height: 42px; }
+.estado-caja { gap: 12px; }
+.cat-item { border-radius: 13px; background: #fafaf9; }
+.hist-item { border-radius: 16px; box-shadow: 0 4px 15px rgba(28,25,23,.045); }
+.alerta-stock { border-radius: 15px; }
+.arqueo-fila .sub { border: 1px solid #e7e5e4; }
+.motivo-grid button { border-radius: 11px; transition: background .14s ease, border-color .14s ease; }
+@media (max-width: 900px) {
+  .vista-header { align-items: stretch; }
+  .vista-header > button, .vista-header .btn-primary, .vista-header .btn-secondary { width: 100%; }
+  .estado-caja { gap: 9px; }
+  .hist-item { padding: 13px; }
+}
+

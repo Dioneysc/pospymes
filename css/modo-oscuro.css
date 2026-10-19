@@ -253,3 +253,80 @@ body.modo-oscuro .total-box .monto {
 body.modo-oscuro .total-box .label {
   color: #fff !important;
 }
+
+/* =========================================================
+   REDISEÑO COMERCIAL 2026 — AJUSTES DEL TEMA OSCURO
+   Se usa únicamente body.modo-oscuro, igual que modo-oscuro.js.
+   Mantiene el ticket de impresión en blanco y negro.
+   ========================================================= */
+body.modo-oscuro {
+  --gris: #0f172a; --gris-card: #1e293b; --borde: #334155;
+  --texto: #f1f5f9; --texto-suave: #94a3b8; --gris-oscuro: #f8fafc;
+  background: #0f172a; color: #f1f5f9;
+}
+body.modo-oscuro .topbar { background: linear-gradient(120deg,#020617,#172033); }
+body.modo-oscuro main { color: #f1f5f9; }
+body.modo-oscuro .vista-header h2,
+body.modo-oscuro .card-config h3,
+body.modo-oscuro .card .big { color: #f1f5f9; }
+body.modo-oscuro .card,
+body.modo-oscuro .card-config,
+body.modo-oscuro .tabla-wrap,
+body.modo-oscuro .carrito-panel,
+body.modo-oscuro .prod-btn,
+body.modo-oscuro .modal-contenido,
+body.modo-oscuro .hist-item {
+  background: #1e293b; color: #f1f5f9; border-color: #334155;
+  box-shadow: 0 5px 18px rgba(0,0,0,.16);
+}
+body.modo-oscuro .prod-nombre,
+body.modo-oscuro .cat-item,
+body.modo-oscuro .card-config p,
+body.modo-oscuro .card small { color: #e2e8f0; }
+body.modo-oscuro .cat-item,
+body.modo-oscuro .arqueo-fila .sub { background: #0f172a; border-color: #334155; }
+body.modo-oscuro .barra-busqueda input,
+body.modo-oscuro .card-config input,
+body.modo-oscuro .card-config select,
+body.modo-oscuro .card-config textarea,
+body.modo-oscuro #modalBody input,
+body.modo-oscuro #modalBody select,
+body.modo-oscuro #modalBody textarea {
+  background: #0f172a; color: #f1f5f9; border-color: #475569;
+}
+body.modo-oscuro input::placeholder,
+body.modo-oscuro textarea::placeholder { color: #94a3b8; }
+body.modo-oscuro .categorias button:not(.activo),
+body.modo-oscuro .billetes-grid button,
+body.modo-oscuro .toggle-btn,
+body.modo-oscuro .btn-secondary,
+body.modo-oscuro .motivo-grid button {
+  background: #273449; color: #f1f5f9; border-color: #475569;
+}
+body.modo-oscuro .btn-secondary:hover,
+body.modo-oscuro .categorias button:not(.activo):active { background: #334155; }
+body.modo-oscuro .tabla-wrap table th,
+body.modo-oscuro .tabla-wrap table thead th { background: #172033; color: #cbd5e1; border-color: #334155; }
+body.modo-oscuro .tabla-wrap table td { color: #e2e8f0; border-color: #334155; }
+body.modo-oscuro .tabla-wrap table tbody tr,
+body.modo-oscuro .tabla-wrap table tbody tr:hover { background: #1e293b; }
+body.modo-oscuro .nav-inferior { background: rgba(15,23,42,.97); border-color: #334155; }
+body.modo-oscuro .nav-inferior button { color: #94a3b8; }
+body.modo-oscuro .nav-inferior button.activo { color: #fdba74; background: rgba(124,45,18,.22); }
+body.modo-oscuro .toggle-modo { background: #0f172a; border-color: #334155; }
+body.modo-oscuro .toggle-modo .label { color: #f1f5f9; }
+body.modo-oscuro .login-box { background: #1e293b; color: #f1f5f9; border-color: #334155; }
+body.modo-oscuro .login-box h1 { color: #f1f5f9; }
+body.modo-oscuro .login-box input { background: #0f172a; color: #f1f5f9; border-color: #475569; }
+body.modo-oscuro .login-box .hint { color: #cbd5e1; }
+/* Cobro: conserva el amarillo de acción y el contraste del total. */
+body.modo-oscuro .btn-cobrar { background: linear-gradient(135deg,#fbbf24,#f59e0b); color: #292524; }
+body.modo-oscuro .btn-cobrar .total-cobrar { background: #292524; color: #fff; }
+/* El ticket para impresión siempre debe salir blanco con texto negro. */
+body.modo-oscuro .ticket-preview { background: #fff; color: #111827; border-color: #cbd5e1; }
+body.modo-oscuro .ticket-preview * { color: inherit; }
+@media print {
+  body.modo-oscuro #zonaImpresion { background: #fff !important; color: #000 !important; }
+  body.modo-oscuro #zonaImpresion * { color: #000 !important; background: transparent !important; }
+}
+

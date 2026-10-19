@@ -325,203 +325,68 @@
   #zonaImpresion hr { border: none; border-top: 1px dashed #000; margin: 4px 0; }
 }
 
-/* POS POLLERÍA PRO — REDISEÑO PANTALLA DE VENTA
-   Agregar al FINAL de css/venta.css. No modifica JavaScript.
-*/
-
+/* =========================================================
+   REDISEÑO COMERCIAL 2026 — VENTA Y COBRO
+   ========================================================= */
 .caja-layout { gap: 16px; }
 .productos-wrap { gap: 12px; }
-
-/* Búsqueda */
 .barra-busqueda input {
-  border: 1.5px solid var(--borde);
-  border-radius: 14px;
-  padding: 14px 16px;
-  background: #fff;
-  color: var(--texto);
-  box-shadow: 0 3px 12px rgba(15,23,42,.04);
-  transition: border-color .18s ease, box-shadow .18s ease;
+  border: 1.5px solid #e7e5e4; border-radius: 14px; padding: 14px 16px;
+  background: #fff; color: #292524; box-shadow: 0 3px 12px rgba(41,37,36,.045);
 }
-.barra-busqueda input:focus {
-  outline: none;
-  border-color: var(--naranja);
-  box-shadow: 0 0 0 3px rgba(249,115,22,.13);
-}
-
-/* Categorías */
-.categorias { gap: 8px; padding: 4px 2px 9px; }
+.barra-busqueda input:focus { border-color: #f97316; box-shadow: 0 0 0 3px rgba(249,115,22,.13); }
+.categorias { gap: 8px; padding: 4px 2px 10px; }
 .categorias button {
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  color: #57534e;
-  padding: 10px 16px;
-  border-radius: 999px;
-  font-weight: 700;
-  transition: background .18s ease, color .18s ease, transform .18s ease;
+  border: 1px solid #e7e5e4; background: #fff; color: #57534e;
+  border-radius: 999px; padding: 10px 15px; font-weight: 750;
+  transition: transform .14s ease, background .14s ease, color .14s ease;
 }
-.categorias button.activo {
-  background: linear-gradient(135deg,#f97316,#ea580c);
-  color: #fff;
-  border-color: #ea580c;
-  box-shadow: 0 4px 10px rgba(234,88,12,.2);
-}
+.categorias button.activo { background: linear-gradient(135deg,#f97316,#ea580c); color: #fff; border-color: #ea580c; box-shadow: 0 4px 10px rgba(234,88,12,.2); }
 .categorias button:active { transform: scale(.97); }
-
-/* Productos */
 .productos-grid { gap: 12px; padding: 2px 2px 14px; }
 .prod-btn {
-  min-height: 145px;
-  padding: 14px 10px;
-  gap: 8px;
-  border: 1px solid #e7e5e4;
-  border-radius: 18px;
-  background: #fff;
-  box-shadow: 0 3px 10px rgba(28,25,23,.045);
-  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease;
+  min-height: 145px; padding: 14px 10px; gap: 8px; border: 1px solid #e7e5e4;
+  border-radius: 17px; background: #fff; box-shadow: 0 3px 10px rgba(28,25,23,.045);
+  transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease, background .15s ease;
 }
-.prod-btn:hover {
-  border-color: #fdba74;
-  box-shadow: 0 7px 18px rgba(234,88,12,.10);
-  transform: translateY(-2px);
-}
-.prod-btn:active { transform: scale(.97); background: #fff7ed; border-color: var(--naranja); }
+.prod-btn:hover { border-color: #fdba74; box-shadow: 0 7px 18px rgba(234,88,12,.10); transform: translateY(-2px); }
+.prod-btn:active { transform: scale(.975); background: #fff7ed; border-color: #f97316; }
 .prod-emoji { font-size: 44px; line-height: 1.05; }
 .prod-imagen { width: 68px; height: 68px; border-radius: 14px; object-fit: cover; }
-.prod-nombre { font-size: 13px; line-height: 1.3; color: #292524; }
-.prod-precio { margin-top: auto; color: #ea580c; font-size: 18px; font-weight: 900; }
-
-/* Carrito */
-.carrito-panel {
-  border: 1px solid #e7e5e4;
-  border-radius: 20px;
-  padding: 16px;
-  background: #fff;
-  box-shadow: 0 8px 28px rgba(28,25,23,.07);
-}
-.carrito-header { border-bottom: 1px solid #e7e5e4; padding-bottom: 12px; margin-bottom: 12px; }
-.carrito-header h3 { font-size: 16px; color: #292524; }
-.carrito-header .btn-trash {
-  width: 36px; height: 36px; border-radius: 11px;
-  transition: background .15s ease, transform .15s ease;
-}
-.carrito-header .btn-trash:active { transform: scale(.94); }
-.carrito-lista { scrollbar-width: thin; scrollbar-color: #d6d3d1 transparent; }
-.carrito-item { gap: 8px; padding: 12px 0; border-bottom: 1px solid #f5f5f4; }
-.carrito-item-info b { color: #292524; font-size: 13px; }
-.item-controles { gap: 7px; }
-.item-controles button {
-  width: 32px; height: 32px; border: 1px solid #e7e5e4;
-  border-radius: 10px; background: #fafaf9;
-  transition: background .15s ease, border-color .15s ease, transform .15s ease;
-}
-.item-controles button:active { background: #ffedd5; border-color: #fdba74; transform: scale(.94); }
-.item-precio { color: #292524; font-size: 15px; white-space: nowrap; }
-
-/* Total */
-.total-box {
-  padding: 15px 16px; border-radius: 16px;
-  background: linear-gradient(135deg,#292524,#44403c);
-  box-shadow: 0 7px 18px rgba(41,37,36,.18);
-}
-.total-box .label { color: #f5f5f4; font-size: 13px; }
-.total-box .monto { color: #fdba74; font-size: 28px; letter-spacing: -.5px; }
-.totales-sec { gap: 8px; }
-.totales-sec .fila-sec {
-  padding: 10px; border: 1px solid #e7e5e4;
-  border-radius: 12px; background: #fafaf9;
-}
-.totales-sec .fila-sec .lbl { color: #78716c; letter-spacing: .35px; }
-.totales-sec .fila-sec .val { color: #292524; }
-
-/* Métodos de pago */
-.pagos { gap: 9px; }
-.btn-pago {
-  min-height: 66px; padding: 11px 5px; border-radius: 14px;
-  font-size: 12px; box-shadow: 0 4px 10px rgba(0,0,0,.09);
-  transition: transform .15s ease, filter .15s ease;
-}
-.btn-pago:hover { filter: brightness(1.04); }
-.btn-pago:active { transform: scale(.97); }
-.btn-pago .ico { font-size: 22px; }
-
-/* Cobrar */
+.prod-nombre { color: #292524; font-size: 13px; line-height: 1.3; }
+.prod-precio { color: #ea580c; font-size: 18px; font-weight: 900; }
+.carrito-panel { border: 1px solid #e7e5e4; border-radius: 20px; background: #fff; box-shadow: 0 8px 28px rgba(28,25,23,.07); padding: 16px; }
 .btn-cobrar {
-  min-height: 58px; padding: 15px 16px; border-radius: 16px;
-  background: linear-gradient(135deg,#fb923c,#f97316);
-  color: #292524; box-shadow: 0 6px 16px rgba(249,115,22,.25);
-  transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+  min-height: 56px; border-radius: 14px; background: linear-gradient(135deg,#fbbf24,#f59e0b);
+  color: #292524; box-shadow: 0 5px 15px rgba(245,158,11,.25); font-weight: 900;
 }
-.btn-cobrar:hover { filter: brightness(1.03); box-shadow: 0 8px 20px rgba(249,115,22,.3); }
-.btn-cobrar:active { transform: scale(.985); box-shadow: none; }
-.btn-cobrar .total-cobrar { padding: 5px 11px; background: #292524; color: #fff; border-radius: 999px; }
-
-/* Opciones de cobro y billetes */
-.toggle-btn {
-  border-color: #e7e5e4; border-radius: 12px; background: #fff;
-  transition: background .15s ease, border-color .15s ease, transform .15s ease;
+.btn-cobrar:active { transform: scale(.985); }
+.btn-cobrar .total-cobrar { background: #292524; color: #fff; }
+.billetes-grid button { border-radius: 12px; transition: border-color .14s ease, background .14s ease, transform .14s ease; }
+.billetes-grid button:active { transform: scale(.97); }
+.toggle-btn { border-radius: 12px; }
+.ticket-preview { border-radius: 12px; box-shadow: 0 4px 14px rgba(15,23,42,.06); }
+.carrito-flotante-total { background: #292524; color: #fff; }
+@media (min-width: 901px) {
+  .caja-layout { grid-template-columns: minmax(0,1fr) 370px; height: calc(100dvh - 145px); min-height: 520px; }
+  .productos-grid { grid-template-columns: repeat(auto-fill,minmax(135px,1fr)); }
+  .carrito-panel { position: relative; }
 }
-.toggle-btn.activo { background: #fff7ed; border-color: #f97316; color: #c2410c; }
-.toggle-btn:active { transform: scale(.98); }
-.modal-pago { max-width: 420px; }
-.modal-pago input { border: 1.5px solid #e7e5e4; border-radius: 14px; }
-.cambio-box { border: 1px solid #a7f3d0; border-radius: 16px; }
-.falta-box { border-color: #fecaca; }
-.billetes-grid { gap: 9px; }
-.billetes-grid button {
-  min-height: 46px; border: 1px solid #e7e5e4; border-radius: 12px;
-  transition: background .15s ease, border-color .15s ease, transform .15s ease;
-}
-.billetes-grid button:active { background: #fff7ed; border-color: #f97316; transform: scale(.97); }
-
-/* Ticket */
-.ticket-preview {
-  border: 1px dashed #d6d3d1; border-radius: 14px;
-  box-shadow: 0 4px 14px rgba(28,25,23,.04);
-}
-.ticket-acciones { gap: 9px; }
-.ticket-acciones button {
-  min-height: 46px; border-radius: 12px;
-  transition: transform .15s ease, filter .15s ease;
-}
-.ticket-acciones button:active { transform: scale(.98); }
-
-/* Carrito flotante móvil */
-.carrito-flotante {
-  bottom: calc(86px + env(safe-area-inset-bottom));
-  border-radius: 18px;
-  background: linear-gradient(135deg,#f97316,#ea580c);
-  box-shadow: 0 8px 24px rgba(234,88,12,.3);
-}
-.carrito-flotante:active { transform: translateX(-50%) scale(.98); }
-.carrito-flotante-count { color: #c2410c; }
-.carrito-flotante-total { background: #292524; }
-
-/* Accesibilidad */
-.categorias button:focus-visible,
-.prod-btn:focus-visible,
-.item-controles button:focus-visible,
-.btn-pago:focus-visible,
-.btn-cobrar:focus-visible,
-.billetes-grid button:focus-visible,
-.ticket-acciones button:focus-visible {
-  outline: 2px solid #f97316;
-  outline-offset: 3px;
-}
-
-/* Adaptación a móviles */
 @media (max-width: 900px) {
-  .productos-grid { grid-template-columns: repeat(auto-fill,minmax(112px,1fr)); gap: 10px; }
-  .prod-btn { min-height: 128px; border-radius: 16px; }
-  .prod-emoji { font-size: 38px; }
-  .prod-precio { font-size: 17px; }
-  .carrito-panel.modal-abierto { padding: 22px 16px calc(22px + env(safe-area-inset-bottom)); border-radius: 24px 24px 0 0; }
-  .btn-cobrar { min-height: 56px; }
-}
-@media (max-width: 380px) {
-  .productos-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
-  .prod-btn { min-height: 112px; padding: 10px 8px; }
-  .prod-emoji { font-size: 34px; }
+  .caja-layout { gap: 10px; }
+  .productos-grid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 9px; }
+  .prod-btn { min-height: 122px; padding: 10px 7px; border-radius: 15px; }
+  .prod-emoji { font-size: 35px; }
+  .prod-imagen { width: 54px; height: 54px; }
+  .prod-nombre { font-size: 12px; }
   .prod-precio { font-size: 16px; }
-  .total-box .monto { font-size: 24px; }
-  .ticket-acciones { grid-template-columns: 1fr; }
+  .carrito-panel.modal-abierto { border: 1px solid #e7e5e4; }
+  .btn-cobrar { min-height: 58px; }
 }
+@media (max-width: 390px) {
+  .productos-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .prod-btn { min-height: 112px; }
+  .barra-busqueda input { padding: 12px; }
+  .categorias button { padding: 9px 12px; }
+}
+
