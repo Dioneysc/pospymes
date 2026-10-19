@@ -390,3 +390,18 @@
   .categorias button { padding: 9px 12px; }
 }
 
+
+
+/* Ajuste móvil: separar el botón cerrar (X) del botón vaciar carrito (papelera). */
+@media (max-width: 900px) {
+  .carrito-panel.modal-abierto .carrito-cerrar-movil {
+    top: 16px;
+    right: 58px;
+    z-index: 2;
+  }
+  .carrito-panel.modal-abierto .carrito-header .btn-trash {
+    position: relative;
+    z-index: 1;
+    flex: 0 0 32px;
+  }
+}
