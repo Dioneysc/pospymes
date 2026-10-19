@@ -131,8 +131,8 @@
           </button>
 
           <div class="mesa-input" style="display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:13px">
-  <label style="color:#64748b;font-weight:600">Nota:</label>
-  <input id="mesaActual" placeholder=" " style="flex:1;padding:8px;border:2px solid var(--borde);border-radius:8px;font-size:14px">
+  <label style="color:#64748b;font-weight:600">Mesa:</label>
+  <input id="mesaActual" placeholder="Ej: 3" style="flex:1;padding:8px;border:2px solid var(--borde);border-radius:8px;font-size:14px">
 </div>
         </aside>
         
@@ -176,10 +176,10 @@
     <section id="reportes" class="vista">
       <div class="vista-header">
         <h2>📊 Panel de ventas</h2>
-        <div class="rango" id="rangoBotones" style="display:flex;gap:4px;background:#e2e8f0;padding:4px;border-radius:12px;">
-          <button onclick="reporteRango('dia')" class="activo" style="border:none;padding:6px 14px;border-radius:8px;font-weight:700;background:#fff;cursor:pointer;">Hoy</button>
-          <button onclick="reporteRango('semana')" style="border:none;padding:6px 14px;border-radius:8px;font-weight:700;background:transparent;cursor:pointer;">Semana</button>
-          <button onclick="reporteRango('mes')" style="border:none;padding:6px 14px;border-radius:8px;font-weight:700;background:transparent;cursor:pointer;">Mes</button>
+        <div class="rango" id="rangoBotones" role="group" aria-label="Periodo del reporte" style="--rango-index:0">
+          <button type="button" onclick="reporteRango('dia')" class="activo" aria-pressed="true">Hoy</button>
+          <button type="button" onclick="reporteRango('semana')" aria-pressed="false">Semana</button>
+          <button type="button" onclick="reporteRango('mes')" aria-pressed="false">Mes</button>
         </div>
       </div>
       <div id="reporteContenido"></div>

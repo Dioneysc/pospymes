@@ -464,3 +464,17 @@ body.modo-oscuro .panel-metrica-principal { background:linear-gradient(135deg,#1
 body.modo-oscuro .panel-metrica-principal strong { color:#fff; }
 body.modo-oscuro .panel-aviso-amarillo { background:#422f0a; color:#fde68a; border-color:#785b17; }
 body.modo-oscuro .panel-barra-fondo { background:#334155; }
+
+
+/* Selector Hoy/Semana/Mes: contraste y deslizador en modo oscuro */
+body.modo-oscuro #rangoBotones.rango {
+  background: #0f172a !important;
+  border-color: #475569;
+}
+body.modo-oscuro #rangoBotones.rango::before {
+  background: #245c49;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, .35);
+}
+body.modo-oscuro #rangoBotones.rango button { color: #cbd5e1 !important; }
+body.modo-oscuro #rangoBotones.rango button.activo { color: #ffffff !important; }
+body.modo-oscuro #rangoBotones.rango button:focus-visible { outline-color: #86efac; }

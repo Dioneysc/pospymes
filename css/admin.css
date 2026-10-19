@@ -133,3 +133,59 @@
 .panel-total-semana b { color:var(--gris-oscuro); }
 @media (max-width:900px) { .panel-metricas { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; } .panel-metrica { padding:13px; } .panel-pagos { grid-template-columns:1fr; gap:8px; } .panel-pagos > div { flex-direction:row; justify-content:space-between; align-items:center; } .panel-resumen-cabecera { align-items:stretch; } .panel-tickets { min-width:0; flex-direction:row; align-items:center; justify-content:space-between; } .panel-acciones .btn-secondary { width:100%; } }
 @media (max-width:380px) { .panel-metricas { grid-template-columns:1fr 1fr; } .panel-metrica strong { font-size:18px; } }
+
+
+/* Selector de periodo del panel: indicador deslizante entre Hoy, Semana y Mes */
+#rangoBotones.rango {
+  position: relative;
+  isolation: isolate;
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 0 !important;
+  width: min(100%, 330px);
+  min-width: 240px;
+  padding: 4px !important;
+  border: 1px solid #d9e1e8;
+  border-radius: 12px;
+  background: #e8edf2 !important;
+  overflow: hidden;
+}
+#rangoBotones.rango::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 8px) / 3);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, .16);
+  transform: translateX(calc(var(--rango-index, 0) * 100%));
+  transition: transform .24s cubic-bezier(.2,.8,.2,1), background-color .2s ease;
+}
+#rangoBotones.rango button {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  padding: 9px 8px !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: #526174 !important;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color .18s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+#rangoBotones.rango button.activo { color: #173b32 !important; }
+#rangoBotones.rango button:focus-visible { outline: 2px solid #25815d; outline-offset: -2px; }
+@media (max-width: 520px) {
+  #rangoBotones.rango { width: 100%; min-width: 0; }
+  #rangoBotones.rango button { padding: 10px 5px !important; font-size: 12px; }
+}

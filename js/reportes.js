@@ -29,8 +29,12 @@ function obtenerRangoReporte(tipo) {
 
 function reporteRango(tipo) {
   const btns = $$("#rangoBotones button");
+  const indices = { dia: 0, semana: 1, mes: 2 };
+  const indiceActivo = Object.prototype.hasOwnProperty.call(indices, tipo) ? indices[tipo] : 0;
+  const selectorRango = $("#rangoBotones");
+  if (selectorRango) selectorRango.style.setProperty("--rango-index", String(indiceActivo));
   btns.forEach((b, i) => {
-    const activo = (tipo === "dia" && i === 0) || (tipo === "semana" && i === 1) || (tipo === "mes" && i === 2);
+    const activo = i === indiceActivo;
     b.classList.toggle("activo", activo);
     b.setAttribute("aria-pressed", activo ? "true" : "false");
   });
