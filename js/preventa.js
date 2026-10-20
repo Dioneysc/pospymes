@@ -61,7 +61,7 @@ function mostrarOpcionesPreventa(pedido) {
       <p style="margin:0;color:var(--texto-secundario,#64748b);font-size:13px">No se registró una venta ni se realizó un cobro.</p>
       <p style="margin:12px 0 0;font-size:18px;font-weight:900">Total: ${fmt(pedido.total)}</p>
     </div>
-    <div class="ticket-acciones" style="grid-template-columns:1fr 1fr;">
+    <div class="ticket-acciones preventa-modal-acciones">
       <button class="btn-imprimir" onclick="imprimirPreventa(${pedido.id})">🖨️ Imprimir</button>
       <button class="btn-whatsapp" onclick="compartirPreventaWhatsApp(${pedido.id})">📤 WhatsApp</button>
     </div>
@@ -252,11 +252,11 @@ function renderListaPreventas() {
             <div style="font-size:12px;color:var(--texto-secundario,#64748b);margin-top:7px">Atendió: ${escapeHTML(p.usuario || "admin")}</div>
           </div>
         </details>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
-          <button class="btn-primary" type="button" onclick="prepararPreventaVenta(${Number(p.id) || 0})" style="flex:1;min-width:120px">🛒 Pasar a venta</button>
-          <button class="btn-imprimir" type="button" onclick="imprimirPreventa(${Number(p.id) || 0})" style="flex:1;min-width:120px">🖨️ Imprimir</button>
-          <button class="btn-whatsapp" type="button" onclick="compartirPreventaWhatsApp(${Number(p.id) || 0})" style="flex:1;min-width:120px">📤 WhatsApp</button>
-          <button class="btn-danger" type="button" onclick="eliminarPreventa(${Number(p.id) || 0})" style="flex:1;min-width:120px">🗑️ Eliminar</button>
+        <div class="preventa-lista-acciones">
+          <button class="btn-primary" type="button" onclick="prepararPreventaVenta(${Number(p.id) || 0})">🛒 Pasar a venta</button>
+          <button class="btn-imprimir" type="button" onclick="imprimirPreventa(${Number(p.id) || 0})">🖨️ Imprimir</button>
+          <button class="btn-whatsapp" type="button" onclick="compartirPreventaWhatsApp(${Number(p.id) || 0})">📤 WhatsApp</button>
+          <button class="btn-danger" type="button" onclick="eliminarPreventa(${Number(p.id) || 0})">🗑️ Eliminar</button>
         </div>
       </article>`;
   }).join("");
