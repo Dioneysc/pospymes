@@ -6,66 +6,93 @@
 function renderHistorial() {
   let desde = $("#histDesde")?.value;
   let hasta = $("#histHasta")?.value;
-
   if (!desde && !hasta) {
     const ahora = new Date();
-    const primerDia = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
-    desde = fechaLocal(primerDia);
+    desde = fechaLocal(new Date(ahora.getFullYear(), ahora.getMonth(), 1));
     hasta = fechaLocal(ahora);
     const elD = $("#histDesde");
     const elH = $("#histHasta");
     if (elD) elD.value = desde;
     if (elH) elH.value = hasta;
   }
-
   let ventas = [...DB.ventas].sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
-
   if (desde) {
     const d = new Date(desde + "T00:00:00");
     ventas = ventas.filter(v => new Date(v.fecha) >= d);
   }
   if (hasta) {
-    const h = new Date(hasta + "T23:59:59");
+    const h = new Date(hasta + "T23:59:59.999");
     ventas = ventas.filter(v => new Date(v.fecha) <= h);
   }
-
   const el = $("#listaHistorial");
   if (!el) return;
-
   if (!ventas.length) {
-    el.innerHTML = `<p style="text-align:center;padding:30px;color:#94a3b8">Sin ventas en este rango</p>`;
+    el.innerHTML = `<p style="text-align:center;padding:30px;color:#94a3b8">Sin tickets en este rango de fechas</p>`;
     return;
   }
-
-  el.innerHTML = ventas.map(v => {
-    const cancelada = v.cancelada || false;
-    const itemsTxt = v.items.map(i => `${i.cantidad}x ${i.nombre}`).join(", ");
+  const grupos = new Map();
+  ventas.forEach(v => {
+    const fecha = fechaLocal(new Date(v.fecha));
+    if (!grupos.has(fecha)) grupos.set(fecha, []);
+    grupos.get(fecha).push(v);
+  });
+  el.innerHTML = [...grupos.entries()].map(([fecha, tickets]) => {
+    const totalDia = tickets.filter(v => !v.cancelada).reduce((s, v) => s + (Number(v.total) || 0), 0);
+    const tituloFecha = fecha === fechaLocal(new Date()) ? "Hoy" : new Date(fecha + "T12:00:00").toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
     return `
-      <div class="hist-item ${cancelada ? "cancelada" : ""}">
-        <div class="hist-header">
-          <div>
-            <div class="hist-id">
-              🧾 Ticket #${String(v.id).padStart(6, "0")}
-              ${cancelada ? `<span class="badge-cancelada">Cancelada</span>` : ""}
-            </div>
-            <div class="hist-fecha">${new Date(v.fecha).toLocaleString("es-MX")}</div>
-          </div>
-          <div class="hist-total">${fmt(v.total)}</div>
+      <section class="hist-grupo-fecha" style="margin-bottom:18px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:12px 14px;margin-bottom:10px;background:var(--superficie,#f1f5f9);border:1px solid var(--borde);border-radius:12px">
+          <div><b style="text-transform:capitalize">📅 ${escapeHTML(tituloFecha)}</b><div style="font-size:12px;color:var(--texto-suave);margin-top:3px">${tickets.length} ${tickets.length === 1 ? "ticket" : "tickets"}</div></div>
+          <b>${fmt(totalDia)}</b>
         </div>
-        <div class="hist-meta">
-          <span>💳 ${v.metodo}</span>
-          <span>👤 ${v.usuario || "admin"}</span>
-        </div>
-        <div class="hist-items">${itemsTxt}</div>
-        <div class="hist-acciones">
-          <button class="btn-mini" onclick='verTicketHistorial(${JSON.stringify(v).replace(/'/g, "&#39;")})'>👁️ Ver</button>
-         <button class="btn-mini" onclick="reimprimirVenta(${v.id})">🖨️ Reimprimir</button>
-          <button class="btn-mini" style="color:#25d366;border-color:#25d366" onclick="compartirWhatsApp(${v.id})">📤 WhatsApp</button>
-          ${!cancelada ? `<button class="btn-mini" style="color:var(--rojo);border-color:var(--rojo)" onclick="abrirCancelarVenta(${v.id})">↩️ Cancelar</button>` : ""}
-        </div>
-      </div>
-    `;
+        ${tickets.map(v => {
+          const cancelada = v.cancelada || false;
+          const itemsTxt = (v.items || []).map(i => `${i.cantidad}x ${i.nombre}`).join(", ");
+          return `
+            <div class="hist-item ${cancelada ? "cancelada" : ""}">
+              <div class="hist-header">
+                <div><div class="hist-id">🧾 Ticket #${String(v.id).padStart(6, "0")} ${cancelada ? `<span class="badge-cancelada">Cancelada</span>` : ""}</div><div class="hist-fecha">${new Date(v.fecha).toLocaleString("es-MX")}</div></div>
+                <div class="hist-total">${fmt(v.total)}</div>
+              </div>
+              <div class="hist-meta"><span>💳 ${escapeHTML(v.metodo || "—")}</span><span>👤 ${escapeHTML(v.usuario || "admin")}</span></div>
+              <div class="hist-items">${escapeHTML(itemsTxt)}</div>
+              <div class="hist-acciones">
+                <button class="btn-mini" onclick='verTicketHistorial(${JSON.stringify(v).replace(/'/g, "&#39;")})'>👁️ Ver</button>
+                <button class="btn-mini" onclick="reimprimirVenta(${JSON.stringify(String(v.id))})">🖨️ Reimprimir</button>
+                <button class="btn-mini" style="color:#25d366;border-color:#25d366" onclick="compartirWhatsApp(${JSON.stringify(String(v.id))})">📤 WhatsApp</button>
+                ${!cancelada ? `<button class="btn-mini" style="color:var(--rojo);border-color:var(--rojo)" onclick="abrirCancelarVenta(${JSON.stringify(v.id)})">↩️ Cancelar</button>` : ""}
+                <button class="btn-mini" style="color:#dc2626;border-color:#dc2626" onclick="eliminarTicketHistorial(${JSON.stringify(v.id)})">🗑️ Eliminar</button>
+              </div>
+            </div>`;
+        }).join("")}
+      </section>`;
   }).join("");
+}
+
+function eliminarTicketHistorial(id) {
+  const venta = DB.ventas.find(v => String(v.id) === String(id));
+  if (!venta) return toast("⚠️ Ticket no encontrado");
+  const mensaje = venta.cancelada
+    ? `¿Eliminar permanentemente el ticket cancelado #${String(venta.id).padStart(6, "0")} del historial?`
+    : `¿Eliminar permanentemente el ticket #${String(venta.id).padStart(6, "0")} por ${fmt(venta.total)}?\n\nSe quitará de historial, reportes y cálculos de caja. Los insumos asociados a la venta se devolverán al inventario. Esta acción no se puede deshacer.`;
+  if (!confirm(mensaje)) return;
+  if (!venta.cancelada) {
+    (venta.items || []).forEach(item => {
+      const prod = DB.productos.find(p => String(p.id) === String(item.productoId));
+      if (!prod || !Array.isArray(prod.insumos)) return;
+      prod.insumos.forEach(ing => {
+        const ins = DB.insumos.find(x => String(x.id) === String(ing.insumoId));
+        if (ins) ins.stock = (Number(ins.stock) || 0) + (Number(ing.cantidad) || 0) * (Number(item.cantidad) || 0);
+      });
+    });
+  }
+  DB.ventas = DB.ventas.filter(v => String(v.id) !== String(id));
+  guardar();
+  renderHistorial();
+  if (typeof renderEstadoCaja === "function") renderEstadoCaja();
+  if (typeof reporteRango === "function") reporteRango("dia");
+  if (typeof mostrarAlertaStock === "function") mostrarAlertaStock();
+  toast(`🗑️ Ticket #${String(id).padStart(6, "0")} eliminado del historial`);
 }
 
 function verTicketHistorial(v) {
@@ -140,10 +167,11 @@ function exportarHistorial() {
 }
 
 function limpiarFiltroHistorial() {
+  const ahora = new Date();
   const d = $("#histDesde");
   const h = $("#histHasta");
-  if (d) d.value = "";
-  if (h) h.value = "";
+  if (d) d.value = fechaLocal(new Date(ahora.getFullYear(), ahora.getMonth(), 1));
+  if (h) h.value = fechaLocal(ahora);
   renderHistorial();
 }
 

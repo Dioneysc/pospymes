@@ -66,12 +66,17 @@ function abrirGestorGastosPersonales() {
   const movimientos = listarMovimientosCajaFuerte();
   const ingresos = movimientos.filter(m => m.tipo === "ingreso").reduce((s, m) => s + (Number(m.monto) || 0), 0);
   const gastos = movimientos.filter(m => m.tipo !== "ingreso").reduce((s, m) => s + (Number(m.monto) || 0), 0);
-  const saldo = ingresos - gastos;
+  const saldoMovimientos = ingresos - gastos;
+  const ajusteSaldo = Number(LS.get("cajaFuerteSaldoAjuste", 0)) || 0;
+  const saldo = saldoMovimientos + ajusteSaldo;
   abrirModal("🔐 Caja Fuerte", `
     <div class="cf-panel">
       <div class="cf-saldo">
         <div class="cf-saldo-etiqueta">Saldo actual</div>
         <div class="cf-saldo-cantidad">${fmt(saldo)}</div>
+        <div style="display:flex;justify-content:flex-end;margin-top:-8px;margin-bottom:12px">
+          <button class="cf-boton" style="padding:7px 11px;background:#ffffff20;color:#fff;border:1px solid #ffffff55;font-size:12px" onclick="abrirEditarSaldoCajaFuerte(${saldo})">✏️ Editar saldo</button>
+        </div>
         <div class="cf-resumen">
           <div><span>Ingresos</span><b class="cf-ingreso">+${fmt(ingresos)}</b></div>
           <div><span>Gastos</span><b class="cf-gasto">−${fmt(gastos)}</b></div>
@@ -95,6 +100,34 @@ function abrirGestorGastosPersonales() {
       <div class="acciones"><button class="btn-secondary" onclick="cerrarModal()">Cerrar</button></div>
     </div>
   `);
+}
+
+
+function abrirEditarSaldoCajaFuerte(saldoActual) {
+  abrirModal("✏️ Editar saldo actual", `
+    <div class="cf-formulario">
+      <p class="cf-form-ayuda">Ajusta el saldo mostrado sin modificar ni borrar los ingresos y gastos del historial. Los movimientos futuros seguirán sumando o restando a partir de este saldo.</p>
+      <label>Nuevo saldo actual</label>
+      <input id="cfNuevoSaldo" type="number" step="0.01" inputmode="decimal" value="${Number(saldoActual || 0).toFixed(2)}" placeholder="0.00">
+      <div class="acciones">
+        <button class="btn-secondary" onclick="abrirGestorGastosPersonales()">Cancelar</button>
+        <button class="btn-primary" onclick="guardarSaldoCajaFuerte()">💾 Guardar saldo</button>
+      </div>
+    </div>
+  `);
+}
+
+function guardarSaldoCajaFuerte() {
+  const input = document.getElementById("cfNuevoSaldo");
+  const nuevoSaldo = Number(input?.value);
+  if (!Number.isFinite(nuevoSaldo)) return toast("Ingresa un saldo válido");
+  const movimientos = listarMovimientosCajaFuerte();
+  const ingresos = movimientos.filter(m => m.tipo === "ingreso").reduce((s, m) => s + (Number(m.monto) || 0), 0);
+  const gastos = movimientos.filter(m => m.tipo !== "ingreso").reduce((s, m) => s + (Number(m.monto) || 0), 0);
+  // Ajuste separado: no altera los movimientos históricos.
+  LS.set("cajaFuerteSaldoAjuste", nuevoSaldo - (ingresos - gastos));
+  toast("✅ Saldo actual actualizado; el historial no se modificó");
+  abrirGestorGastosPersonales();
 }
 
 function abrirFormularioCajaFuerte(tipo) {
