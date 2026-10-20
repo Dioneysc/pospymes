@@ -240,6 +240,15 @@
           <input id="cfgSlogan" placeholder="Eslogan (ej: Asados al carbón)">
           <input id="cfgDireccion" placeholder="Dirección">
           <input id="cfgTelefono" placeholder="Teléfono">
+          <div class="config-logo-negocio">
+            <label for="cfgLogoNegocio" style="display:block;font-weight:700;margin:10px 0 6px">Logotipo del negocio (opcional)</label>
+            <input id="cfgLogoNegocio" type="file" accept="image/png,image/jpeg,image/webp" onchange="previsualizarLogoNegocio(event)">
+            <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+              <img id="cfgLogoPreview" alt="Vista previa del logotipo" style="display:none;width:64px;height:64px;object-fit:contain;border:1px solid var(--borde,#ddd);border-radius:8px;padding:4px">
+              <button type="button" class="btn-secondary" onclick="eliminarLogoNegocio()">Quitar logotipo</button>
+            </div>
+            <small style="display:block;color:var(--texto-secundario,#64748b);margin-top:6px">Se guarda en esta terminal. Usa una imagen JPG, PNG o WebP de hasta 5 MB.</small>
+          </div>
           <button class="btn-primary" onclick="guardarNegocio()" style="margin-top:8px">Guardar</button>
         </div>
 
