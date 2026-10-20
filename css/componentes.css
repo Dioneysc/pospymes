@@ -246,3 +246,95 @@ tr:last-child td { border-bottom: none; }
 .cf-vacio{display:flex;flex-direction:column;align-items:center;gap:6px;padding:25px 12px;text-align:center}.cf-vacio>span{font-size:25px}.cf-vacio b{font-size:13px}.cf-vacio small{font-size:12px;color:var(--texto-suave,#64748b)}
 .cf-formulario{display:flex;flex-direction:column;gap:9px}.cf-formulario label{margin-top:3px}.cf-formulario input{width:100%;box-sizing:border-box}.cf-formulario .acciones{margin-top:10px}
 @media(max-width:380px){.cf-boton{padding:9px;gap:7px}.cf-boton b{font-size:12px}.cf-movimiento{gap:6px;padding:9px 6px}.cf-mov-icono{flex-basis:29px;width:29px;height:29px}.cf-mov-monto{font-size:11px}}
+
+/* FASE A · Componentes con jerarquía visual y estados consistentes */
+.card, .card-config, .tabla-wrap, .modal-contenido {
+  border-radius: var(--radio-panel, 18px);
+}
+
+.card, .card-config {
+  box-shadow: var(--sombra-panel, 0 8px 24px rgba(15,23,42,.055));
+}
+
+.btn-primary, .btn-success, .btn-danger, .btn-secondary,
+button.btn-primary, button.btn-success, button.btn-danger, button.btn-secondary {
+  min-height: 42px;
+  transition: transform .14s ease, box-shadow .14s ease, filter .14s ease;
+}
+
+.btn-primary:active, .btn-success:active, .btn-danger:active,
+.btn-secondary:active { transform: translateY(1px); }
+
+input, select, textarea {
+  border-radius: 11px;
+  transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--naranja) !important;
+  box-shadow: var(--anillo-foco, 0 0 0 3px rgba(249,115,22,.20));
+}
+
+.tabla-wrap table th { position: sticky; top: 0; z-index: 1; }
+.tabla-wrap table td, .tabla-wrap table th { vertical-align: middle; }
+
+.toast { max-width: min(92vw, 420px); overflow-wrap: anywhere; }
+
+@media (hover: hover) and (pointer: fine) {
+  .card, .card-config { transition: box-shadow .16s ease, transform .16s ease; }
+  .card:hover, .card-config:hover { box-shadow: 0 12px 28px rgba(15,23,42,.09); }
+  .btn-primary:hover, .btn-success:hover { filter: brightness(1.035); }
+}
+
+
+/* Ajustes de contraste en modo claro: efectivo esperado y botón Google */
+body:not(.modo-oscuro) .card.destacado small {
+  color: #fff7ed !important;
+  opacity: 1;
+}
+body:not(.modo-oscuro) #syncForm button[onclick="conectarSync()"] {
+  background: #ffffff !important;
+  color: #3c4043 !important;
+  border-color: #dadce0 !important;
+}
+body:not(.modo-oscuro) #syncForm button[onclick="conectarSync()"] svg {
+  flex-shrink: 0;
+}
+
+
+/* Notas opcionales para tickets */
+.ticket-notas-editor {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid var(--borde, #d8dee6);
+  border-radius: 12px;
+  background: var(--superficie, #fff);
+}
+.ticket-notas-editor label {
+  font-weight: 700;
+  font-size: 13px;
+}
+.ticket-notas-editor textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 64px;
+  resize: vertical;
+  padding: 10px 12px;
+  border: 1px solid var(--borde, #d8dee6);
+  border-radius: 8px;
+  background: var(--fondo, #fff);
+  color: var(--texto, #18212f);
+  font: inherit;
+}
+.ticket-notas-editor small {
+  color: var(--texto-secundario, #64748b);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.ticket-notas-preview, .ticket-notas-impresion {
+  margin: 8px 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

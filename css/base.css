@@ -188,3 +188,44 @@ main { max-width: 1600px; margin-inline: auto; padding: 20px; padding-bottom: 11
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
 
+
+/* FASE A · Pulido visual global (sin cambiar lógica de negocio) */
+:root {
+  --radio-panel: 18px;
+  --sombra-panel: 0 8px 24px rgba(15, 23, 42, .055);
+  --anillo-foco: 0 0 0 3px rgba(249, 115, 22, .20);
+}
+
+button, input, select, textarea, a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible, a:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--naranja);
+  outline-offset: 2px;
+}
+
+button:disabled, input:disabled, select:disabled, textarea:disabled {
+  cursor: not-allowed;
+  opacity: .62;
+}
+
+.topbar {
+  box-shadow: 0 5px 18px rgba(15, 23, 42, .14);
+}
+
+.vista-header h2 {
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .topbar .btn-icon:hover { background: rgba(255,255,255,.16); }
+  .nav-inferior button:hover { background: rgba(249,115,22,.07); }
+}
+
+@media (max-width: 520px) {
+  .vista-header h2 { font-size: clamp(20px, 5.4vw, 25px); }
+  main { padding-left: 12px; padding-right: 12px; }
+}

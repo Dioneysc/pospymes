@@ -73,10 +73,15 @@
               <span>🏷️ Descuento</span>
               <span class="toggle-val" id="toggleDescuentoVal"></span>
             </button>
-            <button class="toggle-btn" id="togglePropina" onclick="togglePropina()">
-              <span>💝 Propina</span>
-              <span class="toggle-val" id="togglePropinaVal"></span>
+            <button class="toggle-btn" id="btnPreventa" type="button" onclick="guardarPreventa()" title="Guardar este pedido como preventa">
+              <span>📅 Preventa</span>
+              <span class="toggle-val" id="preventaVal"></span>
             </button>
+          </div>
+
+          <div class="nota-pedido-wrap">
+            <label for="notaPedido">📝 Nota del pedido (opcional)</label>
+            <textarea id="notaPedido" rows="2" maxlength="300" placeholder="Ej. Sin salsa, entregar a la 1:00..." aria-label="Nota del pedido"></textarea>
           </div>
 
           <div class="totales-sec oculto" id="panelDescuento">
@@ -92,18 +97,7 @@
             </div>
           </div>
 
-          <div class="totales-sec oculto" id="panelPropina">
-            <div class="fila-sec">
-              <div class="lbl">Propina</div>
-              <div class="val" id="propinaVal">$0.00</div>
-              <div class="btns">
-                <button onclick="aplicarPropina(0)">0</button>
-                <button onclick="aplicarPropina(5)">5%</button>
-                <button onclick="aplicarPropina(10)">10%</button>
-                <button onclick="aplicarPropina(15)">15%</button>
-              </div>
-            </div>
-          </div>
+
 
           <div class="total-box">
             <span class="label">Total:</span>
@@ -130,10 +124,6 @@
             <span class="total-cobrar" id="totalCobrar">$0</span>
           </button>
 
-          <div class="mesa-input" style="display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:13px">
-  <label style="color:#64748b;font-weight:600">Mesa:</label>
-  <input id="mesaActual" placeholder="Ej: 3" style="flex:1;padding:8px;border:2px solid var(--borde);border-radius:8px;font-size:14px">
-</div>
         </aside>
         
                 <!-- BOTÓN FLOTANTE CARRITO (solo móvil) -->
@@ -183,6 +173,19 @@
         </div>
       </div>
       <div id="reporteContenido"></div>
+    </section>
+
+    <!-- PREVENTAS PENDIENTES -->
+    <section id="preventas" class="vista">
+      <div class="vista-header">
+        <h2>📅 Lista de preventas</h2>
+        <button class="btn-secondary" type="button" onclick="renderListaPreventas()">🔄 Actualizar</button>
+      </div>
+      <div id="resumenPreventas" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px"></div>
+      <div style="margin-bottom:14px">
+        <input id="buscarPreventa" type="search" placeholder="🔍 Buscar por número, producto o nota..." oninput="renderListaPreventas()" style="width:100%;padding:12px;border:2px solid var(--borde);border-radius:12px;background:#fff;box-sizing:border-box">
+      </div>
+      <div id="listaPreventasContenido"></div>
     </section>
 
     <!-- HISTORIAL -->
@@ -364,6 +367,7 @@
 <script src="js/productos.js"></script>
 <script src="js/inventario.js"></script>
 <script src="js/venta.js"></script>
+<script src="js/preventa.js"></script>
 <script src="js/impresion.js"></script>
 <script src="js/whatsapp.js"></script>
 <script src="js/gastos.js"></script>

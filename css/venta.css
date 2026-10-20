@@ -405,3 +405,29 @@
     flex: 0 0 32px;
   }
 }
+
+/* FASE A · Venta: controles más claros sin alterar el flujo de cobro */
+.barra-busqueda input { min-height: 48px; }
+.categorias button { min-height: 40px; transition: background .15s ease, border-color .15s ease, color .15s ease, transform .15s ease; }
+.prod-btn { border-color: var(--borde); box-shadow: 0 3px 10px rgba(15,23,42,.055); }
+.prod-btn:focus-visible { outline-offset: 3px; border-color: var(--naranja); }
+.carrito-panel { border-radius: 18px; }
+.btn-cobrar { min-height: 56px; font-weight: 850; letter-spacing: .15px; }
+
+@media (hover: hover) and (pointer: fine) {
+  .prod-btn:hover { transform: translateY(-2px); border-color: rgba(249,115,22,.55); box-shadow: 0 8px 18px rgba(15,23,42,.09); }
+  .categorias button:hover:not(.activo) { border-color: #fdba74; color: var(--naranja2); }
+}
+
+@media (max-width: 520px) {
+  .productos-grid { gap: 8px; }
+  .prod-btn { min-width: 0; }
+  .btn-cobrar { width: 100%; }
+}
+
+
+/* Campo de nota compartido por venta normal y preventa. */
+.nota-pedido-wrap { display: grid; gap: 6px; margin: 10px 0; }
+.nota-pedido-wrap label { color: var(--texto-suave, #64748b); font-size: 12px; font-weight: 700; }
+.nota-pedido-wrap textarea { width: 100%; box-sizing: border-box; min-height: 54px; resize: vertical; border: 1px solid var(--borde, #e2e8f0); border-radius: 10px; padding: 9px 10px; font: inherit; font-size: 13px; color: var(--texto, #1e293b); background: var(--fondo-card, #fff); }
+.nota-pedido-wrap textarea:focus { outline: 2px solid rgba(249,115,22,.25); border-color: var(--naranja, #f97316); }

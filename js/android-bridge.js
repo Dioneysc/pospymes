@@ -76,8 +76,8 @@ function androidImprimirTicket(venta) {
         telefono: n.telefono || "",
         id: venta.id,
         fecha: new Date(venta.fecha).toLocaleString("es-MX"),
-        mesa: venta.mesa || "",
         cajero: venta.usuario || "admin",
+        notas: venta.notas || "",
         items: venta.items.map(it => ({
             cantidad: it.cantidad,
             nombre: it.nombre,
@@ -239,7 +239,6 @@ function imprimirPrueba() {
     telefono: DB.negocio.telefono || "",
     id: "TEST",
     fecha: new Date().toLocaleString("es-MX"),
-    mesa: "",
     cajero: "admin",
     items: [
       { cantidad: 1, nombre: "Ticket de prueba", precio: 0 }

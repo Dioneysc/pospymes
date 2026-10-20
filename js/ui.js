@@ -40,6 +40,7 @@ function cambiarVista(nombre) {
   if (nombre === "productos") renderProductos();
   if (nombre === "config") { cargarNegocio(); if (typeof pintarEstadoSync === "function") pintarEstadoSync(); }
   if (nombre === "historial") { renderHistorial(); }
+  if (nombre === "preventas") { renderListaPreventas(); }
 
   mostrarAlertaStock();
 }
@@ -55,6 +56,7 @@ function abrirMenu() {
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('corte')" style="text-align:left;padding:14px;font-size:15px">💰 Caja</button>
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('reportes')" style="text-align:left;padding:14px;font-size:15px">📊 Reportes</button>
       <hr style="border:none;border-top:1px solid #e2e8f0;margin:6px 0">
+      <button class="btn-secondary" onclick="cerrarModal();cambiarVista('preventas')" style="text-align:left;padding:14px;font-size:15px">📋 Lista de preventas</button>
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('historial')" style="text-align:left;padding:14px;font-size:15px">📅 Historial de tickets</button>
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('productos')" style="text-align:left;padding:14px;font-size:15px">🍗 Productos</button>
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('gastos')" style="text-align:left;padding:14px;font-size:15px">💸 Gastos</button>

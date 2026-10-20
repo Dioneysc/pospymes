@@ -16,8 +16,7 @@ function compartirWhatsApp(ventaId) {
   texto += `━━━━━━━━━━━━━━━\n`;
   texto += `🧾 *Ticket #${String(v.id).padStart(6, "0")}*\n`;
   texto += `📅 ${fecha}\n`;
-  if (v.mesa) texto += `🍽️ Mesa: ${v.mesa}\n`;
-  texto += `👤 Cajero: ${v.usuario || "admin"}\n`;
+    texto += `👤 Cajero: ${v.usuario || "admin"}\n`;
   texto += `━━━━━━━━━━━━━━━\n`;
 
   v.items.forEach(it => {

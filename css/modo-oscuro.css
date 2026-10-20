@@ -478,3 +478,42 @@ body.modo-oscuro #rangoBotones.rango::before {
 body.modo-oscuro #rangoBotones.rango button { color: #cbd5e1 !important; }
 body.modo-oscuro #rangoBotones.rango button.activo { color: #ffffff !important; }
 body.modo-oscuro #rangoBotones.rango button:focus-visible { outline-color: #86efac; }
+
+/* FASE A · Estados de interacción en modo oscuro */
+body.modo-oscuro {
+  --sombra-panel: 0 8px 24px rgba(0,0,0,.18);
+  --anillo-foco: 0 0 0 3px rgba(251,146,60,.25);
+}
+
+body.modo-oscuro button:focus-visible,
+body.modo-oscuro a:focus-visible,
+body.modo-oscuro input:focus-visible,
+body.modo-oscuro select:focus-visible,
+body.modo-oscuro textarea:focus-visible {
+  outline-color: #fdba74;
+}
+
+body.modo-oscuro input:focus,
+body.modo-oscuro select:focus,
+body.modo-oscuro textarea:focus {
+  border-color: #fb923c !important;
+  box-shadow: 0 0 0 3px rgba(251,146,60,.22);
+}
+
+body.modo-oscuro .card,
+body.modo-oscuro .card-config,
+body.modo-oscuro .tabla-wrap,
+body.modo-oscuro .hist-item {
+  box-shadow: 0 8px 24px rgba(0,0,0,.18);
+}
+
+body.modo-oscuro .tabla-wrap table th {
+  background: #273449;
+  color: #dbe5f1;
+}
+body.modo-oscuro .tabla-wrap table td { border-bottom-color: #334155; }
+body.modo-oscuro .tabla-wrap table tbody tr:hover { background: #263447; }
+
+@media (hover: hover) and (pointer: fine) {
+  body.modo-oscuro .nav-inferior button:hover { background: rgba(251,146,60,.10); }
+}

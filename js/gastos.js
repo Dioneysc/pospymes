@@ -57,11 +57,12 @@ function abrirFormGasto() {
   abrirModal("Nuevo gasto", `
     <label>Categoría</label>
     <select id="fgCategoria">${CATS_GASTO.map(c => `<option>${c}</option>`).join("")}</select>
-    <label>Monto</label><input id="fgMonto" type="number" step="0.01">
+    <label>Monto</label><input id="fgMonto" type="number" min="0.01" step="0.01" inputmode="decimal">
     <label>Método de pago</label>
     <select id="fgMetodo">
       <option value="Efectivo">💵 Efectivo (afecta caja)</option>
       <option value="Transferencia">🏦 Transferencia (no afecta caja)</option>
+      <option value="Caja Fuerte">🔐 Caja Fuerte (descuenta de Caja Fuerte)</option>
     </select>
     <label>Nota (opcional)</label><input id="fgNota">
     <div class="acciones">
@@ -72,23 +73,26 @@ function abrirFormGasto() {
 }
 
 function guardarGasto() {
-  const monto = +$("#fgMonto").value;
-  if (!monto) return toast("Monto inválido");
+  const monto = Number($("#fgMonto").value);
+  if (!Number.isFinite(monto) || monto <= 0) return toast("Ingresa un monto mayor que cero");
+  const metodo = $("#fgMetodo").value;
   DB.gastos.push({
     id: nuevoId(DB.gastos),
     fecha: new Date().toISOString(),
     categoria: $("#fgCategoria").value,
     monto,
-    metodo: $("#fgMetodo").value,
+    metodo,
     nota: $("#fgNota").value.trim()
   });
   guardar(); cerrarModal(); renderGastos(); renderEstadoCaja();
-  toast("💾 Gasto registrado");
+  toast(metodo === "Caja Fuerte"
+    ? "🔐 Gasto registrado en Caja Fuerte; no se descontó de la caja del negocio"
+    : "💾 Gasto registrado");
 }
 
 function borrarGasto(id) {
   if (!confirm("¿Borrar gasto?")) return;
-  DB.gastos = DB.gastos.filter(x => x.id !== id);
+  DB.gastos = DB.gastos.filter(x => String(x.id) !== String(id));
   guardar(); renderGastos(); renderEstadoCaja();
 }
 

@@ -55,7 +55,6 @@ function renderHistorial() {
         <div class="hist-meta">
           <span>💳 ${v.metodo}</span>
           <span>👤 ${v.usuario || "admin"}</span>
-          ${v.mesa ? `<span>🍽️ Mesa ${v.mesa}</span>` : ""}
         </div>
         <div class="hist-items">${itemsTxt}</div>
         <div class="hist-acciones">
@@ -85,8 +84,8 @@ function verTicketHistorial(v) {
       <hr>
       <div>Ticket No. ${String(v.id).padStart(6, "0")}</div>
       <div>Fecha: ${new Date(v.fecha).toLocaleString("es-MX")}</div>
-      ${v.mesa ? `<div>Mesa: ${v.mesa}</div>` : ""}
       <div>Cajero: ${v.usuario || "admin"}</div>
+      ${v.notas ? `<div class="ticket-notas-preview"><strong>Nota:</strong> ${escapeHTML(v.notas).replace(/\n/g, "<br>")}</div>` : ""}
       <hr>
       <div class="fila bold"><span>Cant.</span><span>Total</span></div>
       <hr>
@@ -188,6 +187,7 @@ function abrirCancelarVenta(id) {
 function confirmarCancelarVenta(id) {
   const v = DB.ventas.find(x => x.id === id);
   if (!v) return toast("⚠️ Venta no encontrada");
+  if (v.cancelada) return toast("⚠️ Esta venta ya fue cancelada");
 
   const motivo = $("#motivoCancel").value.trim() || "Sin motivo";
 

@@ -1,5 +1,5 @@
 // Sube este número cada vez que publiques cambios (v39 → v40 …)
-const VERSION = "v65";
+const VERSION = "v74";
 const CACHE = `pos-polleria-${VERSION}`;
 
 // Sin estos archivos la app no funciona: si falta alguno, la instalación falla y se conserva la versión anterior
@@ -19,6 +19,7 @@ const NUCLEO = [
   "./js/productos.js",
   "./js/inventario.js",
   "./js/venta.js",
+  "./js/preventa.js",
   "./js/impresion.js",
   "./js/android-bridge.js",
   "./js/whatsapp.js",

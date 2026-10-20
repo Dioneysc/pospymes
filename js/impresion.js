@@ -20,7 +20,7 @@ function mostrarTicketImpresion(v) {
       <hr>
       <div>Ticket No. ${String(v.id).padStart(6, "0")}</div>
       <div>Fecha: ${new Date(v.fecha).toLocaleDateString("es-MX")} ${new Date(v.fecha).toLocaleTimeString("es-MX", {hour:"2-digit",minute:"2-digit"})}</div>
-      ${v.mesa ? `<div>Mesa: ${v.mesa}</div>` : ""}
+      ${v.notas ? `<div class="ticket-notas-preview"><strong>Nota:</strong> ${escapeHTML(v.notas).replace(/\n/g, "<br>")}</div>` : ""}
       <hr>
       <div class="fila bold"><span>Cant.</span><span>Total</span></div>
       <hr>
@@ -43,7 +43,7 @@ function mostrarTicketImpresion(v) {
       <div class="centro">${n.telefono || ""}</div>
     </div>
 
-      <div class="ticket-acciones" style="grid-template-columns: 1fr 1fr 1fr;">
+    <div class="ticket-acciones" style="grid-template-columns: 1fr 1fr 1fr;">
       <button class="btn-no-imprimir" onclick="cerrarModal()">✖️ Cerrar</button>
       <button class="btn-imprimir" onclick="imprimirVentaActual()">🖨️ Imprimir</button>
       <button class="btn-whatsapp" onclick="compartirWhatsApp(${v.id})">📤 WhatsApp</button>
@@ -133,8 +133,8 @@ function imprimirTicket(v) {
     <hr>
     <div>Ticket #${String(v.id).padStart(6, "0")}</div>
     <div>${new Date(v.fecha).toLocaleString("es-MX")}</div>
-    ${v.mesa ? `<div>Mesa: ${escapeHTML(v.mesa)}</div>` : ""}
     <div>Cajero: ${escapeHTML(v.usuario || "admin")}</div>
+    ${v.notas ? `<div class="ticket-notas-impresion"><strong>Nota:</strong> ${escapeHTML(v.notas).replace(/\n/g, "<br>")}</div>` : ""}
     <hr>
     ${items}
     <hr>

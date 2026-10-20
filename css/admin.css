@@ -189,3 +189,15 @@
   #rangoBotones.rango { width: 100%; min-width: 0; }
   #rangoBotones.rango button { padding: 10px 5px !important; font-size: 12px; }
 }
+
+/* FASE A · Administración: lectura rápida y controles consistentes */
+.estado-caja > *, .arqueo-grid > * { min-width: 0; }
+.hist-item, .cat-item, .alerta-stock { overflow-wrap: anywhere; }
+.hist-item { box-shadow: 0 5px 18px rgba(15,23,42,.045); }
+.hist-item .hist-header { align-items: flex-start; }
+
+@media (max-width: 520px) {
+  .estado-caja { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  .arqueo-grid { gap: 8px; }
+  .hist-item { padding: 13px; }
+}

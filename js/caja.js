@@ -52,7 +52,14 @@ function listarMovimientosCajaFuerte() {
     monto: Number(g.monto) || 0, tipo: "gasto", nota: g.nota || "", origen: "antiguo"
   }));
   const nuevos = obtenerMovimientosCajaFuerte().map(m => ({ ...m, origen: "nuevo" }));
-  return [...antiguos, ...nuevos].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+  // Los gastos registrados con este método viven en DB.gastos: así se reflejan
+  // en Caja Fuerte y también se sincronizan/resguardan con el resto del negocio.
+  const gastosDesdeCajaFuerte = (DB.gastos || []).filter(g => g.metodo === "Caja Fuerte").map(g => ({
+    id: String(g.id), gastoId: g.id, fecha: g.fecha, concepto: g.categoria || "Gasto del negocio",
+    monto: Number(g.monto) || 0, tipo: "gasto", nota: g.nota || "Registrado desde Gastos",
+    origen: "gasto-negocio"
+  }));
+  return [...antiguos, ...nuevos, ...gastosDesdeCajaFuerte].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 }
 
 function abrirGestorGastosPersonales() {
@@ -120,6 +127,18 @@ function guardarMovimientoCajaFuerte(tipo) {
 }
 
 function borrarMovimientoCajaFuerte(id, origen) {
+  if (origen === "gasto-negocio") {
+    const gasto = (DB.gastos || []).find(g => String(g.id) === String(id) && g.metodo === "Caja Fuerte");
+    if (!gasto) return toast("Gasto no encontrado");
+    if (!confirm(`¿Eliminar también el gasto de ${gasto.categoria || "negocio"} por ${fmt(gasto.monto)}? Se quitará de Gastos, del reporte y de Caja Fuerte.`)) return;
+    DB.gastos = DB.gastos.filter(g => String(g.id) !== String(id));
+    guardar();
+    if (typeof renderGastos === "function") renderGastos();
+    if (typeof renderEstadoCaja === "function") renderEstadoCaja();
+    toast("🗑️ Gasto eliminado de Gastos y Caja Fuerte");
+    abrirGestorGastosPersonales();
+    return;
+  }
   const esAntiguo = origen === "antiguo";
   const lista = esAntiguo ? obtenerGastosPersonales() : obtenerMovimientosCajaFuerte();
   const movimiento = lista.find(m => String(m.id) === String(id));
@@ -150,15 +169,16 @@ function resumenDia() {
   const tarjetaVentas = sumaVentas("Tarjeta");
   const transfVentas = sumaVentas("Transferencia");
   const gastosDia = DB.gastos.filter(g => delTurno(g.fecha));
-  const gastosEfectivo = gastosDia.filter(g => g.metodo !== "Transferencia").reduce((s, g) => s + g.monto, 0);
+  const gastosEfectivo = gastosDia.filter(g => g.metodo === "Efectivo" || !g.metodo).reduce((s, g) => s + g.monto, 0);
   const gastosTransf = gastosDia.filter(g => g.metodo === "Transferencia").reduce((s, g) => s + g.monto, 0);
+  const gastosCajaFuerte = gastosDia.filter(g => g.metodo === "Caja Fuerte").reduce((s, g) => s + g.monto, 0);
   const retiros = estadoCajaHoy.retiros.reduce((s, r) => s + r.monto, 0);
   const depositos = estadoCajaHoy.depositos.reduce((s, d) => s + d.monto, 0);
   const fondo = estadoCajaHoy.fondoInicial || 0;
   const cajaFuerte = CORTE_INCLUYE_CAJA_FUERTE ? depositos - retiros : 0;
   const esperado = fondo + efectivoVentas + cajaFuerte - gastosEfectivo;
   return { ventasHoy, efectivoVentas, tarjetaVentas, transfVentas, totalVentas: efectivoVentas + tarjetaVentas + transfVentas,
-           gastosEfectivo, gastosTransf, retiros, depositos, fondo, esperado };
+           gastosEfectivo, gastosTransf, gastosCajaFuerte, retiros, depositos, fondo, esperado };
 }
 
 /* ============ ESTADO DE CAJA ============ */
@@ -233,7 +253,7 @@ function renderEstadoCaja() {
 function abrirCorteDiario() {
   initDia();
   const r = resumenDia();
-  const { efectivoVentas, tarjetaVentas, transfVentas, totalVentas, gastosEfectivo, gastosTransf, retiros, depositos, fondo, esperado } = r;
+  const { efectivoVentas, tarjetaVentas, transfVentas, totalVentas, gastosEfectivo, gastosTransf, gastosCajaFuerte, retiros, depositos, fondo, esperado } = r;
 
   abrirModal("📋 Corte de caja", `
     <div style="background:#f8fafc;border-radius:12px;padding:12px;margin-bottom:14px;font-size:13px;border:1px solid var(--borde)">
@@ -252,6 +272,7 @@ function abrirCorteDiario() {
       <div style="display:flex;justify-content:space-between;padding:3px 0"><span>Ventas tarjeta:</span><b>${fmt(tarjetaVentas)}</b></div>
       <div style="display:flex;justify-content:space-between;padding:3px 0"><span>Ventas transferencia:</span><b>${fmt(transfVentas)}</b></div>
       <div style="display:flex;justify-content:space-between;padding:3px 0"><span>Gastos por transferencia:</span><b>${fmt(gastosTransf)}</b></div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0"><span>Gastos Caja Fuerte:</span><b>${fmt(gastosCajaFuerte)}</b></div>
       <hr style="border:none;border-top:1px solid #cbd5e1;margin:6px 0">
       <div style="display:flex;justify-content:space-between;padding:3px 0"><b>Total ventas del día:</b><b>${fmt(totalVentas)}</b></div>
     </div>
@@ -335,6 +356,7 @@ function guardarCorte(esperado, efectivo, tarjeta, transf, total) {
     ventas: { efectivo, tarjeta, transf, total, tickets: resumenDia().ventasHoy.length },
     gastos: resumenDia().gastosEfectivo,
     gastosTransf: resumenDia().gastosTransf,
+    gastosCajaFuerte: resumenDia().gastosCajaFuerte,
     retiros: CORTE_INCLUYE_CAJA_FUERTE ? resumenDia().retiros : 0,
     depositos: CORTE_INCLUYE_CAJA_FUERTE ? resumenDia().depositos : 0,
     movCajaFuerte: { retiros: estadoCajaHoy.retiros, depositos: estadoCajaHoy.depositos },
@@ -405,6 +427,7 @@ function imprimirCorte(c) {
     <div class="fila"><span>Retiros:</span><span>-${fmt(c.retiros)}</span></div>` : ""}
     <div class="fila"><span>Gastos efectivo:</span><span>${fmt(c.gastos)}</span></div>
     ${c.gastosTransf ? `<div class="fila"><span>Gastos transf. (no caja):</span><span>${fmt(c.gastosTransf)}</span></div>` : ""}
+    ${c.gastosCajaFuerte ? `<div class="fila"><span>Gastos Caja Fuerte (no caja):</span><span>${fmt(c.gastosCajaFuerte)}</span></div>` : ""}
     <div class="fila b"><span>Esperado:</span><span>${fmt(c.esperado)}</span></div>
     <div class="fila b"><span>Contado:</span><span>${fmt(c.contado)}</span></div>
     <div class="fila b g"><span>DIFERENCIA:</span><span>${fmt(c.diferencia)}</span></div>
