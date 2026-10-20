@@ -12,6 +12,73 @@ function cargarNegocio() {
   if (elS) elS.value = DB.negocio.slogan || "";
   if (elD) elD.value = DB.negocio.direccion || "";
   if (elT) elT.value = DB.negocio.telefono || "";
+  actualizarPreviewLogoNegocio();
+}
+
+function obtenerLogoNegocio() {
+  return LS.get("negocioLogoLocal", "");
+}
+
+function actualizarPreviewLogoNegocio() {
+  const logo = obtenerLogoNegocio();
+  const preview = $("#cfgLogoPreview");
+  if (!preview) return;
+  if (logo) {
+    preview.src = logo;
+    preview.style.display = "block";
+  } else {
+    preview.removeAttribute("src");
+    preview.style.display = "none";
+  }
+}
+
+function previsualizarLogoNegocio(evento) {
+  const archivo = evento && evento.target && evento.target.files && evento.target.files[0];
+  if (!archivo) return;
+  if (!/^image\/(png|jpeg|webp)$/.test(archivo.type)) {
+    evento.target.value = "";
+    return toast("⚠️ Selecciona una imagen PNG, JPG o WebP");
+  }
+  if (archivo.size > 5 * 1024 * 1024) {
+    evento.target.value = "";
+    return toast("⚠️ La imagen debe pesar menos de 5 MB");
+  }
+
+  const lector = new FileReader();
+  lector.onload = () => {
+    const imagen = new Image();
+    imagen.onload = () => {
+      try {
+        const max = 320;
+        const escala = Math.min(1, max / Math.max(imagen.width, imagen.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(imagen.width * escala));
+        canvas.height = Math.max(1, Math.round(imagen.height * escala));
+        const contexto = canvas.getContext("2d");
+        contexto.drawImage(imagen, 0, 0, canvas.width, canvas.height);
+        const data = canvas.toDataURL("image/webp", 0.82);
+        LS.set("negocioLogoLocal", data);
+        actualizarPreviewLogoNegocio();
+        toast("🖼️ Logotipo cargado en esta terminal. Pulsa Guardar para aplicar los datos del negocio.");
+      } catch (error) {
+        toast("⚠️ No se pudo procesar la imagen");
+      }
+    };
+    imagen.onerror = () => toast("⚠️ No se pudo abrir la imagen");
+    imagen.src = lector.result;
+  };
+  lector.onerror = () => toast("⚠️ No se pudo leer el archivo");
+  lector.readAsDataURL(archivo);
+}
+
+function eliminarLogoNegocio() {
+  if (!confirm("¿Quitar el logotipo de esta terminal?")) return;
+  LS.set("negocioLogoLocal", "");
+  const selector = $("#cfgLogoNegocio");
+  if (selector) selector.value = "";
+  actualizarPreviewLogoNegocio();
+  actualizarHeader();
+  toast("Logotipo eliminado de esta terminal");
 }
 
 function guardarNegocio() {

@@ -13,10 +13,14 @@ function mostrarTicketImpresion(v) {
     </div>
   `).join("");
 
+  const logoNegocio = typeof obtenerLogoNegocio === "function" ? obtenerLogoNegocio() : "";
   abrirModal("🧾 Ticket de venta", `
     <div class="ticket-preview">
-      <div class="centro bold grande">${n.nombre || "POS"}</div>
-      <div class="centro">${n.slogan || ""}</div>
+      ${logoNegocio ? `<div class="centro"><img src="${logoNegocio}" alt="Logotipo" style="max-width:90px;max-height:70px;object-fit:contain"></div>` : ""}
+      <div class="centro bold grande">${escapeHTML(n.nombre || "POS")}</div>
+      <div class="centro">${escapeHTML(n.slogan || "")}</div>
+      ${n.direccion ? `<div class="centro">${escapeHTML(n.direccion)}</div>` : ""}
+      ${n.telefono ? `<div class="centro">Tel: ${escapeHTML(n.telefono)}</div>` : ""}
       <hr>
       <div>Ticket No. ${String(v.id).padStart(6, "0")}</div>
       <div>Fecha: ${new Date(v.fecha).toLocaleDateString("es-MX")} ${new Date(v.fecha).toLocaleTimeString("es-MX", {hour:"2-digit",minute:"2-digit"})}</div>
@@ -38,9 +42,8 @@ function mostrarTicketImpresion(v) {
       ` : ""}
       <hr>
       <div class="centro">¡Gracias por su preferencia!</div>
-      <div class="centro bold">${n.nombre || ""}</div>
-      <div class="centro">${n.slogan || ""}</div>
-      <div class="centro">${n.telefono || ""}</div>
+      <div class="centro bold">${escapeHTML(n.nombre || "")}</div>
+      <div class="centro">${escapeHTML(n.slogan || "")}</div>
     </div>
 
     <div class="ticket-acciones" style="grid-template-columns: 1fr 1fr 1fr;">
@@ -125,7 +128,9 @@ function imprimirTicket(v) {
     `<div class="fila"><span>${it.cantidad}x ${escapeHTML(it.nombre)}</span><span>${fmt(it.precio * it.cantidad)}</span></div>`
   ).join("");
 
+  const logoNegocio = typeof obtenerLogoNegocio === "function" ? obtenerLogoNegocio() : "";
   imprimirHTML(`
+    ${logoNegocio ? `<div class="c"><img src="${logoNegocio}" alt="Logotipo" style="max-width:90px;max-height:70px;object-fit:contain"></div>` : ""}
     <div class="c b g">${escapeHTML(n.nombre || "POS")}</div>
     <div class="c">${escapeHTML(n.slogan || "")}</div>
     <div class="c">${escapeHTML(n.direccion || "")}</div>

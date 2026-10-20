@@ -12,6 +12,13 @@ function actualizarHeader() {
   const elTopSlogan = $("#topbarSlogan");
   if (elTopNombre) elTopNombre.textContent = nombre;
   if (elTopSlogan) elTopSlogan.textContent = slogan;
+  const elLogo = document.querySelector(".brand-logo");
+  if (elLogo) {
+    const logoLocal = typeof obtenerLogoNegocio === "function" ? obtenerLogoNegocio() : "";
+    elLogo.src = logoLocal || "logo.png";
+    elLogo.style.display = "block";
+    elLogo.onerror = () => { elLogo.style.display = "none"; };
+  }
   document.title = "🧮 " + nombre;
 
   const elLoginNombre = $("#loginNombre");
