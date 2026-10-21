@@ -49,6 +49,9 @@ function reporteRango(tipo) {
 
   const totalV = ventas.reduce((s, v) => s + (Number(v.total) || 0), 0);
   const totalG = gastos.reduce((s, g) => s + (Number(g.monto) || 0), 0);
+  let costoRecetas = 0;
+  let unidadesConReceta = 0;
+  let unidadesSinReceta = 0;
   const porProd = {};
   let cantidadUnidades = 0;
 
@@ -61,17 +64,34 @@ function reporteRango(tipo) {
       if (!porProd[nombre]) porProd[nombre] = { qty: 0, total: 0 };
       porProd[nombre].qty += cantidad;
       porProd[nombre].total += precio * cantidad;
+
+      const prod = (DB.productos || []).find(p => String(p.id) === String(it.productoId));
+      const receta = prod && Array.isArray(prod.insumos) ? prod.insumos : [];
+      const recetaCompleta = receta.length > 0 && receta.every(ing =>
+        (DB.insumos || []).some(ins => String(ins.id) === String(ing.insumoId) && Number.isFinite(Number(ins.costo)))
+      );
+      if (recetaCompleta) {
+        unidadesConReceta += cantidad;
+        receta.forEach(ing => {
+          const ins = (DB.insumos || []).find(x => String(x.id) === String(ing.insumoId));
+          if (ins) costoRecetas += (Number(ins.costo) || 0) * (Number(ing.cantidad) || 0) * cantidad;
+        });
+      } else {
+        unidadesSinReceta += cantidad;
+      }
     });
   });
 
-  // No se calculan costos de recetas/ingredientes en el modo de inventario simple.
-  // El resultado resta únicamente los gastos registrados por el usuario.
-  const gananciaEstimada = totalV - totalG;
+  // Es una estimación: si un gasto ya incluye los mismos insumos calculados por receta,
+  // restarlo en ambos conceptos duplicaría ese costo. La interfaz lo advierte explícitamente.
+  const gananciaEstimada = totalV - totalG - costoRecetas;
   const maxTotal = Math.max(...Object.values(porProd).map(p => p.total), 1);
   const totalEfectivo = ventas.filter(v => v.metodo === "Efectivo").reduce((s, v) => s + (Number(v.total) || 0), 0);
   const totalTarjeta = ventas.filter(v => v.metodo === "Tarjeta").reduce((s, v) => s + (Number(v.total) || 0), 0);
   const totalTransferencia = ventas.filter(v => v.metodo === "Transferencia").reduce((s, v) => s + (Number(v.total) || 0), 0);
   const periodo = tipo === "dia" ? "Hoy" : tipo === "semana" ? "Últimos 7 días" : "Este mes";
+  const cobertura = cantidadUnidades ? Math.round(unidadesConReceta / cantidadUnidades * 100) : 0;
+  const tieneCostosIncompletos = unidadesSinReceta > 0;
 
   const contenedor = $("#reporteContenido");
   if (!contenedor) return;
@@ -83,15 +103,16 @@ function reporteRango(tipo) {
 
     <div class="panel-metricas">
       <article class="panel-metrica panel-metrica-principal">
-        <span class="panel-metrica-icono">💰</span><span class="panel-metrica-label">Resultado estimado</span>
-        <strong>${fmt(gananciaEstimada)}</strong><small>Ventas − gastos registrados</small>
+        <span class="panel-metrica-icono">💰</span><span class="panel-metrica-label">Ganancia estimada</span>
+        <strong>${fmt(gananciaEstimada)}</strong><small>Ventas − gastos − costo de recetas</small>
       </article>
       <article class="panel-metrica"><span class="panel-metrica-icono">🛒</span><span class="panel-metrica-label">Ventas totales</span><strong>${fmt(totalV)}</strong><small>${cantidadUnidades} unidades vendidas</small></article>
       <article class="panel-metrica"><span class="panel-metrica-icono">💸</span><span class="panel-metrica-label">Gastos registrados</span><strong>${fmt(totalG)}</strong><small>${gastos.length} movimientos</small></article>
-      <article class="panel-metrica"><span class="panel-metrica-icono">📦</span><span class="panel-metrica-label">Productos vendidos</span><strong>${Object.keys(porProd).length}</strong><small>Productos distintos en el periodo</small></article>
+      <article class="panel-metrica"><span class="panel-metrica-icono">📦</span><span class="panel-metrica-label">Costo calculado de recetas</span><strong>${fmt(costoRecetas)}</strong><small>${cobertura}% de unidades con receta completa</small></article>
     </div>
 
-    <div class="panel-aviso panel-aviso-info"><strong>Cómo interpretar el resultado</strong><span>Es ventas menos gastos registrados. No representa la utilidad neta contable y no descuenta por separado el costo de mercancía que no hayas registrado como gasto.</span></div>
+    ${tieneCostosIncompletos ? `<div class="panel-aviso panel-aviso-amarillo"><strong>⚠️ Faltan costos de productos</strong><span>${unidadesSinReceta} unidad(es) vendidas no tienen una receta de costos completa. La ganancia mostrada puede ser mayor que la real. Completa las recetas en Productos.</span></div>` : ""}
+    <div class="panel-aviso panel-aviso-info"><strong>Cómo interpretar la ganancia</strong><span>Esta cifra es estimada. Si registraste como gasto la compra de un insumo cuyo costo también se calcula mediante recetas, ese costo podría descontarse dos veces. Revisa los conceptos de gastos antes de tomarla como utilidad definitiva.</span></div>
 
     <div class="panel-seccion-titulo"><div><h3>💳 Formas de pago</h3><p>Importes de ventas cobradas en el periodo</p></div></div>
     <div class="panel-pagos">

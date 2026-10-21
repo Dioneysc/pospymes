@@ -158,12 +158,12 @@ function exportarBackup() {
 }
 
 function borrarProductosInsumos() {
-  if (!confirm("⚠️ Se borrarán TODOS los productos y existencias.\n\nLas ventas y gastos NO se borran.\n\n¿Continuar?")) return;
-  if (!confirm("⚠️ Última confirmación. ¿Borrar productos y existencias definitivamente?")) return;
+  if (!confirm("⚠️ Se borrarán TODOS los productos e insumos.\n\nLas ventas y gastos NO se borran.\n\n¿Continuar?")) return;
+  if (!confirm("⚠️ Última confirmación. ¿Borrar productos e insumos definitivamente?")) return;
   DB.productos = [];
   DB.insumos = [];
   guardar();
-  toast("📦 Productos e inventario borrados");
+  toast("🍗 Productos e insumos borrados");
   carrito = [];
   renderCaja();
   renderCategorias();
@@ -173,7 +173,7 @@ function borrarProductosInsumos() {
 }
 
 function borrarVentasGastos() {
-  if (!confirm("⚠️ Se borrarán TODAS las ventas y gastos.\n\nLos productos y existencias NO se borran.\n\n¿Continuar?")) return;
+  if (!confirm("⚠️ Se borrarán TODAS las ventas y gastos.\n\nLos productos e insumos NO se borran.\n\n¿Continuar?")) return;
   if (!confirm("⚠️ Última confirmación. ¿Borrar ventas y gastos definitivamente?")) return;
   DB.ventas = [];
   DB.gastos = [];
@@ -258,7 +258,6 @@ function importarBackup(e) {
         ventas: datos.ventas,
         usuarios: datos.usuarios,
         insumos: Array.isArray(datos.insumos) ? datos.insumos : [],
-        inventarioMovimientos: Array.isArray(datos.inventarioMovimientos) ? datos.inventarioMovimientos : [],
         gastos: Array.isArray(datos.gastos) ? datos.gastos : [],
         negocio:
           datos.negocio && typeof datos.negocio === "object"

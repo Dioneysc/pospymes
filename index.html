@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<title>🧮 POS PyMes</title>
+<title>🧮 POS</title>
 
 <!-- CSS modular -->
 <link rel="stylesheet" href="css/base.css">
@@ -51,7 +51,7 @@
   <main>
     <!-- VENTA -->
     <section id="caja" class="vista activa">
-      <div id="alertaStock" class="alerta-stock" style="display:none" onclick="verProductosStockBajo()"></div>
+      <div id="alertaStock" class="alerta-stock" style="display:none" onclick="verInsumosBajos()"></div>
       <div class="caja-layout">
         <div class="productos-wrap">
           <div class="barra-busqueda">
@@ -137,17 +137,16 @@
       </div>
     </section>
 
-    <!-- INVENTARIO SIMPLE -->
+    <!-- INVENTARIO -->
     <section id="inventario" class="vista">
       <div class="vista-header">
         <h2>📦 Inventario</h2>
-        <button class="btn-primary" onclick="abrirFormProducto()">+ Nuevo producto</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-secondary" onclick="abrirFormInsumo()">+ Insumo</button>
+          <button class="btn-primary" onclick="abrirMovimiento()">↕ Movimiento</button>
+        </div>
       </div>
-      <div class="card-config" style="margin-bottom:16px">
-        <h3 style="margin-bottom:10px">Existencias de productos</h3>
-        <p style="font-size:12px;color:#64748b;margin-bottom:12px">Desde Productos puedes registrar compras, precio de compra, unidad y stock mínimo. Aquí puedes revisar existencias o hacer ajustes.</p>
-        <div id="listaStockProductos" class="tabla-wrap"></div>
-      </div>
+      <div id="listaInsumos" class="tabla-wrap"></div>
     </section>
 
     <!-- CAJA -->
@@ -327,7 +326,7 @@
           <h3>⚠️ Zona peligrosa</h3>
           <p style="color:#64748b;font-size:13px;margin-bottom:12px">Opciones para reiniciar el sistema.</p>
           <div style="display:flex;flex-direction:column;gap:6px">
-            <button class="btn-secondary" onclick="borrarProductosInsumos()" style="text-align:left">📦 Borrar todos los productos e inventario</button>
+            <button class="btn-secondary" onclick="borrarProductosInsumos()" style="text-align:left">🍗 Borrar todos los productos e insumos</button>
             <button class="btn-secondary" onclick="borrarVentasGastos()" style="text-align:left">🧾 Borrar ventas y gastos</button>
             <button class="btn-danger" onclick="borrarTodo()" style="text-align:left">🗑️ Borrar TODO (sistema completo)</button>
           </div>

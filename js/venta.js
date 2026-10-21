@@ -44,13 +44,8 @@ function renderCaja() {
     const contenido = p.imagen
       ? `<img src="${p.imagen}" class="prod-imagen" loading="lazy" onerror="this.outerHTML='<div class=\\'prod-emoji\\'>${p.emoji||'🍽️'}</div>'">`
       : `<div class="prod-emoji">${p.emoji || "🍽️"}</div>`;
-    const stockDisponible = typeof existenciaVisibleProducto === "function" ? existenciaVisibleProducto(p) : (p.stock === undefined || p.stock === null ? null : Number(p.stock));
-    const stockVisible = stockDisponible !== null && Number.isFinite(Number(stockDisponible))
-      ? `<span class="prod-stock-numero" aria-label="Existencia">${Number(stockDisponible).toLocaleString("es-MX", { maximumFractionDigits: 3 })}</span>`
-      : "";
     return `
       <button class="prod-btn" data-cat="${p.categoria}" onclick="agregarAlCarrito(${p.id})">
-        ${stockVisible}
         ${contenido}
         <span class="prod-nombre">${escapeHTML(p.nombre)}</span>
         <span class="prod-precio">${fmt(p.precio)}</span>
@@ -249,27 +244,14 @@ function cobrar(metodo) {
 }
 
 function stockFaltante() {
-  const need = {}, nombres = {}, tipos = {};
-  const faltantes = [];
+  const need = {};
   carrito.forEach(it => {
     const p = DB.productos.find(x => x.id === it.productoId);
-    if (!p) return;
-    const modo = typeof modoInventarioProducto === "function" ? modoInventarioProducto(p) : (p.stock !== undefined && p.stock !== null ? "producto" : "ninguno");
-    if (modo === "producto") {
-      const key = `producto_${p.id}`; need[key] = (need[key] || 0) + it.cantidad; nombres[key] = p.nombre; tipos[key] = "producto";
-    } else if (modo === "derivado") {
-      const base = productoBaseInventario(p), factor = factorInventarioProducto(p);
-      if (base && factor > 0) { const key = `producto_${base.id}`; need[key] = (need[key] || 0) + factor * it.cantidad; nombres[key] = base.nombre; tipos[key] = "producto"; }
-    }
+    (p && p.insumos || []).forEach(g => { need[g.insumoId] = (need[g.insumoId] || 0) + g.cantidad * it.cantidad; });
   });
-  Object.entries(need).forEach(([key, q]) => {
-    const id = key.slice(8), prod = DB.productos.find(x => String(x.id) === String(id));
-    if (prod && Number(prod.stock) + 0.000001 < q) {
-      const unidad = prod.unidad ? ` ${prod.unidad}` : "";
-      faltantes.push(`${prod.nombre}: hay ${Number(prod.stock)||0}${unidad}, faltan ${+(q - (Number(prod.stock)||0)).toFixed(3)}${unidad}`);
-    }
-  });
-  return faltantes;
+  return Object.entries(need).map(([id, q]) => ({ ins: DB.insumos.find(x => x.id == id), q }))
+    .filter(o => o.ins && o.ins.stock < o.q)
+    .map(o => `${o.ins.nombre}: hay ${o.ins.stock} ${o.ins.unidad}, faltan ${+(o.q - o.ins.stock).toFixed(2)}`);
 }
 
 function cobrarEfectivoRapido() { cobrar("Efectivo"); }
@@ -410,23 +392,13 @@ function finalizarVenta(metodo, total, pagoCon, cambio) {
   };
   DB.ventas.push(venta);
 
-  asegurarMovimientosInventario();
   carrito.forEach(item => {
     const prod = DB.productos.find(p => p.id === item.productoId);
-    if (!prod) return;
-    const modo = typeof modoInventarioProducto === "function" ? modoInventarioProducto(prod) : (prod.stock !== undefined && prod.stock !== null ? "producto" : "ninguno");
-    if (modo === "producto") {
-      const antes = Math.max(0, Number(prod.stock) || 0), despues = Math.max(0, antes - item.cantidad);
-      prod.stock = despues;
-      registrarMovimientoInventario({entidadTipo:"producto", entidadId:prod.id, nombre:prod.nombre, tipo:"venta", cantidad:-item.cantidad, cantidadAplicada:antes-despues, cantidadSolicitada:item.cantidad, stockAntes:antes, stockDespues:despues, costoTotal:0, ventaId:venta.id, motivo:`Venta #${venta.id}`});
-    } else if (modo === "derivado") {
-      const base = productoBaseInventario(prod), factor = factorInventarioProducto(prod);
-      if (base && factor > 0) {
-        const antes = Math.max(0, Number(base.stock) || 0), solicitado = factor * item.cantidad, despues = Math.max(0, antes - solicitado);
-        base.stock = despues;
-        registrarMovimientoInventario({entidadTipo:"producto", entidadId:base.id, nombre:base.nombre, tipo:"venta", cantidad:-solicitado, cantidadAplicada:antes-despues, cantidadSolicitada:solicitado, stockAntes:antes, stockDespues:despues, costoTotal:0, ventaId:venta.id, motivo:`Venta de ${prod.nombre} · ticket #${venta.id}`});
-      }
-    }
+    if (!prod || !prod.insumos) return;
+    prod.insumos.forEach(ing => {
+      const ins = DB.insumos.find(x => x.id === ing.insumoId);
+      if (ins) ins.stock = Math.max(0, ins.stock - ing.cantidad * item.cantidad);
+    });
   });
 
   guardar();
@@ -446,9 +418,6 @@ function finalizarVenta(metodo, total, pagoCon, cambio) {
 
   cerrarCarritoModal();
   renderCarrito();
-  renderCaja();
-  if (typeof renderInsumos === "function") renderInsumos();
-  if (typeof renderProductos === "function") renderProductos();
   renderEstadoCaja();
   reproducirSonido("cobro");
   mostrarTicketImpresion(venta);
