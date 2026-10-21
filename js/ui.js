@@ -76,45 +76,45 @@ function abrirMenu() {
 
 /* ============ ALERTA STOCK ============ */
 function revisarStockBajo() {
-  return DB.insumos.filter(i => i.stock <= i.min);
+  return (DB.productos || []).filter(p => {
+    const modo = typeof modoInventarioProducto === "function" ? modoInventarioProducto(p) : "ninguno";
+    if (modo !== "producto" && modo !== "derivado") return false;
+    const minimo = Math.max(0, Number(p.stockMinimo) || 0);
+    const stock = typeof existenciaVisibleProducto === "function" ? existenciaVisibleProducto(p) : Number(p.stock);
+    return minimo > 0 && stock !== null && Number.isFinite(Number(stock)) && Number(stock) <= minimo;
+  });
 }
 
 function mostrarAlertaStock() {
   const bajos = revisarStockBajo();
   const el = document.getElementById("alertaStock");
   if (!el) return;
-
-  if (bajos.length === 0) {
-    el.style.display = "none";
-    return;
-  }
-
+  if (bajos.length === 0) { el.style.display = "none"; return; }
   el.style.display = "flex";
   el.innerHTML = `
     <span class="ico">⚠️</span>
-    <span class="texto">Stock bajo: ${bajos.length} insumo${bajos.length>1?'s':''} por reabastecer</span>
+    <span class="texto">Stock bajo: ${bajos.length} producto${bajos.length>1?'s':''} por reabastecer</span>
     <span class="badge-count">${bajos.length}</span>
   `;
 }
 
-function verInsumosBajos() {
+function verProductosStockBajo() {
   const bajos = revisarStockBajo();
   if (bajos.length === 0) return toast("✅ Todo el stock está bien");
-  abrirModal("⚠️ Insumos con stock bajo", `
-    <p style="color:#64748b;font-size:13px;margin-bottom:12px">Estos insumos están en o por debajo del mínimo:</p>
+  abrirModal("⚠️ Productos con stock bajo", `
+    <p style="color:#64748b;font-size:13px;margin-bottom:12px">Estos productos están en o por debajo de su mínimo:</p>
     <div>
-      ${bajos.map(i => `
-        <div class="cat-item" style="background:#fef3c7;border-left:4px solid var(--warn)">
-          <div style="flex:1">
-            <b>${i.nombre}</b>
-            <div style="font-size:12px;color:#64748b">Stock: ${i.stock} ${i.unidad} · Mínimo: ${i.min}</div>
-          </div>
-          <button class="btn-mini" onclick="cerrarModal();abrirMovimiento(${i.id})">↕ Reabastecer</button>
-        </div>
-      `).join("")}
+      ${bajos.map(p => {
+        const stock = typeof existenciaVisibleProducto === "function" ? existenciaVisibleProducto(p) : p.stock;
+        return `<div class="cat-item" style="background:#fef3c7;border-left:4px solid var(--warn)">
+          <div style="flex:1"><b>${escapeHTML(p.nombre)}</b><div style="font-size:12px;color:#64748b">Stock: ${Number(stock).toLocaleString("es-MX",{maximumFractionDigits:3})} ${escapeHTML(p.unidad || "pieza")} · Mínimo: ${Number(p.stockMinimo || 0).toLocaleString("es-MX",{maximumFractionDigits:3})}</div></div>
+          <button class="btn-mini" onclick="cerrarModal();abrirFormProducto(${p.id})">✏️ Revisar</button>
+        </div>`;
+      }).join("")}
     </div>
-    <div class="acciones">
-      <button class="btn-primary" onclick="cerrarModal();cambiarVista('inventario')">Ir a Inventario</button>
-    </div>
+    <div class="acciones"><button class="btn-primary" onclick="cerrarModal();cambiarVista('inventario')">Ir a Inventario</button></div>
   `);
 }
+
+// Compatibilidad con versiones anteriores que llamaban esta función.
+function verInsumosBajos() { verProductosStockBajo(); }

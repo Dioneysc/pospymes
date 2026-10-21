@@ -5,7 +5,7 @@
    Datos en: negocios/{uid}/{productos|insumos|ventas|gastos|usuarios|cortes|config}
    ============================================ */
 
-const SYNC_COLS = ["productos", "insumos", "ventas", "gastos", "usuarios", "cortes"]; // listas de registros con id
+const SYNC_COLS = ["productos", "insumos", "inventarioMovimientos", "ventas", "gastos", "usuarios", "cortes"]; // listas de registros con id
 const SYNC_CFG = ["negocio", "catsGasto", "cajaHoy"];                                   // valores únicos (carpeta config)
 const SYNC_CLAVES = new Set([...SYNC_COLS, ...SYNC_CFG]);
 const FB_VER = "10.12.2";

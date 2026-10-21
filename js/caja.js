@@ -47,8 +47,7 @@ function obtenerMovimientosCajaFuerte() {
 }
 
 // Filtros temporales del historial; no alteran ni eliminan movimientos guardados.
-let filtroCajaFuerteDesde = "";
-let filtroCajaFuerteHasta = "";
+let filtroCajaFuerteFecha = "";
 
 function fechaMovimientoCajaFuerte(fecha) {
   if (!fecha) return "";
@@ -60,19 +59,13 @@ function fechaMovimientoCajaFuerte(fecha) {
   return fechaLocal(d);
 }
 
-function cambiarFiltroCajaFuerte(campo, valor) {
-  if (campo === "desde") filtroCajaFuerteDesde = valor || "";
-  if (campo === "hasta") filtroCajaFuerteHasta = valor || "";
-  if (filtroCajaFuerteDesde && filtroCajaFuerteHasta && filtroCajaFuerteDesde > filtroCajaFuerteHasta) {
-    if (campo === "desde") filtroCajaFuerteHasta = filtroCajaFuerteDesde;
-    else filtroCajaFuerteDesde = filtroCajaFuerteHasta;
-  }
+function cambiarFechaCajaFuerte(valor) {
+  filtroCajaFuerteFecha = valor || hoy();
   abrirGestorGastosPersonales();
 }
 
 function limpiarFiltroCajaFuerte() {
-  filtroCajaFuerteDesde = "";
-  filtroCajaFuerteHasta = "";
+  filtroCajaFuerteFecha = hoy();
   abrirGestorGastosPersonales();
 }
 
@@ -99,12 +92,10 @@ function abrirGestorGastosPersonales() {
   const saldoMovimientos = ingresos - gastos;
   const ajusteSaldo = Number(LS.get("cajaFuerteSaldoAjuste", 0)) || 0;
   const saldo = saldoMovimientos + ajusteSaldo;
-  const movimientosFiltrados = movimientos.filter(m => {
-    const fecha = fechaMovimientoCajaFuerte(m.fecha);
-    if (filtroCajaFuerteDesde && (!fecha || fecha < filtroCajaFuerteDesde)) return false;
-    if (filtroCajaFuerteHasta && (!fecha || fecha > filtroCajaFuerteHasta)) return false;
-    return true;
-  });
+  if (!filtroCajaFuerteFecha) filtroCajaFuerteFecha = hoy();
+  const fechaActiva = filtroCajaFuerteFecha;
+  const movimientosFiltrados = movimientos.filter(m => fechaMovimientoCajaFuerte(m.fecha) === fechaActiva);
+  const fechaTextoCajaFuerte = fechaActiva === hoy() ? "Hoy" : new Date(`${fechaActiva}T12:00:00`).toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   abrirModal("🔐 Caja Fuerte", `
     <div class="cf-panel">
       <div class="cf-saldo">
@@ -127,11 +118,10 @@ function abrirGestorGastosPersonales() {
         <button class="cf-boton cf-boton-ingreso" onclick="abrirFormularioCajaFuerte('ingreso')"><span>＋</span><b>Nuevo ingreso</b></button>
         <button class="cf-boton cf-boton-gasto" onclick="abrirFormularioCajaFuerte('gasto')"><span>−</span><b>Nuevo gasto</b></button>
       </div>
-      <div class="cf-historial-cabecera"><div><b>Historial</b><small>${movimientosFiltrados.length} de ${movimientos.length} movimientos</small></div><span>📊</span></div>
-      <div class="cf-filtros" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px;border:1px solid var(--borde,#e2e8f0);border-radius:12px">
-        <label style="font-size:12px;min-width:0">Desde<input type="date" value="${filtroCajaFuerteDesde}" onchange="cambiarFiltroCajaFuerte('desde',this.value)" style="display:block;box-sizing:border-box;width:100%;margin-top:4px;min-width:0"></label>
-        <label style="font-size:12px;min-width:0">Hasta<input type="date" value="${filtroCajaFuerteHasta}" onchange="cambiarFiltroCajaFuerte('hasta',this.value)" style="display:block;box-sizing:border-box;width:100%;margin-top:4px;min-width:0"></label>
-        <button class="btn-secondary" style="grid-column:1/-1" onclick="limpiarFiltroCajaFuerte()">Limpiar filtros</button>
+      <div class="cf-historial-cabecera"><div><b>Historial · ${escapeHTML(fechaTextoCajaFuerte)}</b><small>${movimientosFiltrados.length} ${movimientosFiltrados.length === 1 ? "movimiento" : "movimientos"} · ${movimientos.length} en total</small></div><span>📊</span></div>
+      <div class="cf-filtros" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px;border:1px solid var(--borde,#e2e8f0);border-radius:12px">
+        <label style="font-size:12px;font-weight:700;min-width:0;flex:1">Consultar fecha<input type="date" value="${escapeHTML(fechaActiva)}" max="${escapeHTML(hoy())}" onchange="cambiarFechaCajaFuerte(this.value)" style="display:block;box-sizing:border-box;width:100%;margin-top:4px;min-width:0;padding:9px;border:1px solid var(--borde);border-radius:9px;background:var(--fondo,#fff);color:var(--texto)"></label>
+        <button class="btn-secondary" type="button" onclick="limpiarFiltroCajaFuerte()">Hoy</button>
       </div>
       <div class="cf-lista">
         ${movimientosFiltrados.length ? movimientosFiltrados.map(m => `
@@ -140,7 +130,7 @@ function abrirGestorGastosPersonales() {
             <div class="cf-mov-info"><b>${escapeHTML(m.concepto || (m.tipo === 'ingreso' ? 'Ingreso personal' : 'Gasto personal'))}</b><small>${m.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'} · ${m.fecha ? new Date(m.fecha).toLocaleDateString('es-MX') : 'Sin fecha'}${m.nota ? ' · ' + escapeHTML(m.nota) : ''}</small></div>
             <b class="cf-mov-monto ${m.tipo === 'ingreso' ? 'cf-ingreso' : 'cf-gasto'}">${m.tipo === 'ingreso' ? '+' : '−'}${fmt(m.monto)}</b>
             <button class="cf-eliminar" onclick="borrarMovimientoCajaFuerte('${String(m.id).replace(/'/g,"\\'")}', '${m.origen}')" title="Eliminar movimiento" aria-label="Eliminar movimiento">×</button>
-          </div>`).join('') : `<div class="cf-vacio"><span>📊</span><b>Aún no hay movimientos</b><small>Registra un ingreso o gasto para comenzar.</small></div>`}
+          </div>`).join('') : `<div class="cf-vacio"><span>📊</span><b>Sin movimientos para esta fecha</b><small>Selecciona otro día en el calendario o registra un movimiento nuevo.</small></div>`}
       </div>
       <div class="acciones"><button class="btn-secondary" onclick="cerrarModal()">Cerrar</button></div>
     </div>
@@ -202,6 +192,7 @@ function guardarMovimientoCajaFuerte(tipo) {
     fecha: new Date().toISOString(), concepto, tipo, monto, nota
   });
   LS.set("cajaFuerteMovimientos", movimientos);
+  filtroCajaFuerteFecha = hoy();
   toast(tipo === "ingreso" ? "✅ Ingreso guardado" : "✅ Gasto guardado");
   abrirGestorGastosPersonales();
 }
@@ -457,6 +448,7 @@ function guardarCorte(esperado, efectivo, tarjeta, transf, total) {
   cerrarModal();
   toast(`✅ Corte guardado · Diferencia: ${fmt(diferencia)} · Caja reiniciada`);
   renderEstadoCaja();
+  window._fechaHistorialCortes = corte.dia;
   renderHistorialCortes();
   mostrarAlertaStock();
   imprimirCorte(corte);
@@ -472,31 +464,69 @@ function resumenResultadoCorte(corte) {
     : { diferencia, texto: "FALTANTE", clase: "danger" };
 }
 
-function renderHistorialCortes() {
-  const cortes = LS.get("cortes", []).slice().reverse();
+function renderHistorialCortes(fechaSeleccionada) {
+  const todos = LS.get("cortes", []).slice().reverse();
+  if (fechaSeleccionada) window._fechaHistorialCortes = fechaSeleccionada;
+  if (!window._fechaHistorialCortes) window._fechaHistorialCortes = hoy();
+  const fechaActiva = window._fechaHistorialCortes;
+  const cortes = todos.filter(c => (c.dia || (c.fecha ? fechaLocal(c.fecha) : "")) === fechaActiva);
   const el = $("#historialCortes");
   if (!el) return;
+
+  const fechaTexto = fechaActiva ? new Date(`${fechaActiva}T12:00:00`).toLocaleDateString("es-MX", {
+    weekday: "long", day: "2-digit", month: "long", year: "numeric"
+  }) : "Selecciona una fecha";
+
   el.innerHTML = `
-    <h3 style="margin-bottom:8px;font-size:15px;padding:12px 12px 0;font-weight:800">Historial de cortes</h3>
-    <table>
-      <thead><tr><th>Fecha</th><th>Ventas</th><th>Esperado</th><th>Contado</th><th>Diferencia</th><th>Resultado</th><th>Cajero</th><th></th></tr></thead>
-      <tbody>
-        ${cortes.length ? cortes.map(c => {
-          const resultado = resumenResultadoCorte(c);
-          return `
-          <tr>
-            <td data-label="Fecha">${new Date(c.fecha).toLocaleString("es-MX",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}</td>
-            <td data-label="Ventas">${fmt(c.ventas?.total || 0)}</td>
-            <td data-label="Esperado">${fmt(c.esperado || 0)}</td>
-            <td data-label="Contado">${fmt(c.contado || 0)}</td>
-            <td data-label="Diferencia"><span class="badge ${resultado.clase}">${resultado.diferencia > 0 ? "+" : resultado.diferencia < 0 ? "−" : ""}${fmt(Math.abs(resultado.diferencia))}</span></td>
-            <td data-label="Resultado"><span class="badge ${resultado.clase}">${resultado.texto}</span></td>
-            <td data-label="Cajero">${escapeHTML(c.usuario || "admin")}</td>
-            <td data-label="Imprimir"><button class="btn-mini" aria-label="Imprimir corte" onclick='imprimirCorte(${JSON.stringify(c).replace(/'/g,"&#39;")})'>🖨️</button></td>
-          </tr>`;
-        }).join("") : `<tr><td colspan="8" style="text-align:center;padding:20px;color:#94a3b8">Sin cortes registrados</td></tr>`}
-      </tbody>
-    </table>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 12px 8px">
+      <div>
+        <h3 style="margin:0;font-size:15px;font-weight:800">Historial de cortes</h3>
+        <small style="color:var(--texto-secundario,#64748b)">Consulta los cortes de un día específico</small>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <label for="fechaHistorialCortes" style="font-size:12px;font-weight:700;margin:0">Fecha</label>
+        <input id="fechaHistorialCortes" type="date" value="${escapeHTML(fechaActiva)}" max="${escapeHTML(hoy())}"
+          onchange="renderHistorialCortes(this.value)"
+          style="width:auto;min-width:145px;padding:8px 10px;border:1px solid var(--borde);border-radius:9px;background:var(--card);color:var(--texto)">
+        <button class="btn-mini" type="button" onclick="renderHistorialCortes('${hoy()}')" style="padding:8px 10px">Hoy</button>
+      </div>
+    </div>
+    <div style="padding:0 12px 12px">
+      <div style="font-size:13px;font-weight:800;text-transform:capitalize;margin-bottom:10px">${escapeHTML(fechaTexto)} · ${cortes.length} ${cortes.length === 1 ? "corte" : "cortes"}</div>
+      ${cortes.length ? `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:10px">
+          ${cortes.map(c => {
+            const resultado = resumenResultadoCorte(c);
+            const hora = c.fecha ? new Date(c.fecha).toLocaleTimeString("es-MX", {hour:"2-digit",minute:"2-digit"}) : "Hora no disponible";
+            const diferenciaTexto = `${resultado.diferencia > 0 ? "+" : resultado.diferencia < 0 ? "−" : ""}${fmt(Math.abs(resultado.diferencia))}`;
+            return `
+              <article class="card" style="padding:14px;border:1px solid var(--borde);border-radius:12px;display:flex;flex-direction:column;gap:9px;min-width:0">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+                  <div><div style="font-size:12px;color:var(--texto-secundario,#64748b)">Corte de las</div><div style="font-size:20px;font-weight:800">${escapeHTML(hora)}</div></div>
+                  <span class="badge ${resultado.clase}">${resultado.texto}</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                  <div style="padding:9px;background:var(--fondo,#f8fafc);border-radius:9px"><div style="font-size:11px;color:var(--texto-secundario,#64748b)">Ventas</div><strong>${fmt(c.ventas?.total || 0)}</strong></div>
+                  <div style="padding:9px;background:var(--fondo,#f8fafc);border-radius:9px"><div style="font-size:11px;color:var(--texto-secundario,#64748b)">Efectivo esperado</div><strong>${fmt(c.esperado || 0)}</strong></div>
+                  <div style="padding:9px;background:var(--fondo,#f8fafc);border-radius:9px"><div style="font-size:11px;color:var(--texto-secundario,#64748b)">Efectivo contado</div><strong>${fmt(c.contado || 0)}</strong></div>
+                  <div style="padding:9px;background:var(--fondo,#f8fafc);border-radius:9px"><div style="font-size:11px;color:var(--texto-secundario,#64748b)">Diferencia</div><strong>${diferenciaTexto}</strong></div>
+                </div>
+                <div style="font-size:12px;color:var(--texto-secundario,#64748b)">Cajero: ${escapeHTML(c.usuario || "admin")}</div>
+                ${c.nota ? `<div style="font-size:12px;overflow-wrap:anywhere">Nota: ${escapeHTML(c.nota)}</div>` : ""}
+                <div style="display:flex;justify-content:flex-end;margin-top:auto;padding-top:3px">
+                  <button class="btn-mini" aria-label="Imprimir corte" onclick='imprimirCorte(${JSON.stringify(c).replace(/'/g,"&#39;")})'>🖨️ Imprimir corte</button>
+                </div>
+              </article>`;
+          }).join("")}
+        </div>
+      ` : `
+        <div style="text-align:center;padding:24px 14px;border:1px dashed var(--borde);border-radius:12px;color:var(--texto-secundario,#94a3b8)">
+          <div style="font-size:26px;margin-bottom:6px">🗓️</div>
+          <strong style="display:block;color:var(--texto,#334155);margin-bottom:4px">No hay cortes para esta fecha</strong>
+          <span style="font-size:12px">Selecciona otro día en el calendario para consultar su historial.</span>
+        </div>
+      `}
+    </div>
   `;
 }
 

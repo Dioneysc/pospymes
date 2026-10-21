@@ -3,70 +3,72 @@
    ============================================ */
 
 /* ============ HISTORIAL ============ */
-function renderHistorial() {
-  let desde = $("#histDesde")?.value;
-  let hasta = $("#histHasta")?.value;
-  if (!desde && !hasta) {
-    const ahora = new Date();
-    desde = fechaLocal(new Date(ahora.getFullYear(), ahora.getMonth(), 1));
-    hasta = fechaLocal(ahora);
-    const elD = $("#histDesde");
-    const elH = $("#histHasta");
-    if (elD) elD.value = desde;
-    if (elH) elH.value = hasta;
-  }
-  let ventas = [...DB.ventas].sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
-  if (desde) {
-    const d = new Date(desde + "T00:00:00");
-    ventas = ventas.filter(v => new Date(v.fecha) >= d);
-  }
-  if (hasta) {
-    const h = new Date(hasta + "T23:59:59.999");
-    ventas = ventas.filter(v => new Date(v.fecha) <= h);
-  }
+function renderHistorial(fechaSeleccionada) {
+  const selector = $("#histFecha");
+  if (fechaSeleccionada) window._fechaHistorialTickets = fechaSeleccionada;
+  if (!window._fechaHistorialTickets) window._fechaHistorialTickets = hoy();
+  const fechaActiva = window._fechaHistorialTickets;
+  if (selector && selector.value !== fechaActiva) selector.value = fechaActiva;
+
+  const ventas = [...DB.ventas]
+    .filter(v => fechaLocal(new Date(v.fecha)) === fechaActiva)
+    .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
   const el = $("#listaHistorial");
   if (!el) return;
   if (!ventas.length) {
-    el.innerHTML = `<p style="text-align:center;padding:30px;color:#94a3b8">Sin tickets en este rango de fechas</p>`;
+    const titulo = fechaActiva === hoy() ? "hoy" : new Date(fechaActiva + "T12:00:00").toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    el.innerHTML = `<div style="text-align:center;padding:30px 16px;color:var(--texto-suave,#94a3b8);border:1px dashed var(--borde);border-radius:14px"><div style="font-size:28px;margin-bottom:8px">🧾</div><b>Sin tickets para ${escapeHTML(titulo)}</b><div style="font-size:12px;margin-top:5px">Selecciona otra fecha en el calendario para consultar el historial.</div></div>`;
     return;
   }
-  const grupos = new Map();
-  ventas.forEach(v => {
-    const fecha = fechaLocal(new Date(v.fecha));
-    if (!grupos.has(fecha)) grupos.set(fecha, []);
-    grupos.get(fecha).push(v);
+  const totalDia = ventas.filter(v => !v.cancelada).reduce((s, v) => s + (Number(v.total) || 0), 0);
+  const tituloFecha = fechaActiva === hoy() ? "Hoy" : new Date(fechaActiva + "T12:00:00").toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  el.innerHTML = `
+    <section class="hist-grupo-fecha" style="margin-bottom:18px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:12px 14px;margin-bottom:10px;background:var(--superficie,#f1f5f9);border:1px solid var(--borde);border-radius:12px">
+        <div><b style="text-transform:capitalize">📅 ${escapeHTML(tituloFecha)}</b><div style="font-size:12px;color:var(--texto-suave);margin-top:3px">${ventas.length} ${ventas.length === 1 ? "ticket" : "tickets"}</div></div>
+        <b>${fmt(totalDia)}</b>
+      </div>
+      ${ventas.map(v => {
+        const cancelada = v.cancelada || false;
+        const itemsTxt = (v.items || []).map(i => `${i.cantidad}x ${i.nombre}`).join(", ");
+        return `
+          <div class="hist-item ${cancelada ? "cancelada" : ""}">
+            <div class="hist-header">
+              <div><div class="hist-id">🧾 Ticket #${String(v.id).padStart(6, "0")} ${cancelada ? `<span class="badge-cancelada">Cancelada</span>` : ""}</div><div class="hist-fecha">${new Date(v.fecha).toLocaleString("es-MX")}</div></div>
+              <div class="hist-total">${fmt(v.total)}</div>
+            </div>
+            <div class="hist-meta"><span>💳 ${escapeHTML(v.metodo || "—")}</span><span>👤 ${escapeHTML(v.usuario || "admin")}</span></div>
+            <div class="hist-items">${escapeHTML(itemsTxt)}</div>
+            <div class="hist-acciones">
+              <button class="btn-mini" onclick='verTicketHistorial(${JSON.stringify(v).replace(/'/g, "&#39;")})'>👁️ Ver</button>
+              <button class="btn-mini" onclick="reimprimirVenta(${JSON.stringify(String(v.id))})">🖨️ Reimprimir</button>
+              <button class="btn-mini" style="color:#25d366;border-color:#25d366" onclick="compartirWhatsApp(${JSON.stringify(String(v.id))})">📤 WhatsApp</button>
+              ${!cancelada ? `<button class="btn-mini" style="color:var(--rojo);border-color:var(--rojo)" onclick="abrirCancelarVenta(${JSON.stringify(v.id)})">↩️ Cancelar</button>` : ""}
+              <button class="btn-mini" style="color:#dc2626;border-color:#dc2626" onclick="eliminarTicketHistorial(${JSON.stringify(v.id)})">🗑️ Eliminar</button>
+            </div>
+          </div>`;
+      }).join("")}
+    </section>`;
+}
+
+function restaurarStockDeVenta(ventaId) {
+  if (!Array.isArray(DB.inventarioMovimientos)) return;
+  const movimientos = DB.inventarioMovimientos.filter(m =>
+    String(m.ventaId) === String(ventaId) && m.tipo === "venta" && m.entidadTipo === "producto"
+  );
+  movimientos.forEach(m => {
+    const p = DB.productos.find(x => String(x.id) === String(m.entidadId));
+    if (!p || p.stock === undefined || p.stock === null) return;
+    const cantidad = Number.isFinite(Number(m.cantidadAplicada))
+      ? Math.max(0, Number(m.cantidadAplicada))
+      : Math.max(0, Math.abs(Number(m.cantidad) || 0));
+    if (cantidad <= 0) return;
+    const antes = Math.max(0, Number(p.stock) || 0);
+    p.stock = antes + cantidad;
+    if (typeof registrarMovimientoInventario === "function") {
+      registrarMovimientoInventario({entidadTipo:"producto", entidadId:p.id, nombre:p.nombre, tipo:"devolucion", cantidad, stockAntes:antes, stockDespues:p.stock, costoTotal:0, ventaId, motivo:`Restitución por cancelación/eliminación del ticket #${ventaId}`});
+    }
   });
-  el.innerHTML = [...grupos.entries()].map(([fecha, tickets]) => {
-    const totalDia = tickets.filter(v => !v.cancelada).reduce((s, v) => s + (Number(v.total) || 0), 0);
-    const tituloFecha = fecha === fechaLocal(new Date()) ? "Hoy" : new Date(fecha + "T12:00:00").toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-    return `
-      <section class="hist-grupo-fecha" style="margin-bottom:18px">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:12px 14px;margin-bottom:10px;background:var(--superficie,#f1f5f9);border:1px solid var(--borde);border-radius:12px">
-          <div><b style="text-transform:capitalize">📅 ${escapeHTML(tituloFecha)}</b><div style="font-size:12px;color:var(--texto-suave);margin-top:3px">${tickets.length} ${tickets.length === 1 ? "ticket" : "tickets"}</div></div>
-          <b>${fmt(totalDia)}</b>
-        </div>
-        ${tickets.map(v => {
-          const cancelada = v.cancelada || false;
-          const itemsTxt = (v.items || []).map(i => `${i.cantidad}x ${i.nombre}`).join(", ");
-          return `
-            <div class="hist-item ${cancelada ? "cancelada" : ""}">
-              <div class="hist-header">
-                <div><div class="hist-id">🧾 Ticket #${String(v.id).padStart(6, "0")} ${cancelada ? `<span class="badge-cancelada">Cancelada</span>` : ""}</div><div class="hist-fecha">${new Date(v.fecha).toLocaleString("es-MX")}</div></div>
-                <div class="hist-total">${fmt(v.total)}</div>
-              </div>
-              <div class="hist-meta"><span>💳 ${escapeHTML(v.metodo || "—")}</span><span>👤 ${escapeHTML(v.usuario || "admin")}</span></div>
-              <div class="hist-items">${escapeHTML(itemsTxt)}</div>
-              <div class="hist-acciones">
-                <button class="btn-mini" onclick='verTicketHistorial(${JSON.stringify(v).replace(/'/g, "&#39;")})'>👁️ Ver</button>
-                <button class="btn-mini" onclick="reimprimirVenta(${JSON.stringify(String(v.id))})">🖨️ Reimprimir</button>
-                <button class="btn-mini" style="color:#25d366;border-color:#25d366" onclick="compartirWhatsApp(${JSON.stringify(String(v.id))})">📤 WhatsApp</button>
-                ${!cancelada ? `<button class="btn-mini" style="color:var(--rojo);border-color:var(--rojo)" onclick="abrirCancelarVenta(${JSON.stringify(v.id)})">↩️ Cancelar</button>` : ""}
-                <button class="btn-mini" style="color:#dc2626;border-color:#dc2626" onclick="eliminarTicketHistorial(${JSON.stringify(v.id)})">🗑️ Eliminar</button>
-              </div>
-            </div>`;
-        }).join("")}
-      </section>`;
-  }).join("");
 }
 
 function eliminarTicketHistorial(id) {
@@ -74,18 +76,9 @@ function eliminarTicketHistorial(id) {
   if (!venta) return toast("⚠️ Ticket no encontrado");
   const mensaje = venta.cancelada
     ? `¿Eliminar permanentemente el ticket cancelado #${String(venta.id).padStart(6, "0")} del historial?`
-    : `¿Eliminar permanentemente el ticket #${String(venta.id).padStart(6, "0")} por ${fmt(venta.total)}?\n\nSe quitará de historial, reportes y cálculos de caja. Los insumos asociados a la venta se devolverán al inventario. Esta acción no se puede deshacer.`;
+    : `¿Eliminar permanentemente el ticket #${String(venta.id).padStart(6, "0")} por ${fmt(venta.total)}?\n\nSe quitará de historial, reportes y cálculos de caja. Se devolverá el stock de los productos que se descontó en esa venta. Esta acción no se puede deshacer.`;
   if (!confirm(mensaje)) return;
-  if (!venta.cancelada) {
-    (venta.items || []).forEach(item => {
-      const prod = DB.productos.find(p => String(p.id) === String(item.productoId));
-      if (!prod || !Array.isArray(prod.insumos)) return;
-      prod.insumos.forEach(ing => {
-        const ins = DB.insumos.find(x => String(x.id) === String(ing.insumoId));
-        if (ins) ins.stock = (Number(ins.stock) || 0) + (Number(ing.cantidad) || 0) * (Number(item.cantidad) || 0);
-      });
-    });
-  }
+  if (!venta.cancelada) restaurarStockDeVenta(venta.id);
   DB.ventas = DB.ventas.filter(v => String(v.id) !== String(id));
   guardar();
   renderHistorial();
@@ -167,12 +160,10 @@ function exportarHistorial() {
 }
 
 function limpiarFiltroHistorial() {
-  const ahora = new Date();
-  const d = $("#histDesde");
-  const h = $("#histHasta");
-  if (d) d.value = fechaLocal(new Date(ahora.getFullYear(), ahora.getMonth(), 1));
-  if (h) h.value = fechaLocal(ahora);
-  renderHistorial();
+  window._fechaHistorialTickets = hoy();
+  const selector = $("#histFecha");
+  if (selector) selector.value = window._fechaHistorialTickets;
+  renderHistorial(window._fechaHistorialTickets);
 }
 
 /* ============ CANCELAR VENTA ============ */
@@ -191,7 +182,7 @@ function abrirCancelarVenta(id) {
 
     <p style="color:#64748b;font-size:13px;margin-bottom:8px">Esta acción:</p>
     <ul style="color:#64748b;font-size:13px;margin-left:20px;margin-bottom:14px">
-      <li>Devuelve los insumos al inventario</li>
+      <li>Devuelve al inventario el stock descontado de los productos</li>
       <li>Marca el ticket como cancelado</li>
       <li>No elimina el registro del historial</li>
     </ul>
@@ -221,14 +212,7 @@ function confirmarCancelarVenta(id) {
 
   if (!confirm(`¿Cancelar la venta #${v.id} por ${fmt(v.total)}?\n\nMotivo: ${motivo}`)) return;
 
-  v.items.forEach(item => {
-    const prod = DB.productos.find(p => p.id === item.productoId);
-    if (!prod || !prod.insumos) return;
-    prod.insumos.forEach(ing => {
-      const ins = DB.insumos.find(x => x.id === ing.insumoId);
-      if (ins) ins.stock += ing.cantidad * item.cantidad;
-    });
-  });
+  restaurarStockDeVenta(v.id);
 
   v.cancelada = true;
   v.motivoCancelacion = motivo;
@@ -237,7 +221,7 @@ function confirmarCancelarVenta(id) {
 
   guardar();
   cerrarModal();
-  toast(`✅ Venta #${v.id} cancelada · Insumos reintegrados`);
+  toast(`✅ Venta #${v.id} cancelada · Stock restaurado`);
   renderHistorial();
   renderEstadoCaja();
   mostrarAlertaStock();
