@@ -462,6 +462,16 @@ function guardarCorte(esperado, efectivo, tarjeta, transf, total) {
   imprimirCorte(corte);
 }
 
+function resumenResultadoCorte(corte) {
+  const diferencia = Number.isFinite(Number(corte?.diferencia))
+    ? Number(corte.diferencia)
+    : (Number(corte?.contado) || 0) - (Number(corte?.esperado) || 0);
+  if (Math.abs(diferencia) < 0.01) return { diferencia: 0, texto: "CAJA CUADRADA", clase: "ok" };
+  return diferencia > 0
+    ? { diferencia, texto: "SOBRANTE", clase: "warn" }
+    : { diferencia, texto: "FALTANTE", clase: "danger" };
+}
+
 function renderHistorialCortes() {
   const cortes = LS.get("cortes", []).slice().reverse();
   const el = $("#historialCortes");
@@ -469,18 +479,22 @@ function renderHistorialCortes() {
   el.innerHTML = `
     <h3 style="margin-bottom:8px;font-size:15px;padding:12px 12px 0;font-weight:800">Historial de cortes</h3>
     <table>
-      <thead><tr><th>Fecha</th><th>Ventas</th><th>Contado</th><th>Diferencia</th><th>Cajero</th><th></th></tr></thead>
+      <thead><tr><th>Fecha</th><th>Ventas</th><th>Esperado</th><th>Contado</th><th>Diferencia</th><th>Resultado</th><th>Cajero</th><th></th></tr></thead>
       <tbody>
-        ${cortes.length ? cortes.map(c => `
+        ${cortes.length ? cortes.map(c => {
+          const resultado = resumenResultadoCorte(c);
+          return `
           <tr>
             <td data-label="Fecha">${new Date(c.fecha).toLocaleString("es-MX",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}</td>
-            <td data-label="Ventas">${fmt(c.ventas.total)}</td>
-            <td data-label="Contado">${fmt(c.contado)}</td>
-            <td data-label="Diferencia"><span class="badge ${Math.abs(c.diferencia)<0.01?'ok':(c.diferencia>0?'warn':'danger')}">${(c.diferencia>=0?"+":"")+fmt(c.diferencia)}</span></td>
-            <td data-label="Cajero">${c.usuario}</td>
-            <td><button class="btn-mini" onclick='imprimirCorte(${JSON.stringify(c).replace(/'/g,"&#39;")})'>🖨️</button></td>
-          </tr>
-        `).join("") : `<tr><td colspan="6" style="text-align:center;padding:20px;color:#94a3b8">Sin cortes registrados</td></tr>`}
+            <td data-label="Ventas">${fmt(c.ventas?.total || 0)}</td>
+            <td data-label="Esperado">${fmt(c.esperado || 0)}</td>
+            <td data-label="Contado">${fmt(c.contado || 0)}</td>
+            <td data-label="Diferencia"><span class="badge ${resultado.clase}">${resultado.diferencia > 0 ? "+" : resultado.diferencia < 0 ? "−" : ""}${fmt(Math.abs(resultado.diferencia))}</span></td>
+            <td data-label="Resultado"><span class="badge ${resultado.clase}">${resultado.texto}</span></td>
+            <td data-label="Cajero">${escapeHTML(c.usuario || "admin")}</td>
+            <td data-label="Imprimir"><button class="btn-mini" aria-label="Imprimir corte" onclick='imprimirCorte(${JSON.stringify(c).replace(/'/g,"&#39;")})'>🖨️</button></td>
+          </tr>`;
+        }).join("") : `<tr><td colspan="8" style="text-align:center;padding:20px;color:#94a3b8">Sin cortes registrados</td></tr>`}
       </tbody>
     </table>
   `;
@@ -504,11 +518,16 @@ function imprimirCorte(c) {
   }
 
   // En navegador de escritorio, conservar la impresión web tradicional.
-  const n = DB.negocio;
+  const n = DB.negocio || {};
+  const resultado = resumenResultadoCorte(c);
+  const logoNegocio = typeof obtenerLogoNegocio === "function" ? obtenerLogoNegocio() : "";
   imprimirHTML(`
+    ${logoNegocio ? `<div class="c"><img src="${logoNegocio}" alt="Logotipo" style="max-width:90px;max-height:70px;object-fit:contain"></div>` : ""}
     <div class="c b g">${escapeHTML(n.nombre || "POS")}</div>
-    <div class="c">${escapeHTML(n.slogan || "")}</div>
-    <div class="c">CORTE DE CAJA</div>
+    ${n.slogan ? `<div class="c">${escapeHTML(n.slogan)}</div>` : ""}
+    ${n.direccion ? `<div class="c">${escapeHTML(n.direccion)}</div>` : ""}
+    ${n.telefono ? `<div class="c">Tel: ${escapeHTML(n.telefono)}</div>` : ""}
+    <div class="c b">CORTE DE CAJA</div>
     <hr>
     <div>Fecha: ${new Date(c.fecha).toLocaleString("es-MX")}</div>
     <div>Cajero: ${escapeHTML(c.usuario)}</div>
@@ -527,9 +546,11 @@ function imprimirCorte(c) {
     <div class="fila"><span>Gastos efectivo:</span><span>${fmt(c.gastos)}</span></div>
     ${c.gastosTransf ? `<div class="fila"><span>Gastos transf. (no caja):</span><span>${fmt(c.gastosTransf)}</span></div>` : ""}
     ${c.gastosCajaFuerte ? `<div class="fila"><span>Gastos Caja Fuerte (no caja):</span><span>${fmt(c.gastosCajaFuerte)}</span></div>` : ""}
-    <div class="fila b"><span>Esperado:</span><span>${fmt(c.esperado)}</span></div>
-    <div class="fila b"><span>Contado:</span><span>${fmt(c.contado)}</span></div>
-    <div class="fila b g"><span>DIFERENCIA:</span><span>${fmt(c.diferencia)}</span></div>
+    <div class="fila"><span>Efectivo esperado:</span><span>${fmt(c.esperado || 0)}</span></div>
+    <div class="fila"><span>Efectivo contado:</span><span>${fmt(c.contado || 0)}</span></div>
+    <hr>
+    <div class="fila b"><span>RESULTADO:</span><span>${resultado.texto}</span></div>
+    <div class="fila b g"><span>${resultado.texto === "CAJA CUADRADA" ? "Diferencia:" : resultado.texto + ":"}</span><span>${fmt(Math.abs(resultado.diferencia))}</span></div>
     <hr>
     ${c.nota ? `<div>Nota: ${escapeHTML(c.nota)}</div><hr>` : ""}
     <div class="c">Firma: _____________</div>
