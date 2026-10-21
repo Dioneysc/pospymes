@@ -29,6 +29,7 @@ function actualizarHeader() {
 
 /* ============ NAVEGACIÓN ============ */
 function cambiarVista(nombre) {
+  if (typeof aplicarMenuInferior === "function") aplicarMenuInferior();
   $$(".vista").forEach(v => v.classList.remove("activa"));
   const target = $("#" + nombre);
   if (target) target.classList.add("activa");
@@ -48,6 +49,7 @@ function cambiarVista(nombre) {
   if (nombre === "config") { cargarNegocio(); if (typeof pintarEstadoSync === "function") pintarEstadoSync(); }
   if (nombre === "historial") { renderHistorial(); }
   if (nombre === "preventas") { renderListaPreventas(); }
+  if (nombre === "pendientes") { renderPendientes(); }
 
   mostrarAlertaStock();
 }
@@ -64,6 +66,7 @@ function abrirMenu() {
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('reportes')" style="text-align:left;padding:14px;font-size:15px">📊 Reportes</button>
       <hr style="border:none;border-top:1px solid #e2e8f0;margin:6px 0">
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('preventas')" style="text-align:left;padding:14px;font-size:15px">📋 Lista de preventas</button>
+      <button class="btn-secondary" onclick="cerrarModal();cambiarVista('pendientes')" style="text-align:left;padding:14px;font-size:15px">📝 Compras y pendientes</button>
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('historial')" style="text-align:left;padding:14px;font-size:15px">📅 Historial de tickets</button>
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('productos')" style="text-align:left;padding:14px;font-size:15px">🍗 Productos</button>
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('gastos')" style="text-align:left;padding:14px;font-size:15px">💸 Gastos</button>
@@ -117,4 +120,30 @@ function verInsumosBajos() {
       <button class="btn-primary" onclick="cerrarModal();cambiarVista('inventario')">Ir a Inventario</button>
     </div>
   `);
+}
+
+
+/* Aplica las preferencias locales de la barra inferior sin afectar la navegación general. */
+function aplicarMenuInferior() {
+  const nav = document.querySelector(".nav-inferior");
+  if (!nav) return;
+  const defaults = ["caja", "inventario", "corte", "reportes"];
+  let menu = defaults;
+  try {
+    const raw = localStorage.getItem("menuInferiorPOS");
+    if (raw !== null) { const parsed = JSON.parse(raw); if (Array.isArray(parsed)) menu = ["caja", ...parsed.filter((id, i, a) => ["inventario","corte","reportes","preventas","pendientes","historial","productos","gastos","config"].includes(id) && a.indexOf(id) === i)]; }
+  } catch (_) {}
+  const mapa = {
+    caja:["🛒","Venta"], inventario:["📦","Inventario"], corte:["💰","Caja"], reportes:["📊","Reportes"],
+    preventas:["📋","Preventas"], pendientes:["📝","Compras"], historial:["🧾","Historial"], productos:["🍗","Productos"], gastos:["💸","Gastos"], config:["⚙️","Config."]
+  };
+  menu.forEach(id => {
+    let btn = nav.querySelector(`button[data-menu="${id}"]`);
+    if (!btn) { btn = document.createElement("button"); btn.dataset.view = id; btn.dataset.menu = id; btn.onclick = () => cambiarVista(id); nav.appendChild(btn); }
+    btn.innerHTML = `<span class="ico">${mapa[id][0]}</span><span>${mapa[id][1]}</span>`;
+    btn.style.display = "";
+  });
+  nav.querySelectorAll("button[data-menu]").forEach(btn => { btn.style.display = menu.includes(btn.dataset.menu) ? "" : "none"; });
+  const activo = nav.querySelector(`button[data-menu="${document.querySelector(".vista.activa")?.id || "caja"}"]`);
+  nav.querySelectorAll("button").forEach(b => b.classList.toggle("activo", b === activo));
 }

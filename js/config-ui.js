@@ -4,6 +4,7 @@
 
 /* ============ CONFIG ============ */
 function cargarNegocio() {
+  renderConfigMenuInferior();
   const elN = $("#cfgNombre");
   const elS = $("#cfgSlogan");
   const elD = $("#cfgDireccion");
@@ -353,3 +354,43 @@ function importarBackup(e) {
   lector.readAsText(archivo);
 }
 
+
+
+/* ============ MENÚ INFERIOR PERSONALIZABLE ============ */
+const OPCIONES_MENU_INFERIOR = [
+  { id: "inventario", label: "Inventario", icon: "📦" },
+  { id: "corte", label: "Caja", icon: "💰" },
+  { id: "reportes", label: "Reportes", icon: "📊" },
+  { id: "preventas", label: "Preventas", icon: "📋" },
+  { id: "pendientes", label: "Compras y pendientes", icon: "📝" },
+  { id: "historial", label: "Historial", icon: "🧾" },
+  { id: "productos", label: "Productos", icon: "🍗" },
+  { id: "gastos", label: "Gastos", icon: "💸" },
+  { id: "config", label: "Configuración", icon: "⚙️" }
+];
+const MENU_INFERIOR_PREDETERMINADO = ["inventario", "corte", "reportes"];
+function obtenerMenuInferior() {
+  const guardado = LS.get("menuInferiorPOS", null);
+  return Array.isArray(guardado) ? ["caja", ...guardado.filter((id, i, a) => OPCIONES_MENU_INFERIOR.some(o => o.id === id) && a.indexOf(id) === i)] : ["caja", ...MENU_INFERIOR_PREDETERMINADO];
+}
+function renderConfigMenuInferior() {
+  const cont = document.getElementById("configMenuInferior");
+  if (!cont) return;
+  const seleccion = obtenerMenuInferior();
+  cont.innerHTML = `<div class="menu-inferior-fijo"><span>🛒</span><span><b>Venta</b><small>Siempre visible</small></span><span class="menu-fijo-check">✓</span></div>` + OPCIONES_MENU_INFERIOR.map(o => `
+    <label class="menu-inferior-opcion"><span class="menu-opcion-icono">${o.icon}</span><span class="menu-opcion-texto">${o.label}</span><input type="checkbox" value="${o.id}" ${seleccion.includes(o.id) ? "checked" : ""}><span class="menu-opcion-switch"></span></label>`).join("");
+}
+function guardarMenuInferior() {
+  const cont = document.getElementById("configMenuInferior");
+  if (!cont) return;
+  const seleccion = [...cont.querySelectorAll('input[type="checkbox"]:checked')].map(el => el.value);
+  LS.set("menuInferiorPOS", seleccion);
+  if (typeof aplicarMenuInferior === "function") aplicarMenuInferior();
+  toast("✅ Menú inferior actualizado");
+}
+function restablecerMenuInferior() {
+  LS.set("menuInferiorPOS", MENU_INFERIOR_PREDETERMINADO);
+  renderConfigMenuInferior();
+  if (typeof aplicarMenuInferior === "function") aplicarMenuInferior();
+  toast("Menú predeterminado restaurado");
+}
