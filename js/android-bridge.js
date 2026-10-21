@@ -74,6 +74,8 @@ function androidImprimirTicket(venta) {
         slogan: n.slogan || "",
         direccion: n.direccion || "",
         telefono: n.telefono || "",
+        // El logotipo se guarda localmente en el navegador/WebView de este equipo.
+        logo: typeof obtenerLogoNegocio === "function" ? (obtenerLogoNegocio() || "") : "",
         id: venta.id,
         fecha: new Date(venta.fecha).toLocaleString("es-MX"),
         cajero: venta.usuario || "admin",
