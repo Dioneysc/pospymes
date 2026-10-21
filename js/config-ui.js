@@ -94,64 +94,63 @@ function guardarNegocio() {
 }
 
 
+function crearObjetoRespaldo() {
+  const extras = {
+    cortes: LS.get("cortes", []),
+    catsGasto: LS.get("catsGasto", []),
+    cajaHoy: LS.get("cajaHoy", {
+      fecha: hoy(),
+      fondoInicial: null,
+      retiros: [],
+      depositos: []
+    }),
+    gastosPersonales: LS.get("gastosPersonales", []),
+    cajaFuerteMovimientos: LS.get("cajaFuerteMovimientos", []),
+    cajaFuerteSaldoAjuste: LS.get("cajaFuerteSaldoAjuste", 0),
+    preventasPendientes: LS.get("preventasPendientes", []),
+    negocioLogoLocal: LS.get("negocioLogoLocal", ""),
+    modoOscuro: LS.get("modoOscuro", false),
+    sonidoActivado: LS.get("sonidoActivado", true)
+  };
+
+  return {
+    app: "POS Pollería Pro",
+    version: 2,
+    fechaExportacion: new Date().toISOString(),
+    DB: JSON.parse(JSON.stringify(DB)),
+    extras
+  };
+}
+
+function guardarArchivoRespaldo(nombre, respaldo) {
+  const contenido = JSON.stringify(respaldo, null, 2);
+
+  // Android: guardar directamente el contenido mediante el puente nativo.
+  if (window.Android && typeof window.Android.guardarArchivo === "function") {
+    return !!window.Android.guardarArchivo(nombre, contenido);
+  }
+
+  // Navegadores web: descargar normalmente mediante Blob.
+  const blob = new Blob([contenido], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nombre;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+  return true;
+}
+
 function exportarBackup() {
   try {
-    const extras = {
-      cortes: LS.get("cortes", []),
-      catsGasto: LS.get("catsGasto", []),
-      cajaHoy: LS.get("cajaHoy", {
-        fecha: hoy(),
-        fondoInicial: null,
-        retiros: [],
-        depositos: []
-      }),
-      gastosPersonales: LS.get("gastosPersonales", []),
-      cajaFuerteMovimientos: LS.get("cajaFuerteMovimientos", [])
-    };
-
-    const respaldo = {
-      app: "POS Pollería Pro",
-      version: 1,
-      fechaExportacion: new Date().toISOString(),
-      DB: JSON.parse(JSON.stringify(DB)),
-      extras
-    };
-
-    const contenido = JSON.stringify(respaldo, null, 2);
-    const nombre = `respaldo-pos-Guardado-${hoy()}.json`;
-
-    // Android: guardar directamente el contenido, no la URL blob.
-    if (
-      window.Android &&
-      typeof window.Android.guardarArchivo === "function"
-    ) {
-      const guardado = window.Android.guardarArchivo(nombre, contenido);
-
-      if (guardado) {
-        toast("✅ Respaldo guardado en Descargas");
-      } else {
-        toast("❌ Android no pudo guardar el respaldo");
-      }
-      return;
+    const respaldo = crearObjetoRespaldo();
+    const nombre = `respaldo-pos-${hoy()}.json`;
+    if (!guardarArchivoRespaldo(nombre, respaldo)) {
+      throw new Error("El dispositivo no pudo guardar el archivo");
     }
-
-    // Navegadores web: descargar normalmente mediante Blob.
-    const blob = new Blob(
-      [contenido],
-      { type: "application/json;charset=utf-8" }
-    );
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-
-    a.href = url;
-    a.download = nombre;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-
-    setTimeout(() => URL.revokeObjectURL(url), 1500);
-    toast("✅ Respaldo exportado correctamente");
-
+    toast("✅ Respaldo exportado. Guárdalo fuera del dispositivo para mayor seguridad.");
   } catch (err) {
     console.error("Error exportando respaldo:", err);
     toast("❌ Error exportando: " + err.message);
@@ -279,56 +278,53 @@ function importarBackup(e) {
       if (
         !confirm(
           "⚠️ Se reemplazarán los datos actuales del POS por los del respaldo.\n\n" +
-          "Antes de continuar, asegúrate de conservar una copia de seguridad.\n\n" +
-          "¿Deseas restaurar este respaldo?"
+          "Antes de restaurar, el sistema intentará guardar automáticamente una copia de los datos actuales.\n\n" +
+          "¿Deseas continuar?"
         )
       ) {
         return;
+      }
+
+      // Crear respaldo preventivo antes de sobrescribir cualquier dato.
+      const nombrePrevio = `respaldo-antes-de-restaurar-${hoy()}.json`;
+      let respaldoPrevioGuardado = false;
+      try {
+        respaldoPrevioGuardado = guardarArchivoRespaldo(nombrePrevio, crearObjetoRespaldo());
+      } catch (errorRespaldo) {
+        console.error("No se pudo crear el respaldo preventivo:", errorRespaldo);
+      }
+      if (!respaldoPrevioGuardado) {
+        if (!confirm("⚠️ No se pudo guardar automáticamente una copia de los datos actuales.\n\nPara evitar pérdida de información, cancela y exporta un respaldo manual.\n\n¿Deseas continuar de todos modos?")) return;
       }
 
       // Guardar los datos principales mediante la función habitual.
       DB = restaurado;
       guardar();
 
-      // Restaurar datos adicionales.
-      LS.set(
-        "cortes",
-        Array.isArray(extras.cortes) ? extras.cortes : []
-      );
-
-      LS.set(
-        "catsGasto",
-        Array.isArray(extras.catsGasto)
-          ? extras.catsGasto
-          : LS.get("catsGasto", [])
-      );
+      // Restaurar datos adicionales; en respaldos antiguos, conservar los datos
+      // locales que ese formato no incluía para no borrarlos accidentalmente.
+      LS.set("cortes", Array.isArray(extras.cortes) ? extras.cortes : LS.get("cortes", []));
+      LS.set("catsGasto", Array.isArray(extras.catsGasto) ? extras.catsGasto : LS.get("catsGasto", []));
 
       const caja = extras.cajaHoy;
-      LS.set(
-        "cajaHoy",
-        caja && typeof caja === "object"
-          ? caja
-          : {
-              fecha: hoy(),
-              fondoInicial: null,
-              retiros: [],
-              depositos: []
-            }
-      );
+      LS.set("cajaHoy", caja && typeof caja === "object"
+        ? caja
+        : LS.get("cajaHoy", { fecha: hoy(), fondoInicial: null, retiros: [], depositos: [] }));
 
-      LS.set(
-        "gastosPersonales",
-        Array.isArray(extras.gastosPersonales)
-          ? extras.gastosPersonales
-          : []
-      );
-
-      LS.set(
-        "cajaFuerteMovimientos",
-        Array.isArray(extras.cajaFuerteMovimientos)
-          ? extras.cajaFuerteMovimientos
-          : []
-      );
+      LS.set("gastosPersonales", Array.isArray(extras.gastosPersonales)
+        ? extras.gastosPersonales : LS.get("gastosPersonales", []));
+      LS.set("cajaFuerteMovimientos", Array.isArray(extras.cajaFuerteMovimientos)
+        ? extras.cajaFuerteMovimientos : LS.get("cajaFuerteMovimientos", []));
+      LS.set("cajaFuerteSaldoAjuste", Number.isFinite(Number(extras.cajaFuerteSaldoAjuste))
+        ? Number(extras.cajaFuerteSaldoAjuste) : LS.get("cajaFuerteSaldoAjuste", 0));
+      LS.set("preventasPendientes", Array.isArray(extras.preventasPendientes)
+        ? extras.preventasPendientes : LS.get("preventasPendientes", []));
+      LS.set("negocioLogoLocal", typeof extras.negocioLogoLocal === "string"
+        ? extras.negocioLogoLocal : LS.get("negocioLogoLocal", ""));
+      LS.set("modoOscuro", typeof extras.modoOscuro === "boolean"
+        ? extras.modoOscuro : LS.get("modoOscuro", false));
+      LS.set("sonidoActivado", typeof extras.sonidoActivado === "boolean"
+        ? extras.sonidoActivado : LS.get("sonidoActivado", true));
 
       estadoCajaHoy = LS.get("cajaHoy");
 

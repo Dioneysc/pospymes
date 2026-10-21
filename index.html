@@ -286,7 +286,7 @@
 
         <div class="card-config">
           <h3>💾 Respaldo de datos</h3>
-          <p style="color:#64748b;font-size:13px;margin-bottom:12px">Exporta todos los datos a un archivo JSON.</p>
+          <p style="color:#64748b;font-size:13px;margin-bottom:12px">Exporta y restaura productos, ventas, gastos, caja, preventas y configuración local (incluido el logotipo). Al importar, se intentará guardar primero una copia de seguridad de los datos actuales.</p>
           <div style="display:flex;gap:8px">
             <button class="btn-secondary" onclick="exportarBackup()">📥 Exportar</button>
             <input type="file" id="fileImport" accept=".json" style="display:none" onchange="importarBackup(event)">
