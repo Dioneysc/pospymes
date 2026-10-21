@@ -64,6 +64,46 @@ function androidEstaConectada() {
 // IMPRESIÓN
 // ============================================
 
+function androidImprimirCorte(corte) {
+    if (!EN_ANDROID || typeof Android === "undefined" || !Android.isConnected()) return false;
+
+    const n = DB.negocio || {};
+    const datos = {
+        tipo: "corte",
+        negocio: n.nombre || "POS",
+        slogan: n.slogan || "",
+        direccion: n.direccion || "",
+        telefono: n.telefono || "",
+        logo: typeof obtenerLogoNegocio === "function" ? (obtenerLogoNegocio() || "") : "",
+        fecha: new Date(corte.fecha).toLocaleString("es-MX"),
+        cajero: corte.usuario || "admin",
+        fondo: Number(corte.fondo) || 0,
+        ventas: {
+            efectivo: Number(corte.ventas?.efectivo) || 0,
+            tarjeta: Number(corte.ventas?.tarjeta) || 0,
+            transf: Number(corte.ventas?.transf) || 0,
+            total: Number(corte.ventas?.total) || 0,
+            tickets: Number(corte.ventas?.tickets) || 0
+        },
+        gastos: Number(corte.gastos) || 0,
+        gastosTransf: Number(corte.gastosTransf) || 0,
+        gastosCajaFuerte: Number(corte.gastosCajaFuerte) || 0,
+        retiros: Number(corte.retiros) || 0,
+        depositos: Number(corte.depositos) || 0,
+        esperado: Number(corte.esperado) || 0,
+        contado: Number(corte.contado) || 0,
+        diferencia: Number(corte.diferencia) || 0,
+        nota: corte.nota || ""
+    };
+
+    try {
+        return Android.printTicket(JSON.stringify(datos)) === true;
+    } catch (e) {
+        console.error("Error al imprimir corte:", e);
+        return false;
+    }
+}
+
 function androidImprimirTicket(venta) {
     if (!EN_ANDROID) return false;
     if (!Android.isConnected()) return false;

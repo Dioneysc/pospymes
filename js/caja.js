@@ -46,6 +46,36 @@ function obtenerMovimientosCajaFuerte() {
   return Array.isArray(lista) ? lista : [];
 }
 
+// Filtros temporales del historial; no alteran ni eliminan movimientos guardados.
+let filtroCajaFuerteDesde = "";
+let filtroCajaFuerteHasta = "";
+
+function fechaMovimientoCajaFuerte(fecha) {
+  if (!fecha) return "";
+  // Las fechas sin hora ya representan un día local; no convertirlas desde UTC.
+  const texto = String(fecha);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) return texto;
+  const d = new Date(fecha);
+  if (Number.isNaN(d.getTime())) return "";
+  return fechaLocal(d);
+}
+
+function cambiarFiltroCajaFuerte(campo, valor) {
+  if (campo === "desde") filtroCajaFuerteDesde = valor || "";
+  if (campo === "hasta") filtroCajaFuerteHasta = valor || "";
+  if (filtroCajaFuerteDesde && filtroCajaFuerteHasta && filtroCajaFuerteDesde > filtroCajaFuerteHasta) {
+    if (campo === "desde") filtroCajaFuerteHasta = filtroCajaFuerteDesde;
+    else filtroCajaFuerteDesde = filtroCajaFuerteHasta;
+  }
+  abrirGestorGastosPersonales();
+}
+
+function limpiarFiltroCajaFuerte() {
+  filtroCajaFuerteDesde = "";
+  filtroCajaFuerteHasta = "";
+  abrirGestorGastosPersonales();
+}
+
 function listarMovimientosCajaFuerte() {
   const antiguos = obtenerGastosPersonales().map(g => ({
     id: String(g.id), fecha: g.fecha, concepto: g.concepto || "Gasto personal",
@@ -69,11 +99,21 @@ function abrirGestorGastosPersonales() {
   const saldoMovimientos = ingresos - gastos;
   const ajusteSaldo = Number(LS.get("cajaFuerteSaldoAjuste", 0)) || 0;
   const saldo = saldoMovimientos + ajusteSaldo;
+  const movimientosFiltrados = movimientos.filter(m => {
+    const fecha = fechaMovimientoCajaFuerte(m.fecha);
+    if (filtroCajaFuerteDesde && (!fecha || fecha < filtroCajaFuerteDesde)) return false;
+    if (filtroCajaFuerteHasta && (!fecha || fecha > filtroCajaFuerteHasta)) return false;
+    return true;
+  });
   abrirModal("🔐 Caja Fuerte", `
     <div class="cf-panel">
       <div class="cf-saldo">
         <div class="cf-saldo-etiqueta">Saldo actual</div>
         <div class="cf-saldo-cantidad">${fmt(saldo)}</div>
+        <div style="font-size:11px;line-height:1.5;color:#d2e5dc;margin-top:-10px;margin-bottom:12px">
+          Saldo por movimientos: ${fmt(saldoMovimientos)}<br>
+          Ajuste manual: ${ajusteSaldo > 0 ? "+" : ""}${fmt(ajusteSaldo)}
+        </div>
         <div style="display:flex;justify-content:flex-end;margin-top:-8px;margin-bottom:12px">
           <button class="cf-boton" style="padding:7px 11px;background:#ffffff20;color:#fff;border:1px solid #ffffff55;font-size:12px" onclick="abrirEditarSaldoCajaFuerte(${saldo})">✏️ Editar saldo</button>
         </div>
@@ -87,9 +127,14 @@ function abrirGestorGastosPersonales() {
         <button class="cf-boton cf-boton-ingreso" onclick="abrirFormularioCajaFuerte('ingreso')"><span>＋</span><b>Nuevo ingreso</b></button>
         <button class="cf-boton cf-boton-gasto" onclick="abrirFormularioCajaFuerte('gasto')"><span>−</span><b>Nuevo gasto</b></button>
       </div>
-      <div class="cf-historial-cabecera"><div><b>Historial</b><small>${movimientos.length} movimientos</small></div><span>📊</span></div>
+      <div class="cf-historial-cabecera"><div><b>Historial</b><small>${movimientosFiltrados.length} de ${movimientos.length} movimientos</small></div><span>📊</span></div>
+      <div class="cf-filtros" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px;border:1px solid var(--borde,#e2e8f0);border-radius:12px">
+        <label style="font-size:12px;min-width:0">Desde<input type="date" value="${filtroCajaFuerteDesde}" onchange="cambiarFiltroCajaFuerte('desde',this.value)" style="display:block;box-sizing:border-box;width:100%;margin-top:4px;min-width:0"></label>
+        <label style="font-size:12px;min-width:0">Hasta<input type="date" value="${filtroCajaFuerteHasta}" onchange="cambiarFiltroCajaFuerte('hasta',this.value)" style="display:block;box-sizing:border-box;width:100%;margin-top:4px;min-width:0"></label>
+        <button class="btn-secondary" style="grid-column:1/-1" onclick="limpiarFiltroCajaFuerte()">Limpiar filtros</button>
+      </div>
       <div class="cf-lista">
-        ${movimientos.length ? movimientos.map(m => `
+        ${movimientosFiltrados.length ? movimientosFiltrados.map(m => `
           <div class="cf-movimiento">
             <div class="cf-mov-icono ${m.tipo === 'ingreso' ? 'es-ingreso' : 'es-gasto'}">${m.tipo === 'ingreso' ? '↙' : '↗'}</div>
             <div class="cf-mov-info"><b>${escapeHTML(m.concepto || (m.tipo === 'ingreso' ? 'Ingreso personal' : 'Gasto personal'))}</b><small>${m.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'} · ${m.fecha ? new Date(m.fecha).toLocaleDateString('es-MX') : 'Sin fecha'}${m.nota ? ' · ' + escapeHTML(m.nota) : ''}</small></div>
@@ -125,6 +170,8 @@ function guardarSaldoCajaFuerte() {
   const ingresos = movimientos.filter(m => m.tipo === "ingreso").reduce((s, m) => s + (Number(m.monto) || 0), 0);
   const gastos = movimientos.filter(m => m.tipo !== "ingreso").reduce((s, m) => s + (Number(m.monto) || 0), 0);
   // Ajuste separado: no altera los movimientos históricos.
+  const saldoAnterior = ingresos - gastos + (Number(LS.get("cajaFuerteSaldoAjuste", 0)) || 0);
+  if (!confirm(`¿Confirmas cambiar el saldo de ${fmt(saldoAnterior)} a ${fmt(nuevoSaldo)}? El ajuste no crea un ingreso o gasto en el historial.`)) return;
   LS.set("cajaFuerteSaldoAjuste", nuevoSaldo - (ingresos - gastos));
   toast("✅ Saldo actual actualizado; el historial no se modificó");
   abrirGestorGastosPersonales();
@@ -164,6 +211,7 @@ function borrarMovimientoCajaFuerte(id, origen) {
     const gasto = (DB.gastos || []).find(g => String(g.id) === String(id) && g.metodo === "Caja Fuerte");
     if (!gasto) return toast("Gasto no encontrado");
     if (!confirm(`¿Eliminar también el gasto de ${gasto.categoria || "negocio"} por ${fmt(gasto.monto)}? Se quitará de Gastos, del reporte y de Caja Fuerte.`)) return;
+    if (prompt('Para confirmar, escribe ELIMINAR:') !== 'ELIMINAR') return toast("Eliminación cancelada");
     DB.gastos = DB.gastos.filter(g => String(g.id) !== String(id));
     guardar();
     if (typeof renderGastos === "function") renderGastos();
@@ -178,6 +226,7 @@ function borrarMovimientoCajaFuerte(id, origen) {
   if (!movimiento) return toast("Movimiento no encontrado");
   const tipo = esAntiguo ? "gasto" : movimiento.tipo;
   if (!confirm(`¿Eliminar este ${tipo === "ingreso" ? "ingreso" : "gasto"} por ${fmt(movimiento.monto)}?`)) return;
+  if (prompt('Para confirmar, escribe ELIMINAR:') !== 'ELIMINAR') return toast("Eliminación cancelada");
   if (esAntiguo) LS.set("gastosPersonales", lista.filter(m => String(m.id) !== String(id)));
   else LS.set("cajaFuerteMovimientos", lista.filter(m => String(m.id) !== String(id)));
   toast("🗑️ Movimiento eliminado");
@@ -438,6 +487,23 @@ function renderHistorialCortes() {
 }
 
 function imprimirCorte(c) {
+  // En Android, enviar el corte al puente nativo Bluetooth (window.print no imprime por esta ruta).
+  if (typeof EN_ANDROID !== "undefined" && EN_ANDROID) {
+    if (typeof androidImprimirCorte === "function" && typeof Android !== "undefined" && Android.isConnected && Android.isConnected()) {
+      const enviado = androidImprimirCorte(c);
+      if (enviado) {
+        toast("🖨️ Corte enviado a la impresora");
+      } else {
+        toast("⚠️ No se pudo enviar el corte a la impresora");
+      }
+    } else {
+      toast("⚠️ No hay impresora Bluetooth conectada");
+      if (typeof abrirModalImpresora === "function") abrirModalImpresora();
+    }
+    return;
+  }
+
+  // En navegador de escritorio, conservar la impresión web tradicional.
   const n = DB.negocio;
   imprimirHTML(`
     <div class="c b g">${escapeHTML(n.nombre || "POS")}</div>
