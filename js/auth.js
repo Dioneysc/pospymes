@@ -54,7 +54,6 @@ async function hacerLogin() {
     return toast("❌ Usuario o contraseña incorrectos");
   }
   intentosFallidos = 0;
-  if (typeof normalizarUsuarioPOS === "function") normalizarUsuarioPOS(user);
   if (!user.hash && user.password) { await fijarPassword(user, p); guardar(); }
   sessionStorage.setItem("sesion", sesionSegura(user));
   $("#pass").value = "";
@@ -117,14 +116,12 @@ function entrarApp() {
   $("#login").style.display = "none";
   $("#app").classList.remove("oculto");
   seed();
-  if (typeof cargarEstadoCajaSucursalPOS === "function") cargarEstadoCajaSucursalPOS();
   actualizarHeader();
   renderCaja();
   renderCategorias();
   cargarNegocio();
   initDia();
   mostrarAlertaStock();
-  if (typeof aplicarPermisosPOS === "function") aplicarPermisosPOS();
   if (s.cambiarPass) setTimeout(abrirCambioInicial, 600);
   else if (estadoCajaHoy.fondoInicial === null) {
     setTimeout(() => abrirFondoInicial(), 600);

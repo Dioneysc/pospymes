@@ -236,13 +236,12 @@ const CORTE_INCLUYE_CAJA_FUERTE = false;
 const delTurno = fecha => fechaLocal(fecha) === hoy() && (!estadoCajaHoy.desde || new Date(fecha) > new Date(estadoCajaHoy.desde));
 
 function resumenDia() {
-  const sucursal = typeof sucursalOperacionPOS === "function" ? sucursalOperacionPOS() : (typeof sucursalActivaPOS === "function" ? sucursalActivaPOS() : "principal");
-  const ventasHoy = DB.ventas.filter(v => String(v.sucursalId || "principal") === sucursal && delTurno(v.fecha) && !v.cancelada);
+  const ventasHoy = DB.ventas.filter(v => delTurno(v.fecha) && !v.cancelada);
   const sumaVentas = m => ventasHoy.filter(v => v.metodo === m).reduce((s, v) => s + v.total, 0);
   const efectivoVentas = sumaVentas("Efectivo");
   const tarjetaVentas = sumaVentas("Tarjeta");
   const transfVentas = sumaVentas("Transferencia");
-  const gastosDia = DB.gastos.filter(g => String(g.sucursalId || "principal") === sucursal && delTurno(g.fecha));
+  const gastosDia = DB.gastos.filter(g => delTurno(g.fecha));
   const gastosEfectivo = gastosDia.filter(g => g.metodo === "Efectivo" || !g.metodo).reduce((s, g) => s + g.monto, 0);
   const gastosTransf = gastosDia.filter(g => g.metodo === "Transferencia").reduce((s, g) => s + g.monto, 0);
   const gastosCajaFuerte = gastosDia.filter(g => g.metodo === "Caja Fuerte").reduce((s, g) => s + g.monto, 0);
@@ -424,7 +423,6 @@ function guardarCorte(esperado, efectivo, tarjeta, transf, total) {
 
   const corte = {
     id: nuevoId(LS.get("cortes", [])),
-    sucursalId: typeof sucursalOperacionPOS === "function" ? sucursalOperacionPOS() : (typeof sucursalActivaPOS === "function" ? sucursalActivaPOS() : "principal"),
     fecha: new Date().toISOString(),
     dia: hoy(),
     fondo: estadoCajaHoy.fondoInicial || 0,
@@ -467,8 +465,7 @@ function resumenResultadoCorte(corte) {
 }
 
 function renderHistorialCortes(fechaSeleccionada) {
-  const sucursal = typeof sucursalOperacionPOS === "function" ? sucursalOperacionPOS() : (typeof sucursalActivaPOS === "function" ? sucursalActivaPOS() : "principal");
-  const todos = LS.get("cortes", []).filter(c => String(c.sucursalId || "principal") === sucursal).slice().reverse();
+  const todos = LS.get("cortes", []).slice().reverse();
   if (fechaSeleccionada) window._fechaHistorialCortes = fechaSeleccionada;
   if (!window._fechaHistorialCortes) window._fechaHistorialCortes = hoy();
   const fechaActiva = window._fechaHistorialCortes;

@@ -5,9 +5,9 @@
    Datos en: negocios/{uid}/{productos|insumos|ventas|gastos|usuarios|cortes|config}
    ============================================ */
 
-const SYNC_COLS = ["productos", "insumos", "ventas", "gastos", "usuarios", "cortes", "preventasPendientes", "gastosPersonales", "cajaFuerteMovimientos", "movimientosInventarioPOS"]; // listas de registros con id
-const SYNC_CFG = ["negocio", "catsGasto", "cajaHoyPorSucursal", "cajaFuerteSaldoAjuste", "menuInferiorPOS", "sucursalesPOS"]; // valores únicos (carpeta config)
-const SYNC_LOCAL_LISTS = new Set(["preventasPendientes", "gastosPersonales", "cajaFuerteMovimientos", "movimientosInventarioPOS"]);
+const SYNC_COLS = ["productos", "insumos", "ventas", "gastos", "usuarios", "cortes", "preventasPendientes", "gastosPersonales", "cajaFuerteMovimientos"]; // listas de registros con id
+const SYNC_CFG = ["negocio", "catsGasto", "cajaHoy", "cajaFuerteSaldoAjuste", "menuInferiorPOS"]; // valores únicos (carpeta config)
+const SYNC_LOCAL_LISTS = new Set(["preventasPendientes", "gastosPersonales", "cajaFuerteMovimientos"]);
 const SYNC_CLAVES = new Set([...SYNC_COLS, ...SYNC_CFG]);
 const FB_VER = "10.12.2";
 
@@ -62,28 +62,17 @@ const msgSync = e => ({
 }[e.code] || e.message || String(e));
 
 // Lectura / escritura de cada dato local
-const leer = k => k === "negocio" ? DB.negocio : k === "catsGasto" ? CATS_GASTO : k === "cajaHoyPorSucursal" ? LS.get(k, {})
-  : k === "cajaHoy" ? estadoCajaHoy : k === "sucursalesPOS" ? LS.get(k, [{ id: "principal", nombre: "Sucursal principal", activa: true }])
+const leer = k => k === "negocio" ? DB.negocio : k === "catsGasto" ? CATS_GASTO : k === "cajaHoy" ? estadoCajaHoy
   : k === "cortes" || SYNC_LOCAL_LISTS.has(k) ? LS.get(k, []) : DB[k];
 function escribir(k, v) {
   if (k === "negocio") DB.negocio = v; else if (k === "catsGasto") CATS_GASTO = v;
-  else if (k === "cajaHoy") estadoCajaHoy = v; else if (k === "cajaHoyPorSucursal") { LS.set(k, v); const id = typeof sucursalOperacionPOS === "function" ? sucursalOperacionPOS() : "principal"; if (v && v[id]) { estadoCajaHoy = v[id]; LS.set("cajaHoy", estadoCajaHoy); } } else if (k === "sucursalesPOS") LS.set(k, v); else if (k !== "cortes" && !SYNC_LOCAL_LISTS.has(k)) DB[k] = v;
+  else if (k === "cajaHoy") estadoCajaHoy = v; else if (k !== "cortes" && !SYNC_LOCAL_LISTS.has(k)) DB[k] = v;
   syncAplicando = true; try { LS.set(k, v); } finally { syncAplicando = false; }
 }
 
 // Cada vez que la app guarda algo sincronizable, se programa una subida
 const _lsSet = LS.set;
-LS.set = (k, v) => {
-  _lsSet(k, v);
-  if (!syncAplicando && k === "cajaHoy") {
-    const id = typeof sucursalOperacionPOS === "function" ? sucursalOperacionPOS() : "principal";
-    const mapa = LS.get("cajaHoyPorSucursal", {});
-    mapa[id] = limpio(v);
-    syncAplicando = true; try { _lsSet("cajaHoyPorSucursal", mapa); } finally { syncAplicando = false; }
-    if (SYNC_CLAVES.has("cajaHoyPorSucursal")) programarSync();
-  }
-  if (!syncAplicando && SYNC_CLAVES.has(k)) programarSync();
-};
+LS.set = (k, v) => { _lsSet(k, v); if (!syncAplicando && SYNC_CLAVES.has(k)) programarSync(); };
 function programarSync() {
   if (!syncMeta.activo || !syncDb) return;
   clearTimeout(syncTimer);
@@ -145,127 +134,6 @@ async function empujarCambios() {
     if (syncRepetir) { syncRepetir = false; programarSync(); }
   }
 }
-
-// ---------- movimiento de inventario atómico (requiere conexión) ----------
-// La transacción actualiza stock y bitácora como una sola operación. Si no hay red,
-// la interfaz conserva el flujo local existente y deja la sincronización pendiente.
-async function movimientoInventarioAtomicoPOS(mov) {
-  if (!syncDb || !syncUid || !navigator.onLine || !syncMeta.activo) {
-    throw new Error("Firebase no está conectado; el movimiento debe quedar pendiente localmente.");
-  }
-  if (!mov || !mov.id || !mov.insumoId || !mov.sucursalId) throw new Error("Faltan datos para registrar el movimiento.");
-  const insRef = ref("insumos").doc(String(mov.insumoId));
-  const movRef = ref("movimientosInventarioPOS").doc(String(mov.id));
-  const resultado = await syncDb.runTransaction(async tx => {
-    const opSnap = await tx.get(movRef);
-    if (opSnap.exists) return { movimiento: opSnap.data(), repetido: true };
-    const insSnap = await tx.get(insRef);
-    if (!insSnap.exists) throw new Error("El insumo no existe en Firebase. Sincroniza y vuelve a intentar.");
-    const ins = insSnap.data();
-    if (String(ins.sucursalId || "principal") !== String(mov.sucursalId)) {
-      throw new Error("El insumo pertenece a otra sucursal. No se modificó el inventario.");
-    }
-    const antes = Number(ins.stock);
-    if (!Number.isFinite(antes) || antes < 0) throw new Error("El stock en Firebase no es válido. Concilia el inventario antes de continuar.");
-    const cantidad = Number(mov.cantidad);
-    if (!Number.isFinite(cantidad) || cantidad <= 0) throw new Error("La cantidad debe ser mayor que cero.");
-    if (mov.tipo === "salida" && cantidad > antes) throw new Error("Stock insuficiente en Firebase. Actualiza el inventario antes de registrar la salida.");
-    const despues = mov.tipo === "entrada" ? antes + cantidad : antes - cantidad;
-    const actualizado = { ...ins, stock: despues, _stockActualizadoEn: Date.now() };
-    const registro = { ...mov, cantidad, cantidadSolicitada: cantidad, stockAntes: antes, stockDespues: despues, atomico: true };
-    tx.set(insRef, actualizado);
-    tx.set(movRef, registro);
-    return { insumo: actualizado, movimiento: registro, repetido: false };
-  });
-  // Reflejar el resultado confirmado en la copia local y evitar que el siguiente ciclo
-  // de sincronización vuelva a escribir una versión local anterior.
-  if (resultado.insumo) {
-    const insumos = leer("insumos");
-    const idx = insumos.findIndex(x => String(x.id) === String(mov.insumoId));
-    if (idx >= 0) insumos[idx] = resultado.insumo;
-    escribir("insumos", insumos);
-    syncMeta.synced.insumos = syncMeta.synced.insumos || {};
-    syncMeta.synced.insumos[String(mov.insumoId)] = hashDe(sinT(resultado.insumo));
-  }
-  const bitacora = leer("movimientosInventarioPOS");
-  if (!bitacora.some(x => String(x.id) === String(mov.id))) bitacora.push(resultado.movimiento || mov);
-  escribir("movimientosInventarioPOS", bitacora);
-  syncMeta.synced.movimientosInventarioPOS = syncMeta.synced.movimientosInventarioPOS || {};
-  syncMeta.synced.movimientosInventarioPOS[String(mov.id)] = hashDe(sinT(resultado.movimiento || mov));
-  guardarMeta();
-  return resultado;
-}
-window.movimientoInventarioAtomicoPOS = movimientoInventarioAtomicoPOS;
-
-// v109: consumo de receta transaccional por venta. Todas las existencias y movimientos
-// se confirman en una sola transacción Firestore; si falta stock, no descuenta parcialmente.
-async function consumoRecetaVentaAtomicoPOS(venta) {
-  if (!syncDb || !syncUid || !navigator.onLine || !syncMeta.activo) throw new Error("Firebase no está conectado.");
-  if (!venta || venta.id == null || !Array.isArray(venta.items)) throw new Error("Venta inválida para consumir receta.");
-  const sucursalId = String(venta.sucursalId || "principal");
-  const productos = leer("productos");
-  const totales = new Map();
-  venta.items.forEach(item => {
-    const producto = productos.find(p => String(p.id) === String(item.productoId));
-    if (!producto || !Array.isArray(producto.insumos)) return;
-    producto.insumos.forEach(r => {
-      const q = Number(r.cantidad) * Number(item.cantidad);
-      if (!r.insumoId || !Number.isFinite(q) || q <= 0) return;
-      const k = String(r.insumoId);
-      const actual = totales.get(k) || { insumoId: k, cantidad: 0, nombres: [] };
-      actual.cantidad += q;
-      actual.nombres.push(producto.nombre || item.nombre || "Producto");
-      totales.set(k, actual);
-    });
-  });
-  if (!totales.size) return { aplicado: 0, sinReceta: true };
-  const consumos = [...totales.values()];
-  const ventaKey = `${sucursalId}_${String(venta.id)}`.replace(/[^a-zA-Z0-9_-]/g, "_");
-  const procesoRef = ref("consumosVentasProcesadasPOS").doc(ventaKey);
-  const insRefs = consumos.map(c => ({ ...c, ref: ref("insumos").doc(String(c.insumoId)), movRef: ref("movimientosInventarioPOS").doc(`consumo_${ventaKey}_${c.insumoId}`) }));
-  const resultado = await syncDb.runTransaction(async tx => {
-    const procesoSnap = await tx.get(procesoRef);
-    if (procesoSnap.exists) return { repetido: true, registros: procesoSnap.data().registros || [] };
-    const snaps = [];
-    for (const c of insRefs) snaps.push(await tx.get(c.ref));
-    const registros = [];
-    // Validar todos antes de escribir: no se permite consumo parcial.
-    snaps.forEach((snap, i) => {
-      const c = insRefs[i];
-      if (!snap.exists) throw new Error(`No existe el insumo ${c.insumoId} en Firebase.`);
-      const ins = snap.data();
-      if (String(ins.sucursalId || "principal") !== sucursalId) throw new Error(`El insumo ${ins.nombre || c.insumoId} no pertenece a la sucursal ${sucursalId}.`);
-      const antes = Number(ins.stock);
-      if (!Number.isFinite(antes) || antes < c.cantidad) throw new Error(`Stock insuficiente para ${ins.nombre || c.insumoId}. Disponible: ${Number.isFinite(antes) ? antes : "inválido"}; requerido: ${c.cantidad}.`);
-      registros.push({ c, ins, antes, despues: antes - c.cantidad });
-    });
-    registros.forEach(({c, ins, antes, despues}) => {
-      const mov = { id: `consumo_${ventaKey}_${c.insumoId}`, referencia: `venta:${sucursalId}:${venta.id}:insumo:${c.insumoId}`, sucursalId, ventaId: venta.id, insumoId: ins.id ?? c.insumoId, insumoNombre: ins.nombre || "Insumo", tipo: "consumo_venta", cantidad: c.cantidad, cantidadSolicitada: c.cantidad, stockAntes: antes, stockDespues: despues, motivo: `Consumo por venta #${venta.id}`, fecha: venta.fecha || new Date().toISOString(), usuario: venta.usuario || "", atomico: true };
-      tx.set(c.ref, { ...ins, stock: despues, _stockActualizadoEn: Date.now() });
-      tx.set(c.movRef, mov);
-    });
-    tx.set(procesoRef, { ventaId: venta.id, sucursalId, procesadoEn: Date.now(), registros: registros.map(({c}) => c.insumoId) });
-    return { repetido: false, registros: registros.map(({c, ins, antes, despues}) => ({ insumoId: c.insumoId, insumo: { ...ins, stock: despues }, movimiento: { id: `consumo_${ventaKey}_${c.insumoId}`, referencia: `venta:${sucursalId}:${venta.id}:insumo:${c.insumoId}`, sucursalId, ventaId: venta.id, insumoId: ins.id ?? c.insumoId, insumoNombre: ins.nombre || "Insumo", tipo: "consumo_venta", cantidad: c.cantidad, cantidadSolicitada: c.cantidad, stockAntes: antes, stockDespues: despues, motivo: `Consumo por venta #${venta.id}`, fecha: venta.fecha || new Date().toISOString(), usuario: venta.usuario || "", atomico: true } })) };
-  });
-  if (!resultado.repetido) {
-    const insumos = leer("insumos"), movimientos = leer("movimientosInventarioPOS");
-    resultado.registros.forEach(r => {
-      const idx = insumos.findIndex(i => String(i.id) === String(r.insumoId) && String(i.sucursalId || "principal") === sucursalId);
-      if (idx >= 0) insumos[idx] = r.insumo;
-      if (!movimientos.some(m => String(m.id) === String(r.movimiento.id))) movimientos.push(r.movimiento);
-      syncMeta.synced.insumos = syncMeta.synced.insumos || {};
-      syncMeta.synced.insumos[String(r.insumoId)] = hashDe(sinT(r.insumo));
-      syncMeta.synced.movimientosInventarioPOS = syncMeta.synced.movimientosInventarioPOS || {};
-      syncMeta.synced.movimientosInventarioPOS[String(r.movimiento.id)] = hashDe(sinT(r.movimiento));
-    });
-    escribir("insumos", insumos); escribir("movimientosInventarioPOS", movimientos); guardarMeta();
-  }
-  const procesadas = LS.get("consumosVentasProcesadasPOS", {});
-  procesadas[`${sucursalId}:${venta.id}`] = { fecha: Date.now(), atomico: true, movimientos: resultado.registros.length };
-  LS.set("consumosVentasProcesadasPOS", procesadas);
-  return { aplicado: resultado.registros.length, repetido: !!resultado.repetido };
-}
-window.consumoRecetaVentaAtomicoPOS = consumoRecetaVentaAtomicoPOS;
 
 // ---------- recibir cambios de otros dispositivos ----------
 function escucharNube() {

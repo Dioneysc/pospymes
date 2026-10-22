@@ -29,7 +29,6 @@ function actualizarHeader() {
 
 /* ============ NAVEGACIÓN ============ */
 function cambiarVista(nombre) {
-  if (typeof permisoVistaPOS === "function" && !permisoVistaPOS(nombre)) { if (typeof exigirAdminPOS === "function") exigirAdminPOS("esta sección"); return; }
   if (typeof aplicarMenuInferior === "function") aplicarMenuInferior();
   $$(".vista").forEach(v => v.classList.remove("activa"));
   const target = $("#" + nombre);
@@ -56,27 +55,25 @@ function cambiarVista(nombre) {
   mostrarAlertaStock();
 }
 
-function irConfig() { if (typeof permisoVistaPOS === "function" && !permisoVistaPOS("config")) return toast("🔒 Solo Administración puede abrir Configuración"); cambiarVista("config"); }
+function irConfig() { cambiarVista("config"); }
 
 /* ============ MENÚ ============ */
 function abrirMenu() {
-  const admin = typeof esAdminPOS === "function" && esAdminPOS();
   abrirModal("☰ Menú", `
     <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('caja')" style="text-align:left;padding:14px;font-size:15px">🛒 Venta</button>
-      ${admin ? `<button class="btn-secondary" onclick="cerrarModal();cambiarVista('inventario')" style="text-align:left;padding:14px;font-size:15px">📦 Inventario</button>` : ""}
+      <button class="btn-secondary" onclick="cerrarModal();cambiarVista('inventario')" style="text-align:left;padding:14px;font-size:15px">📦 Inventario</button>
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('corte')" style="text-align:left;padding:14px;font-size:15px">💰 Caja</button>
-      ${admin ? `<button class="btn-secondary" onclick="cerrarModal();cambiarVista('reportes')" style="text-align:left;padding:14px;font-size:15px">📊 Reportes</button>` : ""}
+      <button class="btn-secondary" onclick="cerrarModal();cambiarVista('reportes')" style="text-align:left;padding:14px;font-size:15px">📊 Reportes</button>
       <hr style="border:none;border-top:1px solid #e2e8f0;margin:6px 0">
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('preventas')" style="text-align:left;padding:14px;font-size:15px">📋 Lista de preventas</button>
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('pendientes')" style="text-align:left;padding:14px;font-size:15px">📝 Compras y pendientes</button>
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('historial')" style="text-align:left;padding:14px;font-size:15px">📅 Historial de tickets</button>
-      ${admin ? `<button class="btn-secondary" onclick="cerrarModal();cambiarVista('productos')" style="text-align:left;padding:14px;font-size:15px">🍗 Productos</button>` : ""}
-      ${admin ? `<button class="btn-secondary" onclick="cerrarModal();cambiarVista('gastos')" style="text-align:left;padding:14px;font-size:15px">💸 Gastos</button>` : ""}
-      ${admin ? `<button class="btn-secondary" onclick="cerrarModal();cambiarVista('papelera')" style="text-align:left;padding:14px;font-size:15px">🗑️ Papelera recuperable</button>` : ""}
-      ${admin ? `<button class="btn-secondary" onclick="cerrarModal();cambiarVista('config')" style="text-align:left;padding:14px;font-size:15px">⚙️ Configuración</button>` : ""}
+      <button class="btn-secondary" onclick="cerrarModal();cambiarVista('productos')" style="text-align:left;padding:14px;font-size:15px">🍗 Productos</button>
+      <button class="btn-secondary" onclick="cerrarModal();cambiarVista('gastos')" style="text-align:left;padding:14px;font-size:15px">💸 Gastos</button>
+      <button class="btn-secondary" onclick="cerrarModal();cambiarVista('papelera')" style="text-align:left;padding:14px;font-size:15px">🗑️ Papelera recuperable</button>
+      <button class="btn-secondary" onclick="cerrarModal();cambiarVista('config')" style="text-align:left;padding:14px;font-size:15px">⚙️ Configuración</button>
       <hr style="border:none;border-top:1px solid #e2e8f0;margin:6px 0">
-      ${admin ? `<button class="btn-secondary" onclick="cerrarModal();abrirUsuariosPermisosPOS()" style="text-align:left;padding:14px;font-size:15px">👥 Usuarios y permisos</button>` : ""}
       <button class="btn-danger" onclick="cerrarModal();logout()" style="padding:14px;font-size:15px">🚪 Cerrar sesión</button>
     </div>
   `);

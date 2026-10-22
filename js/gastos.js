@@ -78,7 +78,6 @@ function guardarGasto() {
   const metodo = $("#fgMetodo").value;
   DB.gastos.push({
     id: nuevoId(DB.gastos),
-    sucursalId: typeof sucursalActivaPOS === "function" ? sucursalActivaPOS() : "principal",
     fecha: new Date().toISOString(),
     categoria: $("#fgCategoria").value,
     monto,
