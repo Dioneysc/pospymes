@@ -88,7 +88,7 @@ function guardarProducto(id) {
     const p = DB.productos.find(x => x.id === id);
     Object.assign(p, { nombre, precio, categoria, emoji, activo });
   } else {
-    DB.productos.push({ id: nuevoId(DB.productos), nombre, precio, categoria, emoji, activo, insumos: [] });
+    DB.productos.push({ id: nuevoId(DB.productos), sucursalId: typeof sucursalActivaPOS === "function" ? sucursalActivaPOS() : "principal", nombre, precio, categoria, emoji, activo, insumos: [] });
   }
   guardar(); cerrarModal(); renderProductos(); renderCaja(); renderCategorias(); toast("💾 Guardado");
 }

@@ -249,7 +249,8 @@ function stockFaltante() {
     const p = DB.productos.find(x => x.id === it.productoId);
     (p && p.insumos || []).forEach(g => { need[g.insumoId] = (need[g.insumoId] || 0) + g.cantidad * it.cantidad; });
   });
-  return Object.entries(need).map(([id, q]) => ({ ins: DB.insumos.find(x => x.id == id), q }))
+  const sucursalId = typeof sucursalOperacionPOS === "function" ? String(sucursalOperacionPOS()) : "principal";
+  return Object.entries(need).map(([id, q]) => ({ ins: DB.insumos.find(x => String(x.id) === String(id) && String(x.sucursalId || "principal") === sucursalId), q }))
     .filter(o => o.ins && o.ins.stock < o.q)
     .map(o => `${o.ins.nombre}: hay ${o.ins.stock} ${o.ins.unidad}, faltan ${+(o.q - o.ins.stock).toFixed(2)}`);
 }
@@ -378,6 +379,7 @@ function finalizarVenta(metodo, total, pagoCon, cambio) {
 
   const venta = {
     id: nuevoId(DB.ventas),
+    sucursalId: typeof sucursalActivaPOS === "function" ? sucursalActivaPOS() : "principal",
     fecha: new Date().toISOString(),
     items: JSON.parse(JSON.stringify(carrito)),
     subtotal: sub,
@@ -392,14 +394,17 @@ function finalizarVenta(metodo, total, pagoCon, cambio) {
   };
   DB.ventas.push(venta);
 
-  carrito.forEach(item => {
-    const prod = DB.productos.find(p => p.id === item.productoId);
-    if (!prod || !prod.insumos) return;
-    prod.insumos.forEach(ing => {
-      const ins = DB.insumos.find(x => x.id === ing.insumoId);
-      if (ins) ins.stock = Math.max(0, ins.stock - ing.cantidad * item.cantidad);
-    });
-  });
+  // v109: online usa una transacción atómica en Firebase; offline conserva el flujo
+  // local existente y deja la venta marcada para conciliación posterior.
+  let resultadoConsumo = { aplicado: 0, faltantes: [] };
+  const usarConsumoAtomico = navigator.onLine && typeof window.consumoRecetaVentaAtomicoPOS === "function";
+  if (!usarConsumoAtomico && typeof registrarConsumoRecetaVentaPOS === "function") {
+    resultadoConsumo = registrarConsumoRecetaVentaPOS(venta);
+    if (navigator.onLine) venta.consumoInventarioEstado = "pendiente_conciliacion";
+    else venta.consumoInventarioEstado = "pendiente_por_conexion";
+  } else if (usarConsumoAtomico) {
+    venta.consumoInventarioEstado = "pendiente_confirmacion_firebase";
+  }
 
   guardar();
   const preventaIdFinalizada = Number(window._preventaEnProcesoId) || 0;
@@ -426,5 +431,24 @@ function finalizarVenta(metodo, total, pagoCon, cambio) {
     toast(`✅ Venta #${venta.id} · Cambio: ${fmt(cambio)}`);
   } else {
     toast(`✅ Venta #${venta.id} cobrada: ${fmt(total)}`);
+  }
+  if (usarConsumoAtomico) {
+    // No bloquea la impresión del ticket: si Firebase rechaza el consumo, la venta
+    // queda guardada y marcada para conciliación; nunca se descuenta stock parcialmente.
+    window.consumoRecetaVentaAtomicoPOS(venta).then(r => {
+      venta.consumoInventarioEstado = "confirmado_firebase";
+      guardar();
+      if (r.repetido) console.info("Consumo de receta ya procesado en Firebase", venta.id);
+    }).catch(error => {
+      venta.consumoInventarioEstado = "pendiente_conciliacion";
+      venta.consumoInventarioError = String(error && error.message || "Error Firebase").slice(0, 240);
+      guardar();
+      console.error("Consumo de receta no confirmado en Firebase:", error);
+      toast("⚠️ Venta guardada e impresa; inventario pendiente de conciliación: " + venta.consumoInventarioError);
+    });
+  }
+  if (resultadoConsumo && resultadoConsumo.faltantes && resultadoConsumo.faltantes.length) {
+    console.warn("Consumo de receta con diferencias:", resultadoConsumo.faltantes);
+    toast("⚠️ Venta guardada; revisa el inventario: hubo insumos faltantes o stock insuficiente.");
   }
 }

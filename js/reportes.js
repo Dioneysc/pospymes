@@ -1,3 +1,18 @@
+
+/* v101: alcance de reportes por sucursal. Es un filtro de interfaz; no sustituye
+   reglas de seguridad de Firestore, que deben configurarse por separado. */
+function sucursalSesionReportePOS() {
+  try { const s = JSON.parse(sessionStorage.getItem("sesion") || "{}"); return String(s.sucursalId || "principal"); } catch (_) { return "principal"; }
+}
+function registrosVisiblesReportePOS(lista) {
+  const registros = Array.isArray(lista) ? lista : [];
+  if (typeof esAdminPOS === "function" && esAdminPOS()) return registros;
+  const sucursal = sucursalSesionReportePOS();
+  return registros.filter(r => String((r && r.sucursalId) || "principal") === sucursal);
+}
+function ventasVisiblesReportePOS() { return registrosVisiblesReportePOS(DB.ventas || []); }
+function gastosVisiblesReportePOS() { return registrosVisiblesReportePOS(DB.gastos || []); }
+
 /* ============================================
    REPORTES.JS — PANEL DE VENTAS, GANANCIA ESTIMADA Y CSV
    Lee DB existente; no crea ni modifica registros.
@@ -54,15 +69,15 @@ function reporteRango(tipo) {
     const fecha = new Date(registro.fecha);
     return !Number.isNaN(fecha.getTime()) && fecha >= desde && fecha <= hasta;
   };
-  const ventas = (DB.ventas || []).filter(v => !v.cancelada && dentroDelRango(v));
-  const gastos = (DB.gastos || []).filter(dentroDelRango);
+  const ventas = ventasVisiblesReportePOS().filter(v => !v.cancelada && dentroDelRango(v));
+  const gastos = gastosVisiblesReportePOS().filter(dentroDelRango);
 
   const totalV = ventas.reduce((s, v) => s + (Number(v.total) || 0), 0);
   // Comparación contra un periodo anterior de duración equivalente.
   const duracion = hasta.getTime() - desde.getTime() + 1;
   const anteriorHasta = new Date(desde.getTime() - 1);
   const anteriorDesde = new Date(anteriorHasta.getTime() - duracion + 1);
-  const ventasAnteriores = (DB.ventas || []).filter(v => {
+  const ventasAnteriores = ventasVisiblesReportePOS().filter(v => {
     if (v.cancelada) return false;
     const f = new Date(v.fecha);
     return !Number.isNaN(f.getTime()) && f >= anteriorDesde && f <= anteriorHasta;
@@ -205,7 +220,7 @@ function inicioSemanaLocal(fecha) {
 }
 
 function obtenerVentasEntre(desde, hasta) {
-  return (DB.ventas || []).filter(v => {
+  return ventasVisiblesReportePOS().filter(v => {
     if (v.cancelada) return false;
     const fecha = new Date(v.fecha);
     return !Number.isNaN(fecha.getTime()) && fecha >= desde && fecha <= hasta;
@@ -320,7 +335,7 @@ function renderComparativaSemanal() {
 
 function exportarCSV() {
   const rows = [["ID","Fecha","Cajero","Productos","Subtotal","Descuento","Propina","Total","Método"]];
-  DB.ventas.forEach(v => rows.push([
+  ventasVisiblesReportePOS().forEach(v => rows.push([
     v.id, new Date(v.fecha).toLocaleString("es-MX"), v.usuario || "",
     (v.items || []).map(i => `${i.cantidad}x ${i.nombre}`).join(" | "),
     v.subtotal || 0, v.descuento || 0, v.propina || 0, v.total || 0, v.metodo || ""
@@ -345,7 +360,7 @@ function renderGrafica7Dias() {
     d.setHours(0,0,0,0);
     const finDia = new Date(d);
     finDia.setHours(23,59,59,999);
-    const ventasDia = DB.ventas.filter(v => {
+    const ventasDia = ventasVisiblesReportePOS().filter(v => {
       if (v.cancelada) return false;
       const f = new Date(v.fecha);
       return !Number.isNaN(f.getTime()) && f >= d && f <= finDia;
