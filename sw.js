@@ -1,5 +1,5 @@
 // Sube este número cada vez que publiques cambios (v39 → v40 …)
-const VERSION = "v95";
+const VERSION = "v93";
 const CACHE = `pos-polleria-${VERSION}`;
 
 // Sin estos archivos la app no funciona: si falta alguno, la instalación falla y se conserva la versión anterior
@@ -33,7 +33,6 @@ const NUCLEO = [
   "./js/sonido.js",
   "./js/firebase-config.js",
   "./js/sync.js",
-  "./js/papelera.js",
   "./js/app.js"
 ];
 

@@ -50,7 +50,6 @@ function cambiarVista(nombre) {
   if (nombre === "historial") { renderHistorial(); }
   if (nombre === "preventas") { renderListaPreventas(); }
   if (nombre === "pendientes") { renderPendientes(); }
-  if (nombre === "papelera" && typeof renderPapelera === "function") renderPapelera();
 
   mostrarAlertaStock();
 }
@@ -71,7 +70,6 @@ function abrirMenu() {
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('historial')" style="text-align:left;padding:14px;font-size:15px">📅 Historial de tickets</button>
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('productos')" style="text-align:left;padding:14px;font-size:15px">🍗 Productos</button>
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('gastos')" style="text-align:left;padding:14px;font-size:15px">💸 Gastos</button>
-      <button class="btn-secondary" onclick="cerrarModal();cambiarVista('papelera')" style="text-align:left;padding:14px;font-size:15px">🗑️ Papelera recuperable</button>
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('config')" style="text-align:left;padding:14px;font-size:15px">⚙️ Configuración</button>
       <hr style="border:none;border-top:1px solid #e2e8f0;margin:6px 0">
       <button class="btn-danger" onclick="cerrarModal();logout()" style="padding:14px;font-size:15px">🚪 Cerrar sesión</button>

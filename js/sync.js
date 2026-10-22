@@ -14,28 +14,6 @@ const FB_VER = "10.12.2";
 let syncMeta = LS.get("syncMeta", { activo: false, slot: 0, email: "", uid: "", synced: {}, cfgT: {}, ultima: 0 });
 let SYNC_SLOT = syncMeta.slot || 0; // terminación de los IDs de este dispositivo (ver nuevoId en db.js)
 let syncDb = null, syncUid = null, syncUnsubs = [];
-// Tombstones y papelera recuperable: se conserva el registro eliminado en Firestore.
-const papeleraLocal = () => LS.get("papeleraPOS", []);
-function guardarEnPapelera(c, id, data, fecha) {
-  if (!data || typeof data !== "object") return;
-  const papelera = papeleraLocal();
-  const clave = `${c}:${id}`;
-  const idx = papelera.findIndex(x => x.clave === clave);
-  const item = { clave, coleccion: c, id: String(id), eliminadoEn: fecha || Date.now(), registro: Object.fromEntries(Object.entries(data).filter(([k]) => !["_deleted", "_deletedAt", "_deletedBy"].includes(k))) };
-  if (idx >= 0) papelera[idx] = item; else papelera.push(item);
-  LS.set("papeleraPOS", papelera);
-}
-function restaurarDePapelera(clave) {
-  const papelera = papeleraLocal(); const item = papelera.find(x => x.clave === clave);
-  if (!item || !SYNC_COLS.includes(item.coleccion)) return false;
-  const lista = leer(item.coleccion);
-  if (!lista.some(x => String(x.id) === String(item.id))) lista.push(limpio(item.registro));
-  escribir(item.coleccion, lista);
-  if (syncMeta.tombstones) delete syncMeta.tombstones[clave];
-  if (syncMeta.synced[item.coleccion]) delete syncMeta.synced[item.coleccion][item.id];
-  LS.set("papeleraPOS", papelera.filter(x => x.clave !== clave)); guardarMeta(); programarSync(); refrescarUI(); return true;
-}
-window.restaurarDePapelera = restaurarDePapelera;
 let syncOcupado = false, syncRepetir = false, syncTimer = null, syncAplicando = false, uiTimer = null, syncUltimoError = "";
 
 // ---------- utilidades ----------
@@ -95,12 +73,7 @@ async function empujarCambios() {
         const h = hashDe(sinT(r));
         if (s[r.id] !== h) { r._t = Date.now(); sello = true; ops.push({ c, id: String(r.id), data: limpio(r), h }); }
       }
-      for (const id of Object.keys(s)) if (!ids.has(id) && !(syncMeta.tombstones || {})[`${c}:${id}`]) {
-        // Convertir el borrado físico en una marca recuperable (tombstone).
-        let anterior = null;
-        try { const snap = await ref(c).doc(String(id)).get(); if (snap.exists) anterior = snap.data(); } catch (e) { throw e; }
-        ops.push({ c, id, tumba: true, data: anterior || { id: isNaN(Number(id)) ? id : Number(id) } });
-      }
+      for (const id of Object.keys(s)) if (!ids.has(id)) ops.push({ c, id, borrar: true });
       if (sello) { syncAplicando = true; LS.set(c, lista); syncAplicando = false; }
     }
     syncMeta.synced.config = syncMeta.synced.config || {};
@@ -110,17 +83,11 @@ async function empujarCambios() {
     }
     for (let i = 0; i < ops.length; i += 400) {
       const lote = ops.slice(i, i + 400), b = syncDb.batch();
-      lote.forEach(o => {
-        if (o.tumba) b.set(ref(o.c).doc(o.id), { ...o.data, _deleted: true, _deletedAt: Date.now(), _deletedBy: syncUid });
-        else if (o.borrar) b.delete(ref(o.c).doc(o.id));
-        else b.set(ref(o.c).doc(o.id), o.data);
-      });
+      lote.forEach(o => o.borrar ? b.delete(ref(o.c).doc(o.id)) : b.set(ref(o.c).doc(o.id), o.data));
       await Promise.race([b.commit(), esperar(15000, "Sin conexión")]);
       lote.forEach(o => {
         const s = (syncMeta.synced[o.c] = syncMeta.synced[o.c] || {});
-        if (o.borrar) delete s[o.id]; else if (o.tumba) {
-          syncMeta.tombstones = syncMeta.tombstones || {}; syncMeta.tombstones[`${o.c}:${o.id}`] = Date.now(); delete s[o.id];
-        } else { s[o.id] = o.h; if (o.c === "config") syncMeta.cfgT[o.id] = o.t; }
+        if (o.borrar) delete s[o.id]; else { s[o.id] = o.h; if (o.c === "config") syncMeta.cfgT[o.id] = o.t; }
       });
       guardarMeta();
     }
@@ -168,17 +135,7 @@ function aplicarRemoto(c, cambios) {
         if (i !== undefined && hashDe(sinT(lista[i])) === s[id]) { quitar.add(i); hubo = true; } // solo si no tiene cambios locales
         delete s[id]; return;
       }
-      const r = ch.doc.data();
-      if (r && r._deleted === true) {
-        guardarEnPapelera(c, id, r, r._deletedAt);
-        if (i !== undefined) {
-          if (hashDe(sinT(lista[i])) === s[id]) { lista.splice(i, 1); hubo = true; }
-          else return; // conservar una edición local pendiente; no pisarla
-        }
-        syncMeta.tombstones = syncMeta.tombstones || {}; syncMeta.tombstones[`${c}:${id}`] = r._deletedAt || Date.now();
-        delete s[id]; return;
-      }
-      const h = hashDe(sinT(r));
+      const r = ch.doc.data(), h = hashDe(sinT(r));
       if (s[id] === h) return;                                         // ya está igual
       if (i !== undefined) {
         if (hashDe(sinT(lista[i])) !== s[id]) return;                  // cambio local pendiente: gana el local
@@ -219,7 +176,7 @@ async function descargarTodo() {
   syncMeta.synced = { config: {} }; syncMeta.cfgT = {};
   for (const c of SYNC_COLS) {
     const lista = [], s = (syncMeta.synced[c] = {});
-    (await ref(c).get()).forEach(d => { const r = d.data(); if (r && r._deleted === true) { guardarEnPapelera(c, d.id, r, r._deletedAt); syncMeta.tombstones = syncMeta.tombstones || {}; syncMeta.tombstones[`${c}:${d.id}`] = r._deletedAt || Date.now(); return; } lista.push(r); s[r.id] = hashDe(sinT(r)); });
+    (await ref(c).get()).forEach(d => { const r = d.data(); lista.push(r); s[r.id] = hashDe(sinT(r)); });
     escribir(c, lista);
   }
   (await ref("config").get()).forEach(d => {
