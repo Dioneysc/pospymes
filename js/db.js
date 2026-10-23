@@ -11,7 +11,6 @@ const LS = {
 let DB = {
   productos: LS.get("productos", []),
   insumos: LS.get("insumos", []),
-  inventarioMovimientos: LS.get("inventarioMovimientos", []),
   ventas: LS.get("ventas", []),
   gastos: LS.get("gastos", []),
   usuarios: LS.get("usuarios", []),
@@ -21,7 +20,6 @@ let DB = {
 function guardar() {
   LS.set("productos", DB.productos);
   LS.set("insumos", DB.insumos);
-  LS.set("inventarioMovimientos", DB.inventarioMovimientos || []);
   LS.set("ventas", DB.ventas);
   LS.set("gastos", DB.gastos);
   LS.set("usuarios", DB.usuarios);

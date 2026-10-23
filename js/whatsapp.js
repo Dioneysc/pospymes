@@ -4,7 +4,7 @@
 
 /* ============ COMPARTIR POR WHATSAPP ============ */
 function compartirWhatsApp(ventaId) {
-  const v = DB.ventas.find(x => String(x.id) === String(ventaId));
+  const v = DB.ventas.find(x => x.id === ventaId);
   if (!v) return toast("Venta no encontrada");
 
   const n = DB.negocio;
@@ -41,22 +41,17 @@ function compartirWhatsApp(ventaId) {
   const textoCod = encodeURIComponent(texto);
 
   // Opciones: compartir a número específico o general
-  const urlWhatsApp = `https://api.whatsapp.com/send?text=${textoCod}`;
+  const urlWhatsApp = `https://wa.me/?text=${textoCod}`;
 
-  // Usar el endpoint HTTPS oficial para evitar que el WebView intente
-  // navegar directamente a un esquema whatsapp:// no soportado.
-  // No usar window.open con noopener: algunos WebView devuelven null.
-  const nuevaVentana = window.open(urlWhatsApp, "_blank");
-  if (!nuevaVentana) {
-    // Alternativa compatible con navegadores móviles que bloquean ventanas.
-    window.location.href = urlWhatsApp;
-  }
+  // Abrir WhatsApp
+  window.open(urlWhatsApp, "_blank");
+
   toast("📤 Abriendo WhatsApp...");
 }
 
 /* Compartir con número específico (opcional) */
 function compartirWhatsAppNumero(ventaId) {
-  const v = DB.ventas.find(x => String(x.id) === String(ventaId));
+  const v = DB.ventas.find(x => x.id === ventaId);
   if (!v) return;
 
   const numero = prompt("Número de WhatsApp (con código de país, ej: 521234567890):");
@@ -65,7 +60,7 @@ function compartirWhatsAppNumero(ventaId) {
   const limpio = numero.replace(/\D/g, "");
   const n = DB.negocio;
 
-  let texto = `*${n.nombre || "POS PyMes"}*\n`;
+  let texto = `*${n.nombre || "POS"}*\n`;
   texto += `🧾 Ticket #${String(v.id).padStart(6, "0")}\n`;
   texto += `━━━━━━━━━━━━━━━\n`;
   v.items.forEach(it => {
@@ -75,7 +70,6 @@ function compartirWhatsAppNumero(ventaId) {
   texto += `*TOTAL: ${fmt(v.total)}*\n`;
   texto += `¡Gracias por su compra! 🍗`;
 
-  const url = `https://api.whatsapp.com/send?phone=${limpio}&text=${encodeURIComponent(texto)}`;
-  const nuevaVentana = window.open(url, "_blank");
-  if (!nuevaVentana) window.location.href = url;
+  const url = `https://wa.me/${limpio}?text=${encodeURIComponent(texto)}`;
+  window.open(url, "_blank");
 }
