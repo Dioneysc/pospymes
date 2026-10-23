@@ -1,5 +1,5 @@
 // Sube este número cada vez que publiques cambios (v39 → v40 …)
-const VERSION = "v93";
+const VERSION = "v93-sync-safety-1";
 const CACHE = `pos-polleria-${VERSION}`;
 
 // Sin estos archivos la app no funciona: si falta alguno, la instalación falla y se conserva la versión anterior
@@ -51,7 +51,8 @@ self.addEventListener("install", e => {
 self.addEventListener("activate", e => {
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      // Eliminar únicamente cachés de esta aplicación; no tocar los de otras apps del mismo origen.
+      .then(keys => Promise.all(keys.filter(k => k.startsWith("pos-polleria-") && k !== CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });

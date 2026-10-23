@@ -370,8 +370,16 @@ const OPCIONES_MENU_INFERIOR = [
 ];
 const MENU_INFERIOR_PREDETERMINADO = ["inventario", "corte", "reportes"];
 function obtenerMenuInferior() {
-  const guardado = LS.get("menuInferiorPOS", null);
-  return Array.isArray(guardado) ? ["caja", ...guardado.filter((id, i, a) => OPCIONES_MENU_INFERIOR.some(o => o.id === id) && a.indexOf(id) === i)] : ["caja", ...MENU_INFERIOR_PREDETERMINADO];
+  // Migración compatible con v87: menuInferior era la clave anterior.
+  const nuevo = LS.get("menuInferiorPOS", null);
+  const anterior = LS.get("menuInferior", null);
+  const guardado = Array.isArray(nuevo) ? nuevo : Array.isArray(anterior) ? anterior : null;
+  const limpio = Array.isArray(guardado)
+    ? [...new Set(guardado.filter(id => id !== "caja" && OPCIONES_MENU_INFERIOR.some(o => o.id === id)))]
+    : [...MENU_INFERIOR_PREDETERMINADO];
+  // Solo migra si la clave nueva todavía no existía; la preferencia nueva siempre gana.
+  if (!Array.isArray(nuevo) && Array.isArray(anterior)) LS.set("menuInferiorPOS", limpio);
+  return ["caja", ...limpio];
 }
 function renderConfigMenuInferior() {
   const cont = document.getElementById("configMenuInferior");

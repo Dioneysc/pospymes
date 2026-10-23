@@ -20,12 +20,13 @@ let syncOcupado = false, syncRepetir = false, syncTimer = null, syncAplicando = 
 const canon = v => Array.isArray(v) ? "[" + v.map(canon).join(",") + "]"
   : v && typeof v === "object" ? "{" + Object.keys(v).sort().map(k => JSON.stringify(k) + ":" + canon(v[k])).join(",") + "}"
   : JSON.stringify(v);
-const hashDe = v => { const s = canon(v); let h = 5381; for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; return h.toString(36) + "." + s.length; };
+// Los valores de configuración local pueden ser null/undefined durante una migración.
+// Normalizar evita que el hash lance una excepción antes de llegar a Firestore.
+const hashDe = v => { const s = canon(v); const texto = s === undefined ? "null" : s; let h = 5381; for (let i = 0; i < texto.length; i++) h = ((h * 33) ^ texto.charCodeAt(i)) >>> 0; return h.toString(36) + "." + texto.length; };
 const sinT = r => { const { _t, ...resto } = r; return resto; };
 const limpio = o => JSON.parse(JSON.stringify(o)); // Firestore no admite undefined
 const guardarMeta = () => LS.set("syncMeta", syncMeta);
 const ref = n => syncDb.collection("negocios").doc(syncUid).collection(n);
-const esperar = (ms, msg) => new Promise((_, no) => setTimeout(() => no(new Error(msg)), ms));
 const msgSync = e => ({
   "auth/invalid-credential": "Correo o contraseña incorrectos", "auth/wrong-password": "Contraseña incorrecta",
   "auth/user-not-found": "Ese correo no existe en tu proyecto de Firebase", "auth/invalid-email": "Correo inválido",
@@ -40,11 +41,15 @@ const msgSync = e => ({
 }[e.code] || e.message || String(e));
 
 // Lectura / escritura de cada dato local
+const SYNC_LOCAL_VALUES = new Set(["cajaFuerteSaldoAjuste", "menuInferiorPOS"]);
 const leer = k => k === "negocio" ? DB.negocio : k === "catsGasto" ? CATS_GASTO : k === "cajaHoy" ? estadoCajaHoy
-  : k === "cortes" || SYNC_LOCAL_LISTS.has(k) ? LS.get(k, []) : DB[k];
+  : k === "cortes" || SYNC_LOCAL_LISTS.has(k) ? LS.get(k, [])
+  : SYNC_LOCAL_VALUES.has(k) ? LS.get(k, k === "cajaFuerteSaldoAjuste" ? 0 : null)
+  : DB[k];
 function escribir(k, v) {
   if (k === "negocio") DB.negocio = v; else if (k === "catsGasto") CATS_GASTO = v;
-  else if (k === "cajaHoy") estadoCajaHoy = v; else if (k !== "cortes" && !SYNC_LOCAL_LISTS.has(k)) DB[k] = v;
+  else if (k === "cajaHoy") estadoCajaHoy = v;
+  else if (k !== "cortes" && !SYNC_LOCAL_LISTS.has(k) && !SYNC_LOCAL_VALUES.has(k)) DB[k] = v;
   syncAplicando = true; try { LS.set(k, v); } finally { syncAplicando = false; }
 }
 
@@ -84,7 +89,9 @@ async function empujarCambios() {
     for (let i = 0; i < ops.length; i += 400) {
       const lote = ops.slice(i, i + 400), b = syncDb.batch();
       lote.forEach(o => o.borrar ? b.delete(ref(o.c).doc(o.id)) : b.set(ref(o.c).doc(o.id), o.data));
-      await Promise.race([b.commit(), esperar(15000, "Sin conexión")]);
+      // No competir el commit contra un timeout: Promise.race no cancela la escritura
+      // y podría marcar como fallido un lote que Firestore termina guardando después.
+      await b.commit();
       lote.forEach(o => {
         const s = (syncMeta.synced[o.c] = syncMeta.synced[o.c] || {});
         if (o.borrar) delete s[o.id]; else { s[o.id] = o.h; if (o.c === "config") syncMeta.cfgT[o.id] = o.t; }
@@ -106,7 +113,10 @@ async function empujarCambios() {
 function escucharNube() {
   detenerEscucha();
   [...SYNC_COLS, "config"].forEach(c => syncUnsubs.push(
-    ref(c).onSnapshot(snap => aplicarRemoto(c, snap.docChanges()), e => pintarEstadoSync("⚠️ " + msgSync(e)))
+    ref(c).onSnapshot(snap => aplicarRemoto(c, snap.docChanges()), e => {
+      syncUltimoError = msgSync(e);
+      pintarEstadoSync("⚠️ Firebase no confirmó lectura de " + c + ": " + syncUltimoError);
+    })
   ));
 }
 function detenerEscucha() { syncUnsubs.forEach(f => { try { f(); } catch (e) {} }); syncUnsubs = []; }
@@ -192,7 +202,10 @@ async function conectarSync() {
     return toast("⚠️ Falta la configuración en js/firebase-config.js");
   }
 
-  const slot = +$("#syncSlot").value;
+  const slot = Number($("#syncSlot").value);
+  if (!Number.isInteger(slot) || slot < 1 || slot > 9) {
+    return toast("⚠️ Selecciona un número de dispositivo válido (1 a 9).");
+  }
 
   if (!/^https?:$/.test(location.protocol)) {
     return toast("⚠️ Abre la app desde HTTPS o localhost.");
@@ -250,6 +263,8 @@ async function conectarSync() {
 }
 window.onNativeGoogleToken = async function (idToken, slot) {
   try {
+    slot = Number(slot);
+    if (!Number.isInteger(slot) || slot < 1 || slot > 9) throw new Error("Selecciona un número de dispositivo válido (1 a 9).");
     await cargarFirebase();
     iniciarFirebase();
 const credencial =
@@ -257,7 +272,7 @@ const credencial =
 
     const resultado = await firebase.auth().signInWithCredential(credencial);
 
-    await finalizarConexion(resultado.user, Number(slot) || 0);
+    await finalizarConexion(resultado.user, slot);
   } catch (e) {
     console.warn("Error de autenticación nativa:", e);
     pintarEstadoSync();
@@ -265,10 +280,22 @@ const credencial =
   }
 };
 
+// Detecta datos en todas las colecciones sincronizables, no solo en config.
+// Evita tratar como nube vacía un negocio que tenga ventas/productos pero carezca de config.
+async function hayDatosEnNube() {
+  const colecciones = [...SYNC_COLS, "config"];
+  const resultados = await Promise.all(colecciones.map(c => ref(c).limit(1).get()));
+  return resultados.some(snap => !snap.empty);
+}
+
 // Se ejecuta cuando Google ya identificó al usuario (por popup o al volver de la redirección)
 async function finalizarConexion(user, slot) {
+  if (!Number.isInteger(Number(slot)) || Number(slot) < 1 || Number(slot) > 9) {
+    throw new Error("Selecciona un número de dispositivo válido (1 a 9).");
+  }
+  slot = Number(slot);
   syncUid = user.uid; syncDb = firebase.firestore();
-  const hayNube = !(await ref("config").limit(1).get()).empty;
+  const hayNube = await hayDatosEnNube();
   const primera = !syncMeta.activo || syncMeta.uid !== syncUid;
   if (primera && hayNube) {
     if (!confirm("La nube ya tiene datos de este negocio.\n\n¿Reemplazar los datos de ESTE dispositivo por los de la nube?\n\nSe descargará un respaldo de lo que hay aquí antes de reemplazar.")) {
@@ -305,8 +332,9 @@ function pintarEstadoSync(msg) {
   const on = syncMeta.activo;
   const hora = syncMeta.ultima ? new Date(syncMeta.ultima).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" }) : "—";
   const estadoBase = !navigator.onLine ? "📴 Sin internet. Los cambios locales están conservados y pendientes de sincronizar."
-    : (on ? `✅ Conectado (${syncMeta.email}) · Dispositivo ${syncMeta.slot} · Última sincronización: ${hora}`
-    : "No conectado. Tus datos solo están en este dispositivo.");
+    : (syncUltimoError ? `⚠️ Última sincronización no confirmada: ${syncUltimoError}`
+    : (on ? `✅ Conectado (${syncMeta.email}) · Dispositivo ${syncMeta.slot} · Última sincronización confirmada: ${hora}`
+    : "No conectado. Tus datos solo están en este dispositivo."));
   est.textContent = msg || estadoBase;
   const dom = document.getElementById("syncDominio");
   if (dom) dom.textContent = location.hostname || location.protocol;
