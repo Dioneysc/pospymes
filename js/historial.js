@@ -51,34 +51,23 @@ function renderHistorial(fechaSeleccionada) {
     </section>`;
 }
 
-function restaurarStockDeVenta(ventaId) {
-  if (!Array.isArray(DB.inventarioMovimientos)) return;
-  const movimientos = DB.inventarioMovimientos.filter(m =>
-    String(m.ventaId) === String(ventaId) && m.tipo === "venta" && m.entidadTipo === "producto"
-  );
-  movimientos.forEach(m => {
-    const p = DB.productos.find(x => String(x.id) === String(m.entidadId));
-    if (!p || p.stock === undefined || p.stock === null) return;
-    const cantidad = Number.isFinite(Number(m.cantidadAplicada))
-      ? Math.max(0, Number(m.cantidadAplicada))
-      : Math.max(0, Math.abs(Number(m.cantidad) || 0));
-    if (cantidad <= 0) return;
-    const antes = Math.max(0, Number(p.stock) || 0);
-    p.stock = antes + cantidad;
-    if (typeof registrarMovimientoInventario === "function") {
-      registrarMovimientoInventario({entidadTipo:"producto", entidadId:p.id, nombre:p.nombre, tipo:"devolucion", cantidad, stockAntes:antes, stockDespues:p.stock, costoTotal:0, ventaId, motivo:`Restitución por cancelación/eliminación del ticket #${ventaId}`});
-    }
-  });
-}
-
 function eliminarTicketHistorial(id) {
   const venta = DB.ventas.find(v => String(v.id) === String(id));
   if (!venta) return toast("⚠️ Ticket no encontrado");
   const mensaje = venta.cancelada
     ? `¿Eliminar permanentemente el ticket cancelado #${String(venta.id).padStart(6, "0")} del historial?`
-    : `¿Eliminar permanentemente el ticket #${String(venta.id).padStart(6, "0")} por ${fmt(venta.total)}?\n\nSe quitará de historial, reportes y cálculos de caja. Se devolverá el stock de los productos que se descontó en esa venta. Esta acción no se puede deshacer.`;
+    : `¿Eliminar permanentemente el ticket #${String(venta.id).padStart(6, "0")} por ${fmt(venta.total)}?\n\nSe quitará de historial, reportes y cálculos de caja. Los insumos asociados a la venta se devolverán al inventario. Esta acción no se puede deshacer.`;
   if (!confirm(mensaje)) return;
-  if (!venta.cancelada) restaurarStockDeVenta(venta.id);
+  if (!venta.cancelada) {
+    (venta.items || []).forEach(item => {
+      const prod = DB.productos.find(p => String(p.id) === String(item.productoId));
+      if (!prod || !Array.isArray(prod.insumos)) return;
+      prod.insumos.forEach(ing => {
+        const ins = DB.insumos.find(x => String(x.id) === String(ing.insumoId));
+        if (ins) ins.stock = (Number(ins.stock) || 0) + (Number(ing.cantidad) || 0) * (Number(item.cantidad) || 0);
+      });
+    });
+  }
   DB.ventas = DB.ventas.filter(v => String(v.id) !== String(id));
   guardar();
   renderHistorial();
@@ -182,7 +171,7 @@ function abrirCancelarVenta(id) {
 
     <p style="color:#64748b;font-size:13px;margin-bottom:8px">Esta acción:</p>
     <ul style="color:#64748b;font-size:13px;margin-left:20px;margin-bottom:14px">
-      <li>Devuelve al inventario el stock descontado de los productos</li>
+      <li>Devuelve los insumos al inventario</li>
       <li>Marca el ticket como cancelado</li>
       <li>No elimina el registro del historial</li>
     </ul>
@@ -212,7 +201,14 @@ function confirmarCancelarVenta(id) {
 
   if (!confirm(`¿Cancelar la venta #${v.id} por ${fmt(v.total)}?\n\nMotivo: ${motivo}`)) return;
 
-  restaurarStockDeVenta(v.id);
+  v.items.forEach(item => {
+    const prod = DB.productos.find(p => p.id === item.productoId);
+    if (!prod || !prod.insumos) return;
+    prod.insumos.forEach(ing => {
+      const ins = DB.insumos.find(x => x.id === ing.insumoId);
+      if (ins) ins.stock += ing.cantidad * item.cantidad;
+    });
+  });
 
   v.cancelada = true;
   v.motivoCancelacion = motivo;
@@ -221,7 +217,7 @@ function confirmarCancelarVenta(id) {
 
   guardar();
   cerrarModal();
-  toast(`✅ Venta #${v.id} cancelada · Stock restaurado`);
+  toast(`✅ Venta #${v.id} cancelada · Insumos reintegrados`);
   renderHistorial();
   renderEstadoCaja();
   mostrarAlertaStock();
