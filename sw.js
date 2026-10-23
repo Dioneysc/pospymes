@@ -1,5 +1,5 @@
 // Sube este número cada vez que publiques cambios (v39 → v40 …)
-const VERSION = "v93-menu-compat-1";
+const VERSION = "v91";
 const CACHE = `pos-polleria-${VERSION}`;
 
 // Sin estos archivos la app no funciona: si falta alguno, la instalación falla y se conserva la versión anterior
@@ -26,7 +26,6 @@ const NUCLEO = [
   "./js/gastos.js",
   "./js/caja.js",
   "./js/reportes.js",
-  "./js/pendientes.js",
   "./js/historial.js",
   "./js/config-ui.js",
   "./js/modo-oscuro.js",

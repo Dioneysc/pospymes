@@ -4,7 +4,6 @@
 
 /* ============ CONFIG ============ */
 function cargarNegocio() {
-  renderConfigMenuInferior();
   const elN = $("#cfgNombre");
   const elS = $("#cfgSlogan");
   const elD = $("#cfgDireccion");
@@ -159,12 +158,12 @@ function exportarBackup() {
 }
 
 function borrarProductosInsumos() {
-  if (!confirm("⚠️ Se borrarán TODOS los productos e insumos.\n\nLas ventas y gastos NO se borran.\n\n¿Continuar?")) return;
-  if (!confirm("⚠️ Última confirmación. ¿Borrar productos e insumos definitivamente?")) return;
+  if (!confirm("⚠️ Se borrarán TODOS los productos y existencias.\n\nLas ventas y gastos NO se borran.\n\n¿Continuar?")) return;
+  if (!confirm("⚠️ Última confirmación. ¿Borrar productos y existencias definitivamente?")) return;
   DB.productos = [];
   DB.insumos = [];
   guardar();
-  toast("🍗 Productos e insumos borrados");
+  toast("📦 Productos e inventario borrados");
   carrito = [];
   renderCaja();
   renderCategorias();
@@ -174,7 +173,7 @@ function borrarProductosInsumos() {
 }
 
 function borrarVentasGastos() {
-  if (!confirm("⚠️ Se borrarán TODAS las ventas y gastos.\n\nLos productos e insumos NO se borran.\n\n¿Continuar?")) return;
+  if (!confirm("⚠️ Se borrarán TODAS las ventas y gastos.\n\nLos productos y existencias NO se borran.\n\n¿Continuar?")) return;
   if (!confirm("⚠️ Última confirmación. ¿Borrar ventas y gastos definitivamente?")) return;
   DB.ventas = [];
   DB.gastos = [];
@@ -259,6 +258,7 @@ function importarBackup(e) {
         ventas: datos.ventas,
         usuarios: datos.usuarios,
         insumos: Array.isArray(datos.insumos) ? datos.insumos : [],
+        inventarioMovimientos: Array.isArray(datos.inventarioMovimientos) ? datos.inventarioMovimientos : [],
         gastos: Array.isArray(datos.gastos) ? datos.gastos : [],
         negocio:
           datos.negocio && typeof datos.negocio === "object"
@@ -354,55 +354,3 @@ function importarBackup(e) {
   lector.readAsText(archivo);
 }
 
-
-
-/* ============ MENÚ INFERIOR PERSONALIZABLE ============ */
-const OPCIONES_MENU_INFERIOR = [
-  { id: "inventario", label: "Inventario", icon: "📦" },
-  { id: "corte", label: "Caja", icon: "💰" },
-  { id: "reportes", label: "Reportes", icon: "📊" },
-  { id: "preventas", label: "Preventas", icon: "📋" },
-  { id: "pendientes", label: "Compras y pendientes", icon: "📝" },
-  { id: "historial", label: "Historial", icon: "🧾" },
-  { id: "productos", label: "Productos", icon: "🍗" },
-  { id: "gastos", label: "Gastos", icon: "💸" },
-  { id: "config", label: "Configuración", icon: "⚙️" }
-];
-const MENU_INFERIOR_PREDETERMINADO = ["inventario", "corte", "reportes"];
-function obtenerMenuInferior() {
-  // Compatibilidad con v87: antes la preferencia se guardaba como "menuInferior".
-  let guardado = LS.get("menuInferiorPOS", null);
-  if (!Array.isArray(guardado)) {
-    const anterior = LS.get("menuInferior", null);
-    if (Array.isArray(anterior)) {
-      // En v87 "caja" (Venta) formaba parte del arreglo; en v93 es fija y no se guarda.
-      guardado = anterior.filter(id => id !== "caja");
-      LS.set("menuInferiorPOS", guardado);
-    }
-  }
-  const validos = Array.isArray(guardado)
-    ? guardado.filter((id, i, a) => OPCIONES_MENU_INFERIOR.some(o => o.id === id) && a.indexOf(id) === i)
-    : MENU_INFERIOR_PREDETERMINADO.slice();
-  return ["caja", ...validos];
-}
-function renderConfigMenuInferior() {
-  const cont = document.getElementById("configMenuInferior");
-  if (!cont) return;
-  const seleccion = obtenerMenuInferior();
-  cont.innerHTML = `<div class="menu-inferior-fijo"><span>🛒</span><span><b>Venta</b><small>Siempre visible</small></span><span class="menu-fijo-check">✓</span></div>` + OPCIONES_MENU_INFERIOR.map(o => `
-    <label class="menu-inferior-opcion"><span class="menu-opcion-icono">${o.icon}</span><span class="menu-opcion-texto">${o.label}</span><input type="checkbox" value="${o.id}" ${seleccion.includes(o.id) ? "checked" : ""}><span class="menu-opcion-switch"></span></label>`).join("");
-}
-function guardarMenuInferior() {
-  const cont = document.getElementById("configMenuInferior");
-  if (!cont) return;
-  const seleccion = [...cont.querySelectorAll('input[type="checkbox"]:checked')].map(el => el.value);
-  LS.set("menuInferiorPOS", seleccion);
-  if (typeof aplicarMenuInferior === "function") aplicarMenuInferior();
-  toast("✅ Menú inferior actualizado");
-}
-function restablecerMenuInferior() {
-  LS.set("menuInferiorPOS", MENU_INFERIOR_PREDETERMINADO);
-  renderConfigMenuInferior();
-  if (typeof aplicarMenuInferior === "function") aplicarMenuInferior();
-  toast("Menú predeterminado restaurado");
-}

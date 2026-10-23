@@ -5,16 +5,15 @@
    Datos en: negocios/{uid}/{productos|insumos|ventas|gastos|usuarios|cortes|config}
    ============================================ */
 
-const SYNC_COLS = ["productos", "insumos", "ventas", "gastos", "usuarios", "cortes", "preventasPendientes", "gastosPersonales", "cajaFuerteMovimientos"]; // listas de registros con id
-const SYNC_CFG = ["negocio", "catsGasto", "cajaHoy", "cajaFuerteSaldoAjuste", "menuInferiorPOS"]; // valores únicos (carpeta config)
-const SYNC_LOCAL_LISTS = new Set(["preventasPendientes", "gastosPersonales", "cajaFuerteMovimientos"]);
+const SYNC_COLS = ["productos", "insumos", "inventarioMovimientos", "ventas", "gastos", "usuarios", "cortes"]; // listas de registros con id
+const SYNC_CFG = ["negocio", "catsGasto", "cajaHoy"];                                   // valores únicos (carpeta config)
 const SYNC_CLAVES = new Set([...SYNC_COLS, ...SYNC_CFG]);
 const FB_VER = "10.12.2";
 
 let syncMeta = LS.get("syncMeta", { activo: false, slot: 0, email: "", uid: "", synced: {}, cfgT: {}, ultima: 0 });
 let SYNC_SLOT = syncMeta.slot || 0; // terminación de los IDs de este dispositivo (ver nuevoId en db.js)
 let syncDb = null, syncUid = null, syncUnsubs = [];
-let syncOcupado = false, syncRepetir = false, syncTimer = null, syncAplicando = false, uiTimer = null, syncUltimoError = "";
+let syncOcupado = false, syncRepetir = false, syncTimer = null, syncAplicando = false, uiTimer = null;
 
 // ---------- utilidades ----------
 const canon = v => Array.isArray(v) ? "[" + v.map(canon).join(",") + "]"
@@ -41,10 +40,10 @@ const msgSync = e => ({
 
 // Lectura / escritura de cada dato local
 const leer = k => k === "negocio" ? DB.negocio : k === "catsGasto" ? CATS_GASTO : k === "cajaHoy" ? estadoCajaHoy
-  : k === "cortes" || SYNC_LOCAL_LISTS.has(k) ? LS.get(k, []) : DB[k];
+  : k === "cortes" ? LS.get("cortes", []) : DB[k];
 function escribir(k, v) {
   if (k === "negocio") DB.negocio = v; else if (k === "catsGasto") CATS_GASTO = v;
-  else if (k === "cajaHoy") estadoCajaHoy = v; else if (k !== "cortes" && !SYNC_LOCAL_LISTS.has(k)) DB[k] = v;
+  else if (k === "cajaHoy") estadoCajaHoy = v; else if (k !== "cortes") DB[k] = v;
   syncAplicando = true; try { LS.set(k, v); } finally { syncAplicando = false; }
 }
 
@@ -59,9 +58,8 @@ function programarSync() {
 
 // ---------- subir cambios locales ----------
 async function empujarCambios() {
-  if (!syncDb || !syncUid) return false;
-  if (!navigator.onLine) { pintarEstadoSync("📴 Sin internet. Los cambios quedan guardados en este dispositivo y se enviarán al reconectar."); return false; }
-  if (syncOcupado) { syncRepetir = true; return false; }
+  if (!syncDb || !syncUid) return;
+  if (syncOcupado) { syncRepetir = true; return; }
   syncOcupado = true;
   try {
     const ops = [];
@@ -91,11 +89,9 @@ async function empujarCambios() {
       });
       guardarMeta();
     }
-    syncMeta.ultima = Date.now(); syncUltimoError = ""; guardarMeta(); pintarEstadoSync();
-    return true;
+    syncMeta.ultima = Date.now(); guardarMeta(); pintarEstadoSync();
   } catch (e) {
-    syncUltimoError = msgSync(e); console.warn("Sync:", e); pintarEstadoSync("⚠️ Pendiente de subir: " + syncUltimoError + ". Tus datos locales se conservan; se reintentará al reconectar.");
-    return false;
+    console.warn("Sync:", e); pintarEstadoSync("⚠️ Pendiente de subir: " + msgSync(e));
   } finally {
     syncOcupado = false;
     if (syncRepetir) { syncRepetir = false; programarSync(); }
@@ -118,16 +114,12 @@ function aplicarRemoto(c, cambios) {
     syncMeta.synced.config = syncMeta.synced.config || {};
     cambios.forEach(ch => {
       const k = ch.doc.id, d = ch.doc.data();
-      const claveDestino = k === "menuInferior" ? "menuInferiorPOS" : k;
-      if (ch.type === "removed" || (!SYNC_CFG.includes(k) && k !== "menuInferior") || d.valor === undefined) return;
-      // v87 sincronizaba "menuInferior"; convertirlo al nombre canónico de v93.
-      const valor = k === "menuInferior" && Array.isArray(d.valor)
-        ? d.valor.filter(id => id !== "caja") : d.valor;
-      const sh = syncMeta.synced.config[claveDestino], h = hashDe(valor);
+      if (ch.type === "removed" || !SYNC_CFG.includes(k) || d.valor === undefined) return;
+      const sh = syncMeta.synced.config[k], h = hashDe(d.valor);
       if (sh === h) return;                                            // ya está igual
-      if (sh !== undefined && hashDe(leer(claveDestino)) !== sh) return; // cambio local pendiente: gana el local
-      if ((d._t || 0) <= (syncMeta.cfgT[claveDestino] || 0)) return;    // el remoto es más viejo
-      escribir(claveDestino, valor); syncMeta.synced.config[claveDestino] = h; syncMeta.cfgT[claveDestino] = d._t || 0; hubo = true;
+      if (sh !== undefined && hashDe(leer(k)) !== sh) return;          // cambio local pendiente: gana el local
+      if ((d._t || 0) <= (syncMeta.cfgT[k] || 0)) return;              // el remoto es más viejo
+      escribir(k, d.valor); syncMeta.synced.config[k] = h; syncMeta.cfgT[k] = d._t || 0; hubo = true;
     });
   } else {
     let lista = leer(c);
@@ -183,18 +175,9 @@ async function descargarTodo() {
     (await ref(c).get()).forEach(d => { const r = d.data(); lista.push(r); s[r.id] = hashDe(sinT(r)); });
     escribir(c, lista);
   }
-  const configSnap = await ref("config").get();
-  const menuNuevoExiste = configSnap.docs.some(d => d.id === "menuInferiorPOS");
-  configSnap.forEach(d => {
+  (await ref("config").get()).forEach(d => {
     const k = d.id, o = d.data();
-    if ((SYNC_CFG.includes(k) || k === "menuInferior") && o.valor !== undefined) {
-      const claveDestino = k === "menuInferior" ? "menuInferiorPOS" : k;
-      const valor = k === "menuInferior" && Array.isArray(o.valor) ? o.valor.filter(id => id !== "caja") : o.valor;
-      // Si existe ya la clave nueva en la nube, esta tiene prioridad sobre la antigua.
-      if (k !== "menuInferior" || !menuNuevoExiste) {
-        escribir(claveDestino, valor); syncMeta.synced.config[claveDestino] = hashDe(valor); syncMeta.cfgT[claveDestino] = o._t || 0;
-      }
-    }
+    if (SYNC_CFG.includes(k) && o.valor !== undefined) { escribir(k, o.valor); syncMeta.synced.config[k] = hashDe(o.valor); syncMeta.cfgT[k] = o._t || 0; }
   });
   guardarMeta();
 }
@@ -305,11 +288,8 @@ async function desconectarSync() {
 }
 
 async function sincronizarAhora() {
-  if (!syncDb) return toast("⚠️ No hay sesión de nube activa todavía");
-  if (!navigator.onLine) { pintarEstadoSync("📴 Sin internet. Los cambios quedan pendientes."); return toast("📴 Sin internet: los datos locales están guardados"); }
-  const ok = await empujarCambios();
-  if (ok) toast("✅ Sincronización completada");
-  else toast("⚠️ No se confirmó la sincronización. Revisa el estado y vuelve a intentar.");
+  if (!syncDb) return toast("⚠️ No hay conexión con la nube todavía");
+  await empujarCambios(); toast("🔄 Sincronizado");
 }
 
 function pintarEstadoSync(msg) {
@@ -317,10 +297,8 @@ function pintarEstadoSync(msg) {
   if (!est) return;
   const on = syncMeta.activo;
   const hora = syncMeta.ultima ? new Date(syncMeta.ultima).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" }) : "—";
-  const estadoBase = !navigator.onLine ? "📴 Sin internet. Los cambios locales están conservados y pendientes de sincronizar."
-    : (on ? `✅ Conectado (${syncMeta.email}) · Dispositivo ${syncMeta.slot} · Última sincronización: ${hora}`
+  est.textContent = msg || (on ? `✅ Conectado (${syncMeta.email}) · Dispositivo ${syncMeta.slot} · Última sincronización: ${hora}`
     : "No conectado. Tus datos solo están en este dispositivo.");
-  est.textContent = msg || estadoBase;
   const dom = document.getElementById("syncDominio");
   if (dom) dom.textContent = location.hostname || location.protocol;
   $("#syncForm").classList.toggle("oculto", on);
@@ -331,8 +309,7 @@ function pintarEstadoSync(msg) {
 // Al abrir la app: si ya estaba conectada, reanudar (sin bloquear el arranque)
 function iniciarSync() {
   pintarEstadoSync();
-  window.addEventListener("online", () => { pintarEstadoSync("🌐 Internet recuperado. Sincronizando cambios pendientes..."); programarSync(); });
-  window.addEventListener("offline", () => pintarEstadoSync("📴 Sin internet. Puedes seguir trabajando; los cambios se enviarán al reconectar."));
+  window.addEventListener("online", programarSync);
   const pend = LS.get("syncPendiente", null);
   if (pend && FIREBASE_CONFIG.apiKey) { // volvemos de iniciar sesión con Google por redirección
     LS.set("syncPendiente", null);

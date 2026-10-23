@@ -1,107 +1,69 @@
 /* ============================================
-   INVENTARIO.JS — INSUMOS Y MOVIMIENTOS
+   INVENTARIO.JS — CONTROL SIMPLE DE EXISTENCIAS
+   Los movimientos se conservan internamente para mantener consistencia,
+   pero no se muestra una pantalla de Kardex.
    ============================================ */
 
-/* ============ INVENTARIO ============ */
+function asegurarMovimientosInventario() {
+  if (!Array.isArray(DB.inventarioMovimientos)) DB.inventarioMovimientos = [];
+}
+
+function registrarMovimientoInventario(m) {
+  asegurarMovimientosInventario();
+  DB.inventarioMovimientos.push({ id:nuevoId(DB.inventarioMovimientos), fecha:new Date().toISOString(), ...m });
+}
+
+// Se conserva el nombre por compatibilidad con la navegación existente.
 function renderInsumos() {
-  if (!DB.insumos.length) {
-    $("#listaInsumos").innerHTML = `
-      <div style="text-align:center;padding:40px 20px;color:#94a3b8">
-        <div style="font-size:60px;margin-bottom:12px">📦</div>
-        <h3 style="color:#64748b;font-size:16px;margin-bottom:8px">Sin insumos todavía</h3>
-        <p style="font-size:13px;margin-bottom:16px">Agrega los insumos que consumes</p>
-        <button class="btn-primary" onclick="abrirFormInsumo()" style="padding:12px 24px">+ Agregar insumo</button>
-      </div>
-    `;
+  renderInventarioProductos();
+}
+
+function renderInventarioProductos() {
+  const el = $("#listaStockProductos"); if (!el) return;
+  const productos = DB.productos.filter(p => modoInventarioProducto(p) === "producto" || modoInventarioProducto(p) === "derivado");
+  if (!productos.length) {
+    el.innerHTML = `<div style="padding:18px;color:#94a3b8;font-size:13px">Todavía no hay productos con stock controlado. Entra a Productos, edita un artículo y activa el control de existencia.</div>`;
     return;
   }
-
-  $("#listaInsumos").innerHTML = `
-    <table>
-      <thead><tr><th>Insumo</th><th>Stock</th><th>Mínimo</th><th>Costo</th><th>Unidad</th><th>Estado</th><th>Acciones</th></tr></thead>
-      <tbody>
-        ${DB.insumos.map(i => {
-          const bajo = i.stock <= i.min;
-          return `<tr>
-            <td data-label="Insumo">${i.nombre}</td>
-            <td data-label="Stock">${i.stock}</td>
-            <td data-label="Mínimo">${i.min}</td>
-            <td data-label="Costo">${fmt(i.costo)}</td>
-            <td data-label="Unidad">${i.unidad}</td>
-            <td data-label="Estado"><span class="badge ${bajo?'danger':'ok'}">${bajo?'⚠ Bajo':'OK'}</span></td>
-            <td data-label="Acciones">
-              <button class="btn-mini" onclick="abrirFormInsumo(${i.id})">✏️</button>
-              <button class="btn-mini" onclick="abrirMovimiento(${i.id})">↕</button>
-              <button class="btn-mini" onclick="borrarInsumo(${i.id})">🗑️</button>
-            </td>
-          </tr>`;
-        }).join("")}
-      </tbody>
-    </table>`;
+  el.innerHTML = `<table><thead><tr><th>Producto</th><th>Existencia</th><th>Mínimo</th><th>Unidad</th><th>Compra</th><th>Acciones</th></tr></thead><tbody>${productos.map(p => {
+    const modo = modoInventarioProducto(p), stock = existenciaVisibleProducto(p), base = productoBaseInventario(p);
+    const minimo = Math.max(0, Number(p.stockMinimo) || 0), bajo = stock !== null && minimo > 0 && stock <= minimo;
+    return `<tr>
+      <td data-label="Producto"><b>${p.emoji || "🍽️"} ${escapeHTML(p.nombre)}</b>${modo === "derivado" ? `<div style="font-size:11px;color:#64748b">Descuenta de: ${escapeHTML(base?.nombre || "Producto no disponible")}</div>` : ""}</td>
+      <td data-label="Existencia"><b>${stock === null ? "—" : stock.toLocaleString("es-MX",{maximumFractionDigits:3})}</b>${bajo ? `<div style="font-size:10px;color:#b91c1c;font-weight:700">Stock bajo</div>` : ""}</td>
+      <td data-label="Mínimo">${minimo.toLocaleString("es-MX",{maximumFractionDigits:3})}</td>
+      <td data-label="Unidad">${escapeHTML(p.unidad || "pieza")}</td>
+      <td data-label="Compra">${Number(p.precioCompra) > 0 ? fmt(p.precioCompra) : "—"}</td>
+      <td data-label="Acciones"><button class="btn-mini" onclick="abrirFormProducto(${p.id})" title="Editar producto o agregar stock">✏️ / 📥</button>${modo === "producto" ? `<button class="btn-mini" onclick="abrirAjusteProducto(${p.id})" title="Ajustar existencia">↕</button>` : ""}</td>
+    </tr>`;
+  }).join("")}</tbody></table>`;
 }
 
-function abrirFormInsumo(id) {
-  const i = id ? DB.insumos.find(x => x.id === id) : { nombre: "", unidad: "kg", stock: 0, min: 0, costo: 0 };
-  abrirModal(id ? "Editar insumo" : "Nuevo insumo", `
-    <label>Nombre</label><input id="fiNombre" value="${escapeHTML(i.nombre)}">
-    <label>Unidad (kg, L, pza...)</label><input id="fiUnidad" value="${escapeHTML(i.unidad)}">
-    <label>Stock actual</label><input id="fiStock" type="number" step="0.01" value="${i.stock}">
-    <label>Stock mínimo</label><input id="fiMin" type="number" step="0.01" value="${i.min}">
-    <label>Costo por unidad</label><input id="fiCosto" type="number" step="0.01" value="${i.costo}">
-    <div class="acciones">
-      <button class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
-      <button class="btn-primary" onclick="guardarInsumo(${id||0})">Guardar</button>
-    </div>
-  `);
+// El registro de compras se realiza ahora desde el formulario del producto.
+function abrirEntradaProducto(productoId) {
+  abrirFormProducto(productoId);
 }
 
-function guardarInsumo(id) {
-  const data = {
-    nombre: $("#fiNombre").value.trim(),
-    unidad: $("#fiUnidad").value.trim() || "pza",
-    stock: +$("#fiStock").value,
-    min: +$("#fiMin").value,
-    costo: +$("#fiCosto").value
-  };
-  if (!data.nombre) return toast("Falta nombre");
-  if (id) Object.assign(DB.insumos.find(x => x.id === id), data);
-  else DB.insumos.push({ id: nuevoId(DB.insumos), ...data });
-  guardar(); cerrarModal(); renderInsumos(); toast("💾 Guardado");
+function abrirAjusteProducto(id) {
+  const p = DB.productos.find(x => String(x.id) === String(id));
+  if (!p || modoInventarioProducto(p) !== "producto") return toast("Producto no disponible para ajuste");
+  abrirModal("↕ Ajustar existencia", `<p style="font-size:13px;color:#64748b">${escapeHTML(p.nombre)} · actual: <b>${Number(p.stock || 0).toLocaleString("es-MX",{maximumFractionDigits:3})} ${escapeHTML(p.unidad || "pieza")}</b></p>
+    <label>Nueva existencia real</label><input id="apStock" type="number" min="0" step="0.001" value="${Number(p.stock || 0)}" inputmode="decimal">
+    <label>Motivo del ajuste</label><input id="apMotivo" maxlength="160" placeholder="Conteo físico, merma, corrección...">
+    <div class="acciones"><button class="btn-secondary" onclick="cerrarModal()">Cancelar</button><button class="btn-primary" onclick="guardarAjusteProducto(${id})">Guardar ajuste</button></div>`);
 }
 
-function abrirMovimiento(insumoId) {
-  if (!DB.insumos.length) return toast("Agrega insumos primero");
-  abrirModal("Movimiento de inventario", `
-    <label>Insumo</label>
-    <select id="mvInsumo">
-      ${DB.insumos.map(i => `<option value="${i.id}" ${i.id===insumoId?'selected':''}>${i.nombre}</option>`).join("")}
-    </select>
-    <label>Tipo</label>
-    <select id="mvTipo"><option value="entrada">Entrada (+)</option><option value="salida">Salida (−)</option></select>
-    <label>Cantidad</label><input id="mvCantidad" type="number" step="0.01" value="1">
-    <label>Motivo</label><input id="mvMotivo" placeholder="Compra, merma, ajuste...">
-    <div class="acciones">
-      <button class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
-      <button class="btn-primary" onclick="aplicarMovimiento()">Aplicar</button>
-    </div>
-  `);
+function guardarAjusteProducto(id) {
+  const p = DB.productos.find(x => String(x.id) === String(id));
+  if (!p || modoInventarioProducto(p) !== "producto") return;
+  const nuevo = numeroCampoProducto($("#apStock").value), motivo = $("#apMotivo").value.trim();
+  if (!Number.isFinite(nuevo) || nuevo < 0 || !motivo) return toast("Indica una existencia válida y el motivo");
+  const antes = Math.max(0, Number(p.stock) || 0), delta = nuevo - antes;
+  p.stock = nuevo;
+  registrarMovimientoInventario({ entidadTipo:"producto", entidadId:p.id, nombre:p.nombre, tipo:"ajuste", cantidad:delta, cantidadAbsoluta:Math.abs(delta), costoTotal:0, stockAntes:antes, stockDespues:nuevo, motivo });
+  guardar(); cerrarModal(); renderInventarioProductos(); renderProductos(); renderCaja(); mostrarAlertaStock(); toast("✅ Existencia ajustada");
 }
 
-function aplicarMovimiento() {
-  const id = +$("#mvInsumo").value;
-  const tipo = $("#mvTipo").value;
-  const cant = +$("#mvCantidad").value;
-  const ins = DB.insumos.find(x => x.id === id);
-  if (!ins) return toast("Insumo no encontrado");
-  if (tipo === "entrada") ins.stock += cant;
-  else ins.stock = Math.max(0, ins.stock - cant);
-  guardar(); cerrarModal(); renderInsumos();
-  mostrarAlertaStock();
-  toast("✅ Movimiento aplicado");
-}
-
-function borrarInsumo(id) {
-  if (!confirm("¿Borrar insumo?")) return;
-  DB.insumos = DB.insumos.filter(x => x.id !== id);
-  guardar(); renderInsumos(); mostrarAlertaStock();
-}
+// Mantiene el registro interno para compatibilidad con respaldos y reversión de ventas.
+// No se presenta en la interfaz porque el Kardex queda fuera por ahora.
+function renderMovimientosInventario() { asegurarMovimientosInventario(); }
