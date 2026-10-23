@@ -517,23 +517,3 @@ body.modo-oscuro .tabla-wrap table tbody tr:hover { background: #263447; }
 @media (hover: hover) and (pointer: fine) {
   body.modo-oscuro .nav-inferior button:hover { background: rgba(251,146,60,.10); }
 }
-
-
-/* Comparativa semanal en modo oscuro */
-body.modo-oscuro .btn-comparar-ventas { background:#1e293b; color:#e2e8f0; border-color:#9a5b22; }
-body.modo-oscuro .btn-comparar-ventas:hover, body.modo-oscuro .btn-comparar-ventas.activo { background:#f97316; color:#fff; border-color:#f97316; }
-body.modo-oscuro .comparativa-cabecera h3, body.modo-oscuro .comparativa-card > strong, body.modo-oscuro .comparativa-titulo h3 { color:#f1f5f9; }
-body.modo-oscuro .comparativa-card, body.modo-oscuro .comparativa-panel { background:#1e293b; border-color:#334155; }
-body.modo-oscuro .comparativa-card-cambio.comparativa-positivo { background:#102b21; border-color:#166534; }
-body.modo-oscuro .comparativa-card-cambio.comparativa-negativo { background:#35191d; border-color:#991b1b; }
-body.modo-oscuro .comparativa-dia > strong { color:#e2e8f0; }
-body.modo-oscuro .comparativa-barras { border-bottom-color:#475569; }
-body.modo-oscuro .comparativa-positivo { color:#4ade80 !important; }
-body.modo-oscuro .comparativa-negativo { color:#f87171 !important; }
-
-
-body.modo-oscuro .menu-inferior-fijo, body.modo-oscuro .menu-inferior-opcion { background: #1e293b; color: #f1f5f9; border-color: #334155; }
-body.modo-oscuro .menu-inferior-fijo { background: #292524; border-color: #9a3412; }
-body.modo-oscuro .menu-inferior-fijo small, body.modo-oscuro .config-ayuda { color: #94a3b8; }
-body.modo-oscuro .menu-opcion-switch { background: #475569; }
-body.modo-oscuro .menu-inferior-opcion input:checked + .menu-opcion-switch { background: var(--naranja, #f97316); }

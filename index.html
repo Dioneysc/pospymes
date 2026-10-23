@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<title>🧮 POS</title>
+<title>🧮 POS PyMes</title>
 
 <!-- CSS modular -->
 <link rel="stylesheet" href="css/base.css">
@@ -51,7 +51,7 @@
   <main>
     <!-- VENTA -->
     <section id="caja" class="vista activa">
-      <div id="alertaStock" class="alerta-stock" style="display:none" onclick="verInsumosBajos()"></div>
+      <div id="alertaStock" class="alerta-stock" style="display:none" onclick="verProductosStockBajo()"></div>
       <div class="caja-layout">
         <div class="productos-wrap">
           <div class="barra-busqueda">
@@ -137,16 +137,17 @@
       </div>
     </section>
 
-    <!-- INVENTARIO -->
+    <!-- INVENTARIO SIMPLE -->
     <section id="inventario" class="vista">
       <div class="vista-header">
         <h2>📦 Inventario</h2>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn-secondary" onclick="abrirFormInsumo()">+ Insumo</button>
-          <button class="btn-primary" onclick="abrirMovimiento()">↕ Movimiento</button>
-        </div>
+        <button class="btn-primary" onclick="abrirFormProducto()">+ Nuevo producto</button>
       </div>
-      <div id="listaInsumos" class="tabla-wrap"></div>
+      <div class="card-config" style="margin-bottom:16px">
+        <h3 style="margin-bottom:10px">Existencias de productos</h3>
+        <p style="font-size:12px;color:#64748b;margin-bottom:12px">Desde Productos puedes registrar compras, precio de compra, unidad y stock mínimo. Aquí puedes revisar existencias o hacer ajustes.</p>
+        <div id="listaStockProductos" class="tabla-wrap"></div>
+      </div>
     </section>
 
     <!-- CAJA -->
@@ -166,13 +167,10 @@
     <section id="reportes" class="vista">
       <div class="vista-header">
         <h2>📊 Panel de ventas</h2>
-        <div class="reporte-controles">
-          <div class="rango" id="rangoBotones" role="group" aria-label="Periodo del reporte" style="--rango-index:0">
-            <button type="button" onclick="reporteRango('dia')" class="activo" aria-pressed="true">Hoy</button>
-            <button type="button" onclick="reporteRango('semana')" aria-pressed="false">Semana</button>
-            <button type="button" onclick="reporteRango('mes')" aria-pressed="false">Mes</button>
-          </div>
-          <button type="button" id="btnCompararVentas" class="btn-comparar-ventas" onclick="mostrarComparativaSemanal()" aria-pressed="false">⇄ Comparar</button>
+        <div class="rango" id="rangoBotones" role="group" aria-label="Periodo del reporte" style="--rango-index:0">
+          <button type="button" onclick="reporteRango('dia')" class="activo" aria-pressed="true">Hoy</button>
+          <button type="button" onclick="reporteRango('semana')" aria-pressed="false">Semana</button>
+          <button type="button" onclick="reporteRango('mes')" aria-pressed="false">Mes</button>
         </div>
       </div>
       <div id="reporteContenido"></div>
@@ -189,22 +187,6 @@
         <input id="buscarPreventa" type="search" placeholder="🔍 Buscar por número, producto o nota..." oninput="renderListaPreventas()" style="width:100%;padding:12px;border:2px solid var(--borde);border-radius:12px;background:#fff;box-sizing:border-box">
       </div>
       <div id="listaPreventasContenido"></div>
-    </section>
-
-    <!-- COMPRAS Y PENDIENTES (local al dispositivo) -->
-    <section id="pendientes" class="vista">
-      <div class="vista-header">
-        <h2>📝 Compras y pendientes</h2>
-        <button class="btn-primary" type="button" onclick="abrirFormPendiente()">+ Agregar</button>
-      </div>
-      <div id="resumenPendientes" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px"></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
-        <select id="filtroPendientes" onchange="renderPendientes()" aria-label="Filtrar pendientes" style="padding:10px;border:1px solid var(--borde);border-radius:10px;background:var(--fondo,#fff);color:var(--texto)">
-          <option value="abiertos">Pendientes</option><option value="todos">Todos</option><option value="compras">Compras</option><option value="tareas">Tareas</option><option value="hechos">Completados</option>
-        </select>
-        <input id="buscarPendiente" type="search" placeholder="Buscar en la lista..." oninput="renderPendientes()" style="flex:1;min-width:160px;padding:10px;border:1px solid var(--borde);border-radius:10px;background:var(--fondo,#fff);color:var(--texto)">
-      </div>
-      <div id="listaPendientes"></div>
     </section>
 
     <!-- HISTORIAL -->
@@ -253,15 +235,6 @@
         <h2>⚙️ Configuración</h2>
       </div>
       <div class="config-grid">
-        <div class="card-config config-menu-card">
-          <h3>📱 Menú inferior</h3>
-          <p class="config-ayuda">Elige qué accesos quieres tener visibles en la barra inferior. Venta siempre estará disponible.</p>
-          <div id="configMenuInferior" class="menu-inferior-opciones"></div>
-          <div class="config-menu-acciones">
-            <button type="button" class="btn-secondary" onclick="restablecerMenuInferior()">Restablecer</button>
-            <button type="button" class="btn-primary" onclick="guardarMenuInferior()">Guardar menú</button>
-          </div>
-        </div>
         <div class="card-config">
           <h3>🏪 Datos del negocio</h3>
           <input id="cfgNombre" placeholder="Nombre del negocio">
@@ -354,7 +327,7 @@
           <h3>⚠️ Zona peligrosa</h3>
           <p style="color:#64748b;font-size:13px;margin-bottom:12px">Opciones para reiniciar el sistema.</p>
           <div style="display:flex;flex-direction:column;gap:6px">
-            <button class="btn-secondary" onclick="borrarProductosInsumos()" style="text-align:left">🍗 Borrar todos los productos e insumos</button>
+            <button class="btn-secondary" onclick="borrarProductosInsumos()" style="text-align:left">📦 Borrar todos los productos e inventario</button>
             <button class="btn-secondary" onclick="borrarVentasGastos()" style="text-align:left">🧾 Borrar ventas y gastos</button>
             <button class="btn-danger" onclick="borrarTodo()" style="text-align:left">🗑️ Borrar TODO (sistema completo)</button>
           </div>
@@ -364,19 +337,19 @@
   </main>
 
   <nav class="nav-inferior">
-    <button data-view="caja" data-menu="caja" class="activo" onclick="cambiarVista('caja')">
+    <button data-view="caja" class="activo" onclick="cambiarVista('caja')">
       <span class="ico">🛒</span>
       <span>Venta</span>
     </button>
-    <button data-view="inventario" data-menu="inventario" onclick="cambiarVista('inventario')">
+    <button data-view="inventario" onclick="cambiarVista('inventario')">
       <span class="ico">📦</span>
       <span>Inventario</span>
     </button>
-    <button data-view="corte" data-menu="corte" onclick="cambiarVista('corte')">
+    <button data-view="corte" onclick="cambiarVista('corte')">
       <span class="ico">💰</span>
       <span>Caja</span>
     </button>
-    <button data-view="reportes" data-menu="reportes" onclick="cambiarVista('reportes')">
+    <button data-view="reportes" onclick="cambiarVista('reportes')">
       <span class="ico">📊</span>
       <span>Panel</span>
     </button>
@@ -410,7 +383,6 @@
 <script src="js/gastos.js"></script>
 <script src="js/caja.js"></script>
 <script src="js/reportes.js"></script>
-<script src="js/pendientes.js"></script>
 <script src="js/historial.js"></script>
 <script src="js/config-ui.js"></script>
 <script src="js/modo-oscuro.js"></script>
