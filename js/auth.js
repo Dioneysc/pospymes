@@ -99,7 +99,7 @@ function logout() {
   $("#app").classList.add("oculto");
   $("#login").style.display = "flex";
 
-  carrito = []; descuento = 0; propina = 0;
+  carrito = []; descuento = 0; descuentoPct = 0; propina = 0;
   const pD = $("#panelDescuento");
   const pP = $("#panelPropina");
   const tD = $("#toggleDescuento");

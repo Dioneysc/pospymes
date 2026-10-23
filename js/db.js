@@ -4,7 +4,16 @@
 
 /* ============ DATOS ============ */
 const LS = {
-  get: (k, def) => { try { const v = localStorage.getItem(k); return v === null ? def : JSON.parse(v); } catch (e) { console.warn("Dato dañado:", k); return def; } },
+  get: (k, def) => {
+    let v = null;
+    try { v = localStorage.getItem(k); return v === null ? def : JSON.parse(v); }
+    catch (e) {
+      console.warn("Dato dañado:", k);
+      // Conservar el valor original: si la app guarda encima, ya no habría forma de recuperarlo
+      try { if (v !== null && localStorage.getItem(k + "__danado") === null) localStorage.setItem(k + "__danado", v); } catch (_) {}
+      return def;
+    }
+  },
   set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { toast("⚠️ No se pudo guardar: almacenamiento lleno"); } }
 };
 
@@ -27,10 +36,25 @@ function guardar() {
 }
 
 function nuevoId(arr) {
-  const max = arr.length ? Math.max(...arr.map(x => x.id)) : 0;
-  const slot = typeof SYNC_SLOT !== "undefined" ? SYNC_SLOT : 0;
-  if (!slot) return max + 1;                     // sin sincronización: consecutivo, como siempre
-  return Math.floor(max / 10) * 10 + 10 + slot;  // con varios dispositivos: cada uno usa su terminación (1-9) y nunca chocan
+  // Ignorar IDs ausentes o no numéricos: Math.max() con un solo NaN
+  // contaminaba el resultado y podía guardar registros con id=NaN.
+  const usados = new Set((Array.isArray(arr) ? arr : [])
+    .map(x => Number(x && x.id))
+    .filter(Number.isSafeInteger));
+  const max = usados.size ? Math.max(...usados) : 0;
+  const slot = typeof SYNC_SLOT !== "undefined" ? Number(SYNC_SLOT) : 0;
+
+  if (!Number.isInteger(slot) || slot < 1 || slot > 9) {
+    let candidato = max + 1;
+    while (usados.has(candidato)) candidato++;
+    return candidato;
+  }
+
+  // Conserva la terminación asignada a cada dispositivo y evita colisiones
+  // incluso si existen datos importados con IDs atípicos.
+  let candidato = Math.floor(Math.max(0, max) / 10) * 10 + 10 + slot;
+  while (usados.has(candidato)) candidato += 10;
+  return candidato;
 }
 
 /* ============ SEED LIMPIO ============ */

@@ -198,11 +198,12 @@ function borrarTodo() {
 async function cambiarPassword() {
   const actual = $("#passActual").value;
   const nueva = $("#passNueva").value;
-  const confirm = $("#passConfirm").value;
+  const repetida = $("#passConfirm").value;
 
-  if (!actual || !nueva || !confirm) return toast("⚠️ Completa todos los campos");
+  if (!actual || !nueva || !repetida) return toast("⚠️ Completa todos los campos");
   if (nueva.length < 6) return toast("⚠️ Mínimo 6 caracteres");
-  if (nueva !== confirm) return toast("❌ Las contraseñas no coinciden");
+  if (nueva === "admin123") return toast("⚠️ Elige una contraseña distinta a la inicial");
+  if (nueva !== repetida) return toast("❌ Las contraseñas no coinciden");
 
   const sesion = JSON.parse(sessionStorage.getItem("sesion") || "{}");
   const user = DB.usuarios.find(u => u.id === sesion.id);

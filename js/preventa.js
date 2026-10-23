@@ -7,12 +7,13 @@ function guardarPreventa() {
     return toast("⚠️ Agrega productos al carrito antes de guardar una preventa");
   }
 
-  const subtotal = carrito.reduce((s, item) => s + (Number(item.precio) || 0) * (Number(item.cantidad) || 0), 0);
-  const total = subtotal - (Number(descuento) || 0);
+  const subtotal = redondear2(carrito.reduce((s, item) => s + (Number(item.precio) || 0) * (Number(item.cantidad) || 0), 0));
+  const descuentoAplicado = Math.min(redondear2(Number(descuento) || 0), subtotal);
+  const total = redondear2(subtotal - descuentoAplicado);
   const nota = (document.getElementById("notaPedido")?.value || "").trim().slice(0, 300);
   const sesion = JSON.parse(sessionStorage.getItem("sesion") || "{}");
   const preventas = LS.get("preventasPendientes", []);
-  const siguienteId = preventas.reduce((max, p) => Math.max(max, Number(p.id) || 0), 0) + 1;
+  const siguienteId = nuevoId(preventas);
 
   const pedido = {
     id: siguienteId,
@@ -20,7 +21,7 @@ function guardarPreventa() {
     estado: "Pendiente",
     items: JSON.parse(JSON.stringify(carrito)),
     subtotal,
-    descuento: Number(descuento) || 0,
+    descuento: descuentoAplicado,
     total,
     nota,
     usuario: sesion.nombre || "admin"
@@ -34,6 +35,7 @@ function guardarPreventa() {
   // o incluir productos de esta preventa en la siguiente operación.
   carrito = [];
   descuento = 0;
+  descuentoPct = 0;
   propina = 0;
   window._preventaEnProcesoId = null;
 
@@ -302,6 +304,7 @@ function prepararPreventaVenta(id) {
 
   carrito = JSON.parse(JSON.stringify(pedido.items || []));
   descuento = Number(pedido.descuento) || 0;
+  descuentoPct = 0;
   propina = 0;
   window._preventaEnProcesoId = Number(pedido.id);
   const campoNota = document.getElementById("notaPedido");

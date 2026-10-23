@@ -41,11 +41,12 @@ function renderCaja() {
   }
 
   $("#gridProductos").innerHTML = prods.map(p => {
+    const emojiSeguro = escapeHTML(p.emoji || "🍽️");
     const contenido = p.imagen
-      ? `<img src="${p.imagen}" class="prod-imagen" loading="lazy" onerror="this.outerHTML='<div class=\\'prod-emoji\\'>${p.emoji||'🍽️'}</div>'">`
-      : `<div class="prod-emoji">${p.emoji || "🍽️"}</div>`;
+      ? `<img src="${escapeHTML(p.imagen)}" class="prod-imagen" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'prod-emoji',textContent:this.dataset.e}))" data-e="${emojiSeguro}">`
+      : `<div class="prod-emoji">${emojiSeguro}</div>`;
     return `
-      <button class="prod-btn" data-cat="${p.categoria}" onclick="agregarAlCarrito(${p.id})">
+      <button class="prod-btn" data-cat="${escapeHTML(p.categoria)}" onclick="agregarAlCarrito(${p.id})">
         ${contenido}
         <span class="prod-nombre">${escapeHTML(p.nombre)}</span>
         <span class="prod-precio">${fmt(p.precio)}</span>
@@ -83,13 +84,10 @@ function actualizarCarritoFlotante() {
   const count = document.getElementById("carritoFlotanteCount");
   const totalEl = document.getElementById("carritoFlotanteTotal");
 
-  if (!btn) {
-    console.log("❌ Botón no existe");
-    return;
-  }
+  if (!btn) return;
 
   const cantidadTotal = carrito.reduce((s, i) => s + i.cantidad, 0);
-  const totalMonto = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0) - descuento;
+  const totalMonto = Math.max(0, redondear2(carrito.reduce((s, i) => s + i.precio * i.cantidad, 0) - descuento));
 
   if (count) count.textContent = cantidadTotal;
   if (totalEl) totalEl.textContent = fmt(totalMonto);
@@ -101,11 +99,9 @@ function actualizarCarritoFlotante() {
   if (carrito.length > 0 && window.innerWidth <= 900) {
     btn.classList.add("visible");
     btn.style.display = "flex";
-    console.log("✅ Botón flotante mostrado");
   } else {
     btn.classList.remove("visible");
     btn.style.display = "none";
-    console.log("❌ Botón flotante oculto. Carrito:", carrito.length, "Ancho:", window.innerWidth);
   }
 }
 
@@ -148,8 +144,11 @@ function renderCarrito() {
       </div>
     `).join("");
   }
-  const sub = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
-  const total = sub - descuento;
+  const sub = redondear2(carrito.reduce((s, i) => s + i.precio * i.cantidad, 0));
+  if (!carrito.length) { descuento = 0; descuentoPct = 0; }
+  else if (descuentoPct > 0) descuento = redondear2(sub * descuentoPct / 100);
+  descuento = Math.min(Math.max(redondear2(descuento), 0), sub); // evita totales negativos si se quitan productos
+  const total = redondear2(sub - descuento);
 
   const elDesc = $("#descuentoVal");
   const elTot = $("#total");
@@ -164,6 +163,7 @@ function renderCarrito() {
 }
 
 function cambiarCantidad(i, d) {
+  if (!carrito[i]) return;
   carrito[i].cantidad += d;
   if (carrito[i].cantidad <= 0) carrito.splice(i, 1);
   if (!carrito.length) window._preventaEnProcesoId = null;
@@ -173,7 +173,7 @@ function cambiarCantidad(i, d) {
 function limpiarCarrito() {
   if (!carrito.length) return;
   if (!confirm("¿Vaciar el ticket?")) return;
-  carrito = []; descuento = 0; propina = 0;
+  carrito = []; descuento = 0; descuentoPct = 0; propina = 0;
   window._preventaEnProcesoId = null;
   const campoNotaPedido = document.getElementById("notaPedido");
   if (campoNotaPedido) campoNotaPedido.value = "";
@@ -195,7 +195,7 @@ function toggleDescuento() {
   if (visible) {
     panel.classList.add("oculto");
     btn.classList.remove("activo");
-    descuento = 0;
+    descuento = 0; descuentoPct = 0;
     actualizarToggleValores();
     renderCarrito();
   } else {
@@ -206,7 +206,8 @@ function toggleDescuento() {
 
 function aplicarDescuento(pct) {
   const sub = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
-  descuento = sub * (pct / 100);
+  descuentoPct = Math.min(Math.max(Number(pct) || 0, 0), 100);
+  descuento = redondear2(sub * (descuentoPct / 100));
   if (pct === 0) {
     const panel = $("#panelDescuento");
     const btn = $("#toggleDescuento");
@@ -227,14 +228,16 @@ function actualizarToggleValores() {
 
 function cobrar(metodo) {
   if (!carrito.length) return toast("⚠️ Ticket vacío");
+  initDia(); // si la app quedó abierta pasada la medianoche, la caja del día anterior ya no vale
   if (estadoCajaHoy.fondoInicial === null) {
     toast("⚠️ Abre la caja primero");
     return abrirFondoInicial();
   }
   const faltantes = stockFaltante();
   if (faltantes.length && !confirm("⚠️ Stock insuficiente:\n\n" + faltantes.join("\n") + "\n\n¿Vender de todos modos?")) return;
-  const sub = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
-  const total = sub - descuento;
+  const sub = redondear2(carrito.reduce((s, i) => s + i.precio * i.cantidad, 0));
+  const total = redondear2(sub - Math.min(descuento, sub));
+  if (total <= 0) return toast("⚠️ El total a cobrar debe ser mayor que cero");
 
   if (metodo === "Efectivo") {
     abrirModalPago(total);
@@ -319,9 +322,9 @@ function setPago(monto) {
 }
 
 function calcCambio() {
-  const total = window._totalCobro;
+  const total = redondear2(window._totalCobro);
   const pago = +$("#pagoCon").value || 0;
-  const cambio = pago - total;
+  const cambio = redondear2(pago - total);
   const box = $("#cambioBox");
   const monto = $("#cambioMonto");
   const btn = $("#btnConfirmarPago");
@@ -357,10 +360,10 @@ function confirmarPago() {
   if (btn && btn.disabled) return;
   if (btn) btn.disabled = true;
 
-  const total = window._totalCobro;
-  let pago = +$("#pagoCon").value;
+  const total = redondear2(window._totalCobro);
+  let pago = redondear2(+$("#pagoCon").value);
   if (!pago || pago === 0) pago = total;
-  const cambio = pago - total;
+  const cambio = redondear2(pago - total);
 
   if (cambio < 0) {
     if (btn) btn.disabled = false;
@@ -373,7 +376,9 @@ function confirmarPago() {
 
 /* ============ FINALIZAR VENTA ============ */
 function finalizarVenta(metodo, total, pagoCon, cambio) {
-  const sub = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
+  if (!carrito.length) return toast("⚠️ Ticket vacío");
+  const sub = redondear2(carrito.reduce((s, i) => s + i.precio * i.cantidad, 0));
+  total = redondear2(total); pagoCon = redondear2(pagoCon); cambio = redondear2(cambio);
   const sesion = JSON.parse(sessionStorage.getItem("sesion") || "{}");
 
   const venta = {
@@ -381,7 +386,7 @@ function finalizarVenta(metodo, total, pagoCon, cambio) {
     fecha: new Date().toISOString(),
     items: JSON.parse(JSON.stringify(carrito)),
     subtotal: sub,
-    descuento,
+    descuento: redondear2(descuento),
     propina: 0,
     notas: (document.getElementById("notaPedido")?.value || "").trim().slice(0, 300),
     total,
@@ -407,7 +412,7 @@ function finalizarVenta(metodo, total, pagoCon, cambio) {
     marcarPreventaConvertida(preventaIdFinalizada, venta.id);
   }
   window._preventaEnProcesoId = null;
-  carrito = []; descuento = 0; propina = 0;
+  carrito = []; descuento = 0; descuentoPct = 0; propina = 0;
   const campoNotaPedido = document.getElementById("notaPedido");
   if (campoNotaPedido) campoNotaPedido.value = "";
 

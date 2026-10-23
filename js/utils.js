@@ -5,6 +5,7 @@
 /* ============ UTILS ============ */
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
+const redondear2 = n => Math.round((Number(n) || 0) * 100) / 100;
 const fmt = n => "$" + (Number(n)||0).toFixed(2);
 const fechaLocal = d => { const x = new Date(d); return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,"0")}-${String(x.getDate()).padStart(2,"0")}`; };
 const hoy = () => fechaLocal(new Date());

@@ -100,6 +100,4 @@ document.addEventListener("DOMContentLoaded", () => {
   actualizarToggleSonido();
   const sesion = sessionStorage.getItem("sesion");
   if (sesion) entrarApp();
-  const p = document.getElementById("pass");
-  if (p) p.addEventListener("keypress", e => { if (e.key === "Enter") hacerLogin(); });
 });

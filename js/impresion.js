@@ -8,7 +8,7 @@ function mostrarTicketImpresion(v) {
   const n = DB.negocio;
   const itemsHTML = v.items.map(it => `
     <div class="fila">
-      <span>${it.cantidad}x ${it.nombre}</span>
+      <span>${it.cantidad}x ${escapeHTML(it.nombre)}</span>
       <span>${fmt(it.precio * it.cantidad)}</span>
     </div>
   `).join("");
@@ -35,7 +35,7 @@ function mostrarTicketImpresion(v) {
       ${v.propina ? `<div class="fila"><span>Propina</span><span>${fmt(v.propina)}</span></div>` : ""}
       <div class="fila bold grande"><span>TOTAL</span><span>${fmt(v.total)}</span></div>
       <hr>
-      <div class="fila"><span>Forma de pago:</span><span>${v.metodo}</span></div>
+      <div class="fila"><span>Forma de pago:</span><span>${escapeHTML(v.metodo)}</span></div>
       ${v.metodo === "Efectivo" ? `
         <div class="fila"><span>Efectivo</span><span>${fmt(v.pagoCon)}</span></div>
         <div class="fila"><span>Cambio</span><span>${fmt(v.cambio)}</span></div>
@@ -147,7 +147,7 @@ function imprimirTicket(v) {
     ${v.descuento ? `<div class="fila"><span>Descuento:</span><span>-${fmt(v.descuento)}</span></div>` : ""}
     ${v.propina ? `<div class="fila"><span>Propina:</span><span>${fmt(v.propina)}</span></div>` : ""}
     <div class="fila b g"><span>TOTAL:</span><span>${fmt(v.total)}</span></div>
-    <div class="fila"><span>Pago:</span><span>${v.metodo}</span></div>
+    <div class="fila"><span>Pago:</span><span>${escapeHTML(v.metodo)}</span></div>
     ${v.metodo === "Efectivo" ? `
       <div class="fila"><span>Recibido:</span><span>${fmt(v.pagoCon)}</span></div>
       <div class="fila b"><span>Cambio:</span><span>${fmt(v.cambio)}</span></div>

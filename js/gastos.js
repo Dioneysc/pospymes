@@ -27,9 +27,9 @@ function renderGastos() {
         ${gastos.map(g => `
           <tr>
             <td data-label="Fecha">${new Date(g.fecha).toLocaleDateString("es-MX")}</td>
-            <td data-label="Categoría">${g.categoria}</td>
-            <td data-label="Nota">${g.nota || "—"}</td>
-            <td data-label="Método">${g.metodo || "Efectivo"}</td>
+            <td data-label="Categoría">${escapeHTML(g.categoria)}</td>
+            <td data-label="Nota">${escapeHTML(g.nota || "—")}</td>
+            <td data-label="Método">${escapeHTML(g.metodo || "Efectivo")}</td>
             <td data-label="Monto">${fmt(g.monto)}</td>
             <td data-label="Acciones"><button class="btn-mini" onclick="borrarGasto(${g.id})">🗑️</button></td>
           </tr>
@@ -56,7 +56,7 @@ function abrirFormGasto() {
 
   abrirModal("Nuevo gasto", `
     <label>Categoría</label>
-    <select id="fgCategoria">${CATS_GASTO.map(c => `<option>${c}</option>`).join("")}</select>
+    <select id="fgCategoria">${CATS_GASTO.map(c => `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join("")}</select>
     <label>Monto</label><input id="fgMonto" type="number" min="0.01" step="0.01" inputmode="decimal">
     <label>Método de pago</label>
     <select id="fgMetodo">

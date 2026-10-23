@@ -23,11 +23,11 @@ function renderInsumos() {
         ${DB.insumos.map(i => {
           const bajo = i.stock <= i.min;
           return `<tr>
-            <td data-label="Insumo">${i.nombre}</td>
+            <td data-label="Insumo">${escapeHTML(i.nombre)}</td>
             <td data-label="Stock">${i.stock}</td>
             <td data-label="Mínimo">${i.min}</td>
             <td data-label="Costo">${fmt(i.costo)}</td>
-            <td data-label="Unidad">${i.unidad}</td>
+            <td data-label="Unidad">${escapeHTML(i.unidad)}</td>
             <td data-label="Estado"><span class="badge ${bajo?'danger':'ok'}">${bajo?'⚠ Bajo':'OK'}</span></td>
             <td data-label="Acciones">
               <button class="btn-mini" onclick="abrirFormInsumo(${i.id})">✏️</button>
@@ -64,7 +64,11 @@ function guardarInsumo(id) {
     costo: +$("#fiCosto").value
   };
   if (!data.nombre) return toast("Falta nombre");
-  if (id) Object.assign(DB.insumos.find(x => x.id === id), data);
+  if (![data.stock, data.min, data.costo].every(Number.isFinite) || data.stock < 0 || data.min < 0 || data.costo < 0)
+    return toast("⚠️ Stock, mínimo y costo deben ser números válidos (no negativos)");
+  const existente = id ? DB.insumos.find(x => x.id === id) : null;
+  if (id && !existente) { cerrarModal(); return toast("⚠️ El insumo ya no existe (¿se borró en otro dispositivo?)"); }
+  if (id) Object.assign(existente, data);
   else DB.insumos.push({ id: nuevoId(DB.insumos), ...data });
   guardar(); cerrarModal(); renderInsumos(); toast("💾 Guardado");
 }
@@ -74,7 +78,7 @@ function abrirMovimiento(insumoId) {
   abrirModal("Movimiento de inventario", `
     <label>Insumo</label>
     <select id="mvInsumo">
-      ${DB.insumos.map(i => `<option value="${i.id}" ${i.id===insumoId?'selected':''}>${i.nombre}</option>`).join("")}
+      ${DB.insumos.map(i => `<option value="${i.id}" ${i.id===insumoId?'selected':''}>${escapeHTML(i.nombre)}</option>`).join("")}
     </select>
     <label>Tipo</label>
     <select id="mvTipo"><option value="entrada">Entrada (+)</option><option value="salida">Salida (−)</option></select>
@@ -93,6 +97,7 @@ function aplicarMovimiento() {
   const cant = +$("#mvCantidad").value;
   const ins = DB.insumos.find(x => x.id === id);
   if (!ins) return toast("Insumo no encontrado");
+  if (!Number.isFinite(cant) || cant <= 0) return toast("⚠️ Ingresa una cantidad mayor que cero");
   if (tipo === "entrada") ins.stock += cant;
   else ins.stock = Math.max(0, ins.stock - cant);
   guardar(); cerrarModal(); renderInsumos();

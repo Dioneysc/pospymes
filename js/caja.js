@@ -24,7 +24,8 @@ function abrirFondoInicial() {
 }
 
 function guardarFondo() {
-  const monto = +$("#fondoMonto").value || 0;
+  const monto = redondear2(+$("#fondoMonto").value || 0);
+  if (monto < 0) return toast("⚠️ El fondo inicial no puede ser negativo");
   estadoCajaHoy.fondoInicial = monto;
   LS.set("cajaHoy", estadoCajaHoy);
   cerrarModal();
@@ -514,7 +515,7 @@ function renderHistorialCortes(fechaSeleccionada) {
                 <div style="font-size:12px;color:var(--texto-secundario,#64748b)">Cajero: ${escapeHTML(c.usuario || "admin")}</div>
                 ${c.nota ? `<div style="font-size:12px;overflow-wrap:anywhere">Nota: ${escapeHTML(c.nota)}</div>` : ""}
                 <div style="display:flex;justify-content:flex-end;margin-top:auto;padding-top:3px">
-                  <button class="btn-mini" aria-label="Imprimir corte" onclick='imprimirCorte(${JSON.stringify(c).replace(/'/g,"&#39;")})'>🖨️ Imprimir corte</button>
+                  <button class="btn-mini" aria-label="Imprimir corte" onclick="imprimirCorteId(${JSON.stringify(String(c.id)).replace(/"/g, "&quot;")})">🖨️ Imprimir corte</button>
                 </div>
               </article>`;
           }).join("")}
@@ -528,6 +529,12 @@ function renderHistorialCortes(fechaSeleccionada) {
       `}
     </div>
   `;
+}
+
+function imprimirCorteId(id) {
+  const c = LS.get("cortes", []).find(x => String(x.id) === String(id));
+  if (!c) return toast("⚠️ Corte no encontrado");
+  imprimirCorte(c);
 }
 
 function imprimirCorte(c) {

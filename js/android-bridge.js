@@ -135,8 +135,8 @@ function androidImprimirTicket(venta) {
     };
 
     try {
-        Android.printTicket(JSON.stringify(ticket));
-        return true;
+        // Si el puente devuelve false la impresión falló; si no devuelve nada (void) se da por enviada
+        return Android.printTicket(JSON.stringify(ticket)) !== false;
     } catch (e) {
         console.error("Error al imprimir ticket:", e);
         return false;
@@ -198,7 +198,7 @@ function abrirModalImpresora() {
         <div style="flex:1">
           <b style="font-size:14px">${conectada ? 'Impresora conectada' : 'Sin impresora'}</b>
           <div style="font-size:12px;color:#64748b;margin-top:4px">
-            ${conectada ? impresoraNombre : 'Selecciona una impresora emparejada'}
+            ${conectada ? escapeHTML(impresoraNombre) : 'Selecciona una impresora emparejada'}
           </div>
         </div>
         ${conectada ? `<button class="btn-mini" onclick="desconectarImpresora()">Desconectar</button>` : ''}
@@ -218,10 +218,10 @@ function abrirModalImpresora() {
       ` : `
         <div style="max-height:300px;overflow-y:auto">
           ${dispositivos.map(d => `
-            <div class="cat-item" style="cursor:pointer" onclick="conectarImpresora('${d.address}', '${d.name.replace(/'/g, "\\'")}')">
+            <div class="cat-item" style="cursor:pointer" data-address="${escapeHTML(d.address)}" data-name="${escapeHTML(d.name)}" onclick="conectarImpresora(this.dataset.address, this.dataset.name)">
               <div style="flex:1">
-                <b>${d.name}</b>
-                <div style="font-size:11px;color:#64748b">${d.address}</div>
+                <b>${escapeHTML(d.name)}</b>
+                <div style="font-size:11px;color:#64748b">${escapeHTML(d.address)}</div>
               </div>
               <span style="color:var(--naranja);font-weight:700">Conectar →</span>
             </div>

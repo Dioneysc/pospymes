@@ -23,7 +23,7 @@ function actualizarHeader() {
 
   const elLoginNombre = $("#loginNombre");
   const elLoginSlogan = $("#loginSlogan");
-  if (elLoginNombre) elLoginNombre.textContent = "🍗 " + n.nombre;
+  if (elLoginNombre) elLoginNombre.textContent = "🍗 " + (n.nombre || "POS");
   if (elLoginSlogan) elLoginSlogan.textContent = slogan;
 }
 
@@ -109,8 +109,8 @@ function verInsumosBajos() {
       ${bajos.map(i => `
         <div class="cat-item" style="background:#fef3c7;border-left:4px solid var(--warn)">
           <div style="flex:1">
-            <b>${i.nombre}</b>
-            <div style="font-size:12px;color:#64748b">Stock: ${i.stock} ${i.unidad} · Mínimo: ${i.min}</div>
+            <b>${escapeHTML(i.nombre)}</b>
+            <div style="font-size:12px;color:#64748b">Stock: ${i.stock} ${escapeHTML(i.unidad)} · Mínimo: ${i.min}</div>
           </div>
           <button class="btn-mini" onclick="cerrarModal();abrirMovimiento(${i.id})">↕ Reabastecer</button>
         </div>

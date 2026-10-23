@@ -26,10 +26,10 @@ function renderProductos() {
           const margen = p.precio - costo;
           return `
           <tr>
-            <td data-label="Emoji" style="font-size:24px">${p.emoji || "🍽️"}</td>
-            <td data-label="Nombre">${p.nombre}</td>
+            <td data-label="Emoji" style="font-size:24px">${escapeHTML(p.emoji || "🍽️")}</td>
+            <td data-label="Nombre">${escapeHTML(p.nombre)}</td>
             <td data-label="Categoría">
-              ${p.categoria}
+              ${escapeHTML(p.categoria)}
               ${tieneReceta ? `<span style="font-size:10px;color:var(--naranja);font-weight:700"> · 📋 ${p.insumos.length}</span>` : `<span style="font-size:10px;color:#94a3b8"> · sin receta</span>`}
             </td>
             <td data-label="Precio">
@@ -62,7 +62,7 @@ function abrirFormProducto(id) {
     <label>Precio</label><input id="fpPrecio" type="number" step="0.01" value="${p.precio}">
     <label>Categoría</label><input id="fpCategoria" value="${escapeHTML(p.categoria)}">
     <label>Emoji del producto</label>
-    <input id="fpEmoji" value="${p.emoji || "🍽️"}" maxlength="4" style="font-size:24px;text-align:center">
+    <input id="fpEmoji" value="${escapeHTML(p.emoji || "🍽️")}" maxlength="4" style="font-size:24px;text-align:center">
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
       ${["🍗","🍖","🥤","🌶️","🥡","🔥","🌮","🐔","🥣","🍞","🌭","🍟","🧃","🍺","☕","🍰"].map(e =>
         `<button type="button" onclick="document.getElementById('fpEmoji').value='${e}'" style="font-size:22px;padding:6px 10px;border:1px solid #e2e8f0;background:#fff;border-radius:8px;cursor:pointer">${e}</button>`
@@ -83,9 +83,10 @@ function guardarProducto(id) {
   const categoria = $("#fpCategoria").value.trim() || "General";
   const emoji = $("#fpEmoji").value.trim() || "🍽️";
   const activo = $("#fpActivo").value === "true";
-  if (!nombre || !precio) return toast("Completa los campos");
+  if (!nombre || !Number.isFinite(precio) || precio <= 0) return toast("Escribe un nombre y un precio mayor que cero");
   if (id) {
     const p = DB.productos.find(x => x.id === id);
+    if (!p) { cerrarModal(); return toast("⚠️ El producto ya no existe (¿se borró en otro dispositivo?)"); }
     Object.assign(p, { nombre, precio, categoria, emoji, activo });
   } else {
     DB.productos.push({ id: nuevoId(DB.productos), nombre, precio, categoria, emoji, activo, insumos: [] });
@@ -95,6 +96,7 @@ function guardarProducto(id) {
 
 function toggleProducto(id) {
   const p = DB.productos.find(x => x.id === id);
+  if (!p) return;
   p.activo = !p.activo;
   guardar(); renderProductos(); renderCaja();
 }
@@ -138,8 +140,8 @@ function abrirReceta(productoId) {
         return `
           <div class="cat-item" style="background:#f8fafc">
             <div style="flex:1">
-              <b>${ins.nombre}</b>
-              <div style="font-size:11px;color:#64748b">${ins.unidad} · costo ${fmt(ins.costo)}/${ins.unidad}</div>
+              <b>${escapeHTML(ins.nombre)}</b>
+              <div style="font-size:11px;color:#64748b">${escapeHTML(ins.unidad)} · costo ${fmt(ins.costo)}/${escapeHTML(ins.unidad)}</div>
             </div>
             <input type="number" step="0.01" value="${r.cantidad}" onchange="actualizarCantidadReceta(${i}, this.value)" style="width:80px;padding:6px !important;margin:0 !important;text-align:center;font-size:14px !important;">
             <button onclick="borrarItemReceta(${i})" style="background:transparent;border:none;color:#dc2626;cursor:pointer;font-size:16px;padding:4px">🗑️</button>
@@ -153,7 +155,7 @@ function abrirReceta(productoId) {
     <h4 style="font-size:13px;margin-bottom:8px;color:#0f172a">➕ Agregar insumo</h4>
     <div style="display:flex;gap:6px;margin-bottom:8px">
       <select id="recetaInsumo" style="flex:1;margin:0 !important">
-        ${DB.insumos.map(i => `<option value="${i.id}">${i.nombre} (${i.unidad})</option>`).join("")}
+        ${DB.insumos.map(i => `<option value="${i.id}">${escapeHTML(i.nombre)} (${escapeHTML(i.unidad)})</option>`).join("")}
       </select>
       <input id="recetaCantidad" type="number" step="0.01" value="1" style="width:80px;margin:0 !important;text-align:center">
       <button class="btn-primary" onclick="agregarItemReceta(${productoId})" style="padding:10px 16px">+</button>
@@ -221,8 +223,14 @@ function agregarItemReceta(productoId) {
 }
 
 function actualizarCantidadReceta(idx, valor) {
-  window._recetaEditando = window._recetaEditando || {};
-  window._recetaEditando[idx] = +valor;
+  const p = DB.productos.find(x => x.id === window._recetaProductoId);
+  const cantidad = Number(valor);
+  if (!p || !p.insumos || !p.insumos[idx]) return;
+  if (!Number.isFinite(cantidad) || cantidad <= 0) return toast("Cantidad inválida");
+  p.insumos[idx].cantidad = cantidad;
+  guardar();
+  const costo = document.getElementById("costoRecetaVal");
+  if (costo) costo.textContent = fmt(calcularCostoReceta(p));
 }
 
 function borrarItemReceta(idx) {
@@ -238,13 +246,6 @@ function borrarItemReceta(idx) {
 function guardarReceta(productoId) {
   const p = DB.productos.find(x => x.id === productoId);
   if (!p) return;
-
-  if (window._recetaEditando) {
-    Object.entries(window._recetaEditando).forEach(([idx, val]) => {
-      if (p.insumos[+idx]) p.insumos[+idx].cantidad = val;
-    });
-    window._recetaEditando = {};
-  }
 
   guardar();
   cerrarModal();

@@ -4,7 +4,7 @@
 
 /* ============ COMPARTIR POR WHATSAPP ============ */
 function compartirWhatsApp(ventaId) {
-  const v = DB.ventas.find(x => x.id === ventaId);
+  const v = DB.ventas.find(x => String(x.id) === String(ventaId));
   if (!v) return toast("Venta no encontrada");
 
   const n = DB.negocio;
@@ -44,14 +44,14 @@ function compartirWhatsApp(ventaId) {
   const urlWhatsApp = `https://wa.me/?text=${textoCod}`;
 
   // Abrir WhatsApp
-  window.open(urlWhatsApp, "_blank");
+  window.open(urlWhatsApp, "_blank", "noopener");
 
   toast("📤 Abriendo WhatsApp...");
 }
 
 /* Compartir con número específico (opcional) */
 function compartirWhatsAppNumero(ventaId) {
-  const v = DB.ventas.find(x => x.id === ventaId);
+  const v = DB.ventas.find(x => String(x.id) === String(ventaId));
   if (!v) return;
 
   const numero = prompt("Número de WhatsApp (con código de país, ej: 521234567890):");
@@ -71,5 +71,5 @@ function compartirWhatsAppNumero(ventaId) {
   texto += `¡Gracias por su compra! 🍗`;
 
   const url = `https://wa.me/${limpio}?text=${encodeURIComponent(texto)}`;
-  window.open(url, "_blank");
+  window.open(url, "_blank", "noopener");
 }

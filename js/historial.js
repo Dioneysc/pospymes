@@ -40,7 +40,7 @@ function renderHistorial(fechaSeleccionada) {
             <div class="hist-meta"><span>💳 ${escapeHTML(v.metodo || "—")}</span><span>👤 ${escapeHTML(v.usuario || "admin")}</span></div>
             <div class="hist-items">${escapeHTML(itemsTxt)}</div>
             <div class="hist-acciones">
-              <button class="btn-mini" onclick='verTicketHistorial(${JSON.stringify(v).replace(/'/g, "&#39;")})'>👁️ Ver</button>
+              <button class="btn-mini" onclick="verTicketHistorial(${JSON.stringify(String(v.id)).replace(/"/g, "&quot;")})">👁️ Ver</button>
               <button class="btn-mini" onclick="reimprimirVenta(${JSON.stringify(String(v.id))})">🖨️ Reimprimir</button>
               <button class="btn-mini" style="color:#25d366;border-color:#25d366" onclick="compartirWhatsApp(${JSON.stringify(String(v.id))})">📤 WhatsApp</button>
               ${!cancelada ? `<button class="btn-mini" style="color:var(--rojo);border-color:var(--rojo)" onclick="abrirCancelarVenta(${JSON.stringify(v.id)})">↩️ Cancelar</button>` : ""}
@@ -77,23 +77,25 @@ function eliminarTicketHistorial(id) {
   toast(`🗑️ Ticket #${String(id).padStart(6, "0")} eliminado del historial`);
 }
 
-function verTicketHistorial(v) {
+function verTicketHistorial(ref) {
+  const v = (ref && typeof ref === "object") ? ref : DB.ventas.find(x => String(x.id) === String(ref));
+  if (!v) return toast("⚠️ Venta no encontrada");
   const n = DB.negocio;
-  const itemsHTML = v.items.map(it => `
+  const itemsHTML = (v.items || []).map(it => `
     <div class="fila">
-      <span>${it.cantidad}x ${it.nombre}</span>
+      <span>${it.cantidad}x ${escapeHTML(it.nombre)}</span>
       <span>${fmt(it.precio * it.cantidad)}</span>
     </div>
   `).join("");
 
   abrirModal("🧾 Ticket #" + String(v.id).padStart(6, "0"), `
     <div class="ticket-preview">
-      <div class="centro bold grande">${n.nombre || "POS"}</div>
-      <div class="centro">${n.slogan || ""}</div>
+      <div class="centro bold grande">${escapeHTML(n.nombre || "POS")}</div>
+      <div class="centro">${escapeHTML(n.slogan || "")}</div>
       <hr>
       <div>Ticket No. ${String(v.id).padStart(6, "0")}</div>
       <div>Fecha: ${new Date(v.fecha).toLocaleString("es-MX")}</div>
-      <div>Cajero: ${v.usuario || "admin"}</div>
+      <div>Cajero: ${escapeHTML(v.usuario || "admin")}</div>
       ${v.notas ? `<div class="ticket-notas-preview"><strong>Nota:</strong> ${escapeHTML(v.notas).replace(/\n/g, "<br>")}</div>` : ""}
       <hr>
       <div class="fila bold"><span>Cant.</span><span>Total</span></div>
@@ -105,7 +107,7 @@ function verTicketHistorial(v) {
       ${v.propina ? `<div class="fila"><span>Propina</span><span>${fmt(v.propina)}</span></div>` : ""}
       <div class="fila bold grande"><span>TOTAL</span><span>${fmt(v.total)}</span></div>
       <hr>
-      <div class="fila"><span>Forma de pago:</span><span>${v.metodo}</span></div>
+      <div class="fila"><span>Forma de pago:</span><span>${escapeHTML(v.metodo)}</span></div>
       ${v.metodo === "Efectivo" ? `
         <div class="fila"><span>Efectivo</span><span>${fmt(v.pagoCon)}</span></div>
         <div class="fila"><span>Cambio</span><span>${fmt(v.cambio)}</span></div>
@@ -113,7 +115,7 @@ function verTicketHistorial(v) {
       ${v.cancelada ? `
         <hr>
         <div class="centro bold" style="color:#dc2626">*** CANCELADA ***</div>
-        <div class="centro">Motivo: ${v.motivoCancelacion || "—"}</div>
+        <div class="centro">Motivo: ${escapeHTML(v.motivoCancelacion || "—")}</div>
         <div class="centro">${v.fechaCancelacion ? new Date(v.fechaCancelacion).toLocaleString("es-MX") : ""}</div>
       ` : ""}
       <hr>
@@ -121,7 +123,7 @@ function verTicketHistorial(v) {
     </div>
     <div class="acciones">
       <button class="btn-secondary" onclick="cerrarModal()">Cerrar</button>
-      <button class="btn-primary" onclick='cerrarModal();reimprimirVenta(${v.id})'>🖨️ Reimprimir</button>
+      <button class="btn-primary" onclick="cerrarModal();reimprimirVenta(${JSON.stringify(String(v.id)).replace(/"/g, "&quot;")})">🖨️ Reimprimir</button>
     </div>
   `);
 }
@@ -165,7 +167,7 @@ function abrirCancelarVenta(id) {
     <div style="background:#fef3c7;border-radius:12px;padding:12px;margin-bottom:14px;font-size:13px">
       <div style="display:flex;justify-content:space-between;padding:3px 0"><span>Fecha:</span><b>${new Date(v.fecha).toLocaleString("es-MX")}</b></div>
       <div style="display:flex;justify-content:space-between;padding:3px 0"><span>Total:</span><b>${fmt(v.total)}</b></div>
-      <div style="display:flex;justify-content:space-between;padding:3px 0"><span>Método:</span><b>${v.metodo}</b></div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0"><span>Método:</span><b>${escapeHTML(v.metodo)}</b></div>
       <div style="display:flex;justify-content:space-between;padding:3px 0"><span>Productos:</span><b>${v.items.length}</b></div>
     </div>
 

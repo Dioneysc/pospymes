@@ -319,11 +319,12 @@ function renderComparativaSemanal() {
 }
 
 function exportarCSV() {
-  const rows = [["ID","Fecha","Cajero","Productos","Subtotal","Descuento","Propina","Total","Método"]];
+  const rows = [["ID","Fecha","Cajero","Productos","Subtotal","Descuento","Propina","Total","Método","Estado"]];
   DB.ventas.forEach(v => rows.push([
     v.id, new Date(v.fecha).toLocaleString("es-MX"), v.usuario || "",
     (v.items || []).map(i => `${i.cantidad}x ${i.nombre}`).join(" | "),
-    v.subtotal || 0, v.descuento || 0, v.propina || 0, v.total || 0, v.metodo || ""
+    v.subtotal || 0, v.descuento || 0, v.propina || 0, v.total || 0, v.metodo || "",
+    v.cancelada ? "Cancelada" : "Activa"
   ]));
   const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
   const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
