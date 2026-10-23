@@ -118,12 +118,16 @@ function aplicarRemoto(c, cambios) {
     syncMeta.synced.config = syncMeta.synced.config || {};
     cambios.forEach(ch => {
       const k = ch.doc.id, d = ch.doc.data();
-      if (ch.type === "removed" || !SYNC_CFG.includes(k) || d.valor === undefined) return;
-      const sh = syncMeta.synced.config[k], h = hashDe(d.valor);
+      const claveDestino = k === "menuInferior" ? "menuInferiorPOS" : k;
+      if (ch.type === "removed" || (!SYNC_CFG.includes(k) && k !== "menuInferior") || d.valor === undefined) return;
+      // v87 sincronizaba "menuInferior"; convertirlo al nombre canónico de v93.
+      const valor = k === "menuInferior" && Array.isArray(d.valor)
+        ? d.valor.filter(id => id !== "caja") : d.valor;
+      const sh = syncMeta.synced.config[claveDestino], h = hashDe(valor);
       if (sh === h) return;                                            // ya está igual
-      if (sh !== undefined && hashDe(leer(k)) !== sh) return;          // cambio local pendiente: gana el local
-      if ((d._t || 0) <= (syncMeta.cfgT[k] || 0)) return;              // el remoto es más viejo
-      escribir(k, d.valor); syncMeta.synced.config[k] = h; syncMeta.cfgT[k] = d._t || 0; hubo = true;
+      if (sh !== undefined && hashDe(leer(claveDestino)) !== sh) return; // cambio local pendiente: gana el local
+      if ((d._t || 0) <= (syncMeta.cfgT[claveDestino] || 0)) return;    // el remoto es más viejo
+      escribir(claveDestino, valor); syncMeta.synced.config[claveDestino] = h; syncMeta.cfgT[claveDestino] = d._t || 0; hubo = true;
     });
   } else {
     let lista = leer(c);
@@ -179,9 +183,18 @@ async function descargarTodo() {
     (await ref(c).get()).forEach(d => { const r = d.data(); lista.push(r); s[r.id] = hashDe(sinT(r)); });
     escribir(c, lista);
   }
-  (await ref("config").get()).forEach(d => {
+  const configSnap = await ref("config").get();
+  const menuNuevoExiste = configSnap.docs.some(d => d.id === "menuInferiorPOS");
+  configSnap.forEach(d => {
     const k = d.id, o = d.data();
-    if (SYNC_CFG.includes(k) && o.valor !== undefined) { escribir(k, o.valor); syncMeta.synced.config[k] = hashDe(o.valor); syncMeta.cfgT[k] = o._t || 0; }
+    if ((SYNC_CFG.includes(k) || k === "menuInferior") && o.valor !== undefined) {
+      const claveDestino = k === "menuInferior" ? "menuInferiorPOS" : k;
+      const valor = k === "menuInferior" && Array.isArray(o.valor) ? o.valor.filter(id => id !== "caja") : o.valor;
+      // Si existe ya la clave nueva en la nube, esta tiene prioridad sobre la antigua.
+      if (k !== "menuInferior" || !menuNuevoExiste) {
+        escribir(claveDestino, valor); syncMeta.synced.config[claveDestino] = hashDe(valor); syncMeta.cfgT[claveDestino] = o._t || 0;
+      }
+    }
   });
   guardarMeta();
 }

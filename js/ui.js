@@ -130,7 +130,21 @@ function aplicarMenuInferior() {
   const defaults = ["caja", "inventario", "corte", "reportes"];
   let menu = defaults;
   try {
-    const raw = localStorage.getItem("menuInferiorPOS");
+    let raw = localStorage.getItem("menuInferiorPOS");
+    if (raw === null) {
+      // Migración de preferencias creadas por v87 si la barra se aplica antes de abrir Configuración.
+      const anterior = localStorage.getItem("menuInferior");
+      if (anterior !== null) {
+        try {
+          const parsedAnterior = JSON.parse(anterior);
+          if (Array.isArray(parsedAnterior)) {
+            const migrado = parsedAnterior.filter(id => id !== "caja");
+            localStorage.setItem("menuInferiorPOS", JSON.stringify(migrado));
+            raw = JSON.stringify(migrado);
+          }
+        } catch (_) {}
+      }
+    }
     if (raw !== null) { const parsed = JSON.parse(raw); if (Array.isArray(parsed)) menu = ["caja", ...parsed.filter((id, i, a) => ["inventario","corte","reportes","preventas","pendientes","historial","productos","gastos","config"].includes(id) && a.indexOf(id) === i)]; }
   } catch (_) {}
   const mapa = {

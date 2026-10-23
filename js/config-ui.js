@@ -370,8 +370,20 @@ const OPCIONES_MENU_INFERIOR = [
 ];
 const MENU_INFERIOR_PREDETERMINADO = ["inventario", "corte", "reportes"];
 function obtenerMenuInferior() {
-  const guardado = LS.get("menuInferiorPOS", null);
-  return Array.isArray(guardado) ? ["caja", ...guardado.filter((id, i, a) => OPCIONES_MENU_INFERIOR.some(o => o.id === id) && a.indexOf(id) === i)] : ["caja", ...MENU_INFERIOR_PREDETERMINADO];
+  // Compatibilidad con v87: antes la preferencia se guardaba como "menuInferior".
+  let guardado = LS.get("menuInferiorPOS", null);
+  if (!Array.isArray(guardado)) {
+    const anterior = LS.get("menuInferior", null);
+    if (Array.isArray(anterior)) {
+      // En v87 "caja" (Venta) formaba parte del arreglo; en v93 es fija y no se guarda.
+      guardado = anterior.filter(id => id !== "caja");
+      LS.set("menuInferiorPOS", guardado);
+    }
+  }
+  const validos = Array.isArray(guardado)
+    ? guardado.filter((id, i, a) => OPCIONES_MENU_INFERIOR.some(o => o.id === id) && a.indexOf(id) === i)
+    : MENU_INFERIOR_PREDETERMINADO.slice();
+  return ["caja", ...validos];
 }
 function renderConfigMenuInferior() {
   const cont = document.getElementById("configMenuInferior");
