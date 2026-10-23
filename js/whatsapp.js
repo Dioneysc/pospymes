@@ -4,7 +4,7 @@
 
 /* ============ COMPARTIR POR WHATSAPP ============ */
 function compartirWhatsApp(ventaId) {
-  const v = DB.ventas.find(x => x.id === ventaId);
+  const v = DB.ventas.find(x => String(x.id) === String(ventaId));
   if (!v) return toast("Venta no encontrada");
 
   const n = DB.negocio;
@@ -43,15 +43,17 @@ function compartirWhatsApp(ventaId) {
   // Opciones: compartir a número específico o general
   const urlWhatsApp = `https://wa.me/?text=${textoCod}`;
 
-  // Abrir WhatsApp
-  window.open(urlWhatsApp, "_blank");
+  // Abrir WhatsApp. Si el navegador bloquea la ventana emergente,
+  // usar la pestaña actual como alternativa para que el botón sí responda.
+  const ventana = window.open(urlWhatsApp, "_blank", "noopener,noreferrer");
+  if (!ventana) window.location.href = urlWhatsApp;
 
   toast("📤 Abriendo WhatsApp...");
 }
 
 /* Compartir con número específico (opcional) */
 function compartirWhatsAppNumero(ventaId) {
-  const v = DB.ventas.find(x => x.id === ventaId);
+  const v = DB.ventas.find(x => String(x.id) === String(ventaId));
   if (!v) return;
 
   const numero = prompt("Número de WhatsApp (con código de país, ej: 521234567890):");
@@ -60,7 +62,7 @@ function compartirWhatsAppNumero(ventaId) {
   const limpio = numero.replace(/\D/g, "");
   const n = DB.negocio;
 
-  let texto = `*${n.nombre || "POS"}*\n`;
+  let texto = `*${n.nombre || "POS PyMes"}*\n`;
   texto += `🧾 Ticket #${String(v.id).padStart(6, "0")}\n`;
   texto += `━━━━━━━━━━━━━━━\n`;
   v.items.forEach(it => {
