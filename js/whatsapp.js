@@ -41,19 +41,16 @@ function compartirWhatsApp(ventaId) {
   const textoCod = encodeURIComponent(texto);
 
   // Opciones: compartir a número específico o general
-  const urlWhatsApp = `https://wa.me/?text=${textoCod}`;
+  const urlWhatsApp = `https://api.whatsapp.com/send?text=${textoCod}`;
 
-  // Abrir WhatsApp mediante un enlace activado directamente por el clic.
-  // Esto evita el problema de window.open() devolviendo null al usar noopener.
-  const enlace = document.createElement("a");
-  enlace.href = urlWhatsApp;
-  enlace.target = "_blank";
-  enlace.rel = "noopener noreferrer";
-  enlace.style.display = "none";
-  document.body.appendChild(enlace);
-  enlace.click();
-  enlace.remove();
-
+  // Usar el endpoint HTTPS oficial para evitar que el WebView intente
+  // navegar directamente a un esquema whatsapp:// no soportado.
+  // No usar window.open con noopener: algunos WebView devuelven null.
+  const nuevaVentana = window.open(urlWhatsApp, "_blank");
+  if (!nuevaVentana) {
+    // Alternativa compatible con navegadores móviles que bloquean ventanas.
+    window.location.href = urlWhatsApp;
+  }
   toast("📤 Abriendo WhatsApp...");
 }
 
@@ -78,6 +75,7 @@ function compartirWhatsAppNumero(ventaId) {
   texto += `*TOTAL: ${fmt(v.total)}*\n`;
   texto += `¡Gracias por su compra! 🍗`;
 
-  const url = `https://wa.me/${limpio}?text=${encodeURIComponent(texto)}`;
-  window.open(url, "_blank");
+  const url = `https://api.whatsapp.com/send?phone=${limpio}&text=${encodeURIComponent(texto)}`;
+  const nuevaVentana = window.open(url, "_blank");
+  if (!nuevaVentana) window.location.href = url;
 }
