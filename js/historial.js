@@ -41,7 +41,7 @@ function renderHistorial(fechaSeleccionada) {
             <div class="hist-items">${escapeHTML(itemsTxt)}</div>
             <div class="hist-acciones">
               <button class="btn-mini" onclick='verTicketHistorial(${JSON.stringify(v).replace(/'/g, "&#39;")})'>👁️ Ver</button>
-              <button class="btn-mini" style="color:#25d366;border-color:#25d366" onclick="compartirWhatsApp(${JSON.stringify(String(v.id))})">📤 WhatsApp</button>
+              <button class="btn-mini" style="color:#25d366;border-color:#25d366" data-venta-id="${escapeHTML(String(v.id))}" onclick="compartirWhatsApp(this.dataset.ventaId)">📤 WhatsApp</button>
               ${!cancelada ? `<button class="btn-mini" style="color:var(--rojo);border-color:var(--rojo)" onclick="abrirCancelarVenta(${JSON.stringify(v.id)})">↩️ Cancelar</button>` : ""}
               <button class="btn-mini" style="color:#dc2626;border-color:#dc2626" onclick="eliminarTicketHistorial(${JSON.stringify(v.id)})">🗑️ Eliminar</button>
             </div>

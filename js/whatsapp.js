@@ -43,10 +43,16 @@ function compartirWhatsApp(ventaId) {
   // Opciones: compartir a número específico o general
   const urlWhatsApp = `https://wa.me/?text=${textoCod}`;
 
-  // Abrir WhatsApp. Si el navegador bloquea la ventana emergente,
-  // usar la pestaña actual como alternativa para que el botón sí responda.
-  const ventana = window.open(urlWhatsApp, "_blank", "noopener,noreferrer");
-  if (!ventana) window.location.href = urlWhatsApp;
+  // Abrir WhatsApp mediante un enlace activado directamente por el clic.
+  // Esto evita el problema de window.open() devolviendo null al usar noopener.
+  const enlace = document.createElement("a");
+  enlace.href = urlWhatsApp;
+  enlace.target = "_blank";
+  enlace.rel = "noopener noreferrer";
+  enlace.style.display = "none";
+  document.body.appendChild(enlace);
+  enlace.click();
+  enlace.remove();
 
   toast("📤 Abriendo WhatsApp...");
 }
