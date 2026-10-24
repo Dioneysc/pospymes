@@ -350,6 +350,16 @@
             </div>
           </div>
         </div>
+        <div class="card-config">
+          <h3>🗑️ Papelera</h3>
+          <p style="color:#64748b;font-size:13px;margin-bottom:10px">Ventas, productos, gastos y demás registros eliminados en este dispositivo se guardan 30 días. Al restaurar una venta no se vuelve a descontar el inventario.</p>
+          <details ontoggle="if(this.open)renderPapelera()">
+            <summary style="cursor:pointer;font-weight:800">Ver papelera</summary>
+            <div id="papeleraResumen" style="margin:10px 0"></div>
+            <div id="listaPapelera"></div>
+            <button class="btn-secondary" type="button" onclick="vaciarPapelera()" style="margin-top:8px">Vaciar papelera</button>
+          </details>
+        </div>
         <div class="card-config peligro">
           <h3>⚠️ Zona peligrosa</h3>
           <p style="color:#64748b;font-size:13px;margin-bottom:12px">Opciones para reiniciar el sistema.</p>
@@ -417,6 +427,7 @@
 <script src="js/sonido.js"></script>
 <script src="js/firebase-config.js"></script>
 <script src="js/sync.js"></script>
+<script src="js/papelera.js"></script>
 <script src="js/app.js"></script>
 <script src="js/android-bridge.js"></script>
 

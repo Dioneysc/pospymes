@@ -41,7 +41,8 @@ function renderHistorial(fechaSeleccionada) {
             <div class="hist-items">${escapeHTML(itemsTxt)}</div>
             <div class="hist-acciones">
               <button class="btn-mini" onclick="verTicketHistorial(${JSON.stringify(String(v.id)).replace(/"/g, "&quot;")})">👁️ Ver</button>
-              <button class="btn-mini" style="color:#25d366;border-color:#25d366" onclick="compartirWhatsApp(${JSON.stringify(String(v.id)).replace(/"/g, "&quot;")})">📤 WhatsApp</button>
+              <button class="btn-mini" onclick="reimprimirVenta(${JSON.stringify(String(v.id))})">🖨️ Reimprimir</button>
+              <button class="btn-mini" style="color:#25d366;border-color:#25d366" onclick="compartirWhatsApp(${JSON.stringify(String(v.id))})">📤 WhatsApp</button>
               ${!cancelada ? `<button class="btn-mini" style="color:var(--rojo);border-color:var(--rojo)" onclick="abrirCancelarVenta(${JSON.stringify(v.id)})">↩️ Cancelar</button>` : ""}
               <button class="btn-mini" style="color:#dc2626;border-color:#dc2626" onclick="eliminarTicketHistorial(${JSON.stringify(v.id)})">🗑️ Eliminar</button>
             </div>
@@ -141,12 +142,8 @@ function exportarHistorial() {
     ]);
   });
   const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
-  const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `historial_${hoy()}.csv`;
-  a.click();
-  toast("📥 Historial exportado");
+  const ok = guardarArchivoTexto(`historial_${hoy()}.csv`, "\ufeff" + csv, "text/csv;charset=utf-8");
+  if (ok) toast("📥 Historial exportado");
 }
 
 function limpiarFiltroHistorial() {

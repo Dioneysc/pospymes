@@ -36,25 +36,10 @@ function guardar() {
 }
 
 function nuevoId(arr) {
-  // Ignorar IDs ausentes o no numéricos: Math.max() con un solo NaN
-  // contaminaba el resultado y podía guardar registros con id=NaN.
-  const usados = new Set((Array.isArray(arr) ? arr : [])
-    .map(x => Number(x && x.id))
-    .filter(Number.isSafeInteger));
-  const max = usados.size ? Math.max(...usados) : 0;
-  const slot = typeof SYNC_SLOT !== "undefined" ? Number(SYNC_SLOT) : 0;
-
-  if (!Number.isInteger(slot) || slot < 1 || slot > 9) {
-    let candidato = max + 1;
-    while (usados.has(candidato)) candidato++;
-    return candidato;
-  }
-
-  // Conserva la terminación asignada a cada dispositivo y evita colisiones
-  // incluso si existen datos importados con IDs atípicos.
-  let candidato = Math.floor(Math.max(0, max) / 10) * 10 + 10 + slot;
-  while (usados.has(candidato)) candidato += 10;
-  return candidato;
+  const max = arr.length ? Math.max(...arr.map(x => x.id)) : 0;
+  const slot = typeof SYNC_SLOT !== "undefined" ? SYNC_SLOT : 0;
+  if (!slot) return max + 1;                     // sin sincronización: consecutivo, como siempre
+  return Math.floor(max / 10) * 10 + 10 + slot;  // con varios dispositivos: cada uno usa su terminación (1-9) y nunca chocan
 }
 
 /* ============ SEED LIMPIO ============ */
