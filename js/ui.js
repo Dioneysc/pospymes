@@ -46,7 +46,7 @@ function cambiarVista(nombre) {
   if (nombre === "reportes") reporteRango("dia");
   if (nombre === "gastos") { renderGastos(); renderCategoriasGastos(); }
   if (nombre === "productos") renderProductos();
-  if (nombre === "config") { cargarNegocio(); if (typeof pintarEstadoSync === "function") pintarEstadoSync(); if (typeof renderPapelera === "function") renderPapelera(); }
+  if (nombre === "config") { cargarNegocio(); if (typeof pintarEstadoSync === "function") pintarEstadoSync(); }
   if (nombre === "historial") { renderHistorial(); }
   if (nombre === "preventas") { renderListaPreventas(); }
   if (nombre === "pendientes") { renderPendientes(); }

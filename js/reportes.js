@@ -327,8 +327,14 @@ function exportarCSV() {
     v.cancelada ? "Cancelada" : "Activa"
   ]));
   const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
-  const ok = guardarArchivoTexto(`ventas_${hoy()}.csv`, "\ufeff" + csv, "text/csv;charset=utf-8");
-  if (ok) toast("📥 CSV descargado");
+  const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `ventas_${hoy()}.csv`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast("📥 CSV descargado");
 }
 
 function renderGrafica7Dias() {

@@ -11,24 +11,6 @@ const fechaLocal = d => { const x = new Date(d); return `${x.getFullYear()}-${St
 const hoy = () => fechaLocal(new Date());
 const escapeHTML = t => String(t ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 
-/* Descarga/guarda un archivo de texto. En la APK (WebView) las descargas blob: no funcionan,
-   así que se usa el puente nativo; en navegador, descarga normal. */
-function guardarArchivoTexto(nombre, contenido, mime) {
-  if (window.Android && typeof window.Android.guardarArchivo === "function") {
-    return !!window.Android.guardarArchivo(nombre, contenido);
-  }
-  const blob = new Blob([contenido], { type: mime || "text/plain;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = nombre;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1500);
-  return true;
-}
-
 function toast(msg) {
   const t = document.createElement("div");
   t.className = "toast";
