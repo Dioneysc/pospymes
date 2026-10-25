@@ -136,7 +136,7 @@
 
 
 /* Selector de periodo del panel: indicador deslizante entre Hoy, Semana y Mes */
-#rangoBotones.rango {
+#rangoBotones.rango, #rangoPanelBotones.rango {
   position: relative;
   isolation: isolate;
   display: grid !important;
@@ -151,7 +151,7 @@
   background: #e8edf2 !important;
   overflow: hidden;
 }
-#rangoBotones.rango::before {
+#rangoBotones.rango::before, #rangoPanelBotones.rango::before {
   content: "";
   position: absolute;
   z-index: -1;
@@ -165,7 +165,7 @@
   transform: translateX(calc(var(--rango-index, 0) * 100%));
   transition: transform .24s cubic-bezier(.2,.8,.2,1), background-color .2s ease;
 }
-#rangoBotones.rango button {
+#rangoBotones.rango button, #rangoPanelBotones.rango button {
   position: relative;
   z-index: 1;
   min-width: 0;
@@ -183,11 +183,11 @@
   transition: color .18s ease;
   -webkit-tap-highlight-color: transparent;
 }
-#rangoBotones.rango button.activo { color: #173b32 !important; }
-#rangoBotones.rango button:focus-visible { outline: 2px solid #25815d; outline-offset: -2px; }
+#rangoBotones.rango button.activo, #rangoPanelBotones.rango button.activo { color: #173b32 !important; }
+#rangoBotones.rango button:focus-visible, #rangoPanelBotones.rango button:focus-visible { outline: 2px solid #25815d; outline-offset: -2px; }
 @media (max-width: 520px) {
-  #rangoBotones.rango { width: 100%; min-width: 0; }
-  #rangoBotones.rango button { padding: 10px 5px !important; font-size: 12px; }
+  #rangoBotones.rango, #rangoPanelBotones.rango { width: 100%; min-width: 0; }
+  #rangoBotones.rango button, #rangoPanelBotones.rango button { padding: 10px 5px !important; font-size: 12px; }
 }
 
 /* FASE A · Administración: lectura rápida y controles consistentes */
@@ -244,7 +244,7 @@
 .comparativa-cambio-producto { display:inline-flex; align-items:center; gap:4px; font-weight:800; white-space:nowrap; }
 @media (max-width:760px) {
  .reporte-controles { width:100%; }
- #rangoBotones.rango { flex:1; width:auto; min-width:0; }
+ #rangoBotones.rango, #rangoPanelBotones.rango { flex:1; width:auto; min-width:0; }
  .btn-comparar-ventas { flex:0 0 auto; }
  .comparativa-cards { grid-template-columns:1fr; gap:9px; }
  .comparativa-card { padding:13px 15px; display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:5px 10px; }
@@ -310,4 +310,90 @@
 .nav-inferior { overflow-x: auto; justify-content: flex-start; scrollbar-width: none; }
 .nav-inferior::-webkit-scrollbar { display:none; }
 .nav-inferior button { flex: 1 0 68px; min-width: 62px; }
-@media (max-width: 520px) { .menu-inferior-opciones { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; } .menu-inferior-opcion { min-height: 36px; padding: 5px 6px; gap: 5px; } .menu-opcion-texto { font-size: 11px; } .menu-opcion-icono { font-size: 15px; } .menu-opcion-switch { width: 27px; height: 17px; flex-basis: 27px; } .menu-opcion-switch::after { width: 11px; height: 11px; } .menu-inferior-opcion input:checked + .menu-opcion-switch::after { transform: translateX(10px); } .config-menu-acciones button { flex:1; } .nav-inferior button { flex: 1 0 58px; } }
+@media (max-width: 520px) { .menu-inferior-opciones { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; } .menu-inferior-opcion { min-height: 36px; padding: 5px 6px; gap: 5px; } .menu-opcion-texto { font-size: 11px; } .menu-opcion-icono { font-size: 15px; } .menu-opcion-switch { width: 27px; height: 17px; flex-basis: 27px; } .menu-opcion-switch::after { width: 11px; height: 11px; } .menu-inferior-opcion input:checked + .menu-opcion-switch::after { transform: translateX(10px); } .config-menu-acciones button { flex:1; } .nav-inferior button { flex: initial; min-width: 0; width: 100%; padding-inline: 1px; font-size: 9px; } }
+
+
+/* Análisis detallado simplificado: comparación visual entre periodos */
+.analisis-comparativa { margin:14px 0; padding:15px; border:1px solid var(--borde); border-radius:16px; background:var(--superficie,#fff); }
+.analisis-comparativa-cabecera { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:15px; }
+.analisis-comparativa-cabecera h3 { margin:0 0 4px; color:var(--gris-oscuro); font-size:16px; font-weight:850; }
+.analisis-comparativa-cabecera p { margin:0; color:var(--texto-suave); font-size:12px; }
+.analisis-comparativa-cabecera > strong { font-size:18px; white-space:nowrap; }
+.analisis-comparativa-fila { display:grid; grid-template-columns:minmax(130px, 1fr) minmax(100px, 2fr); align-items:center; gap:12px; margin:12px 0; }
+.analisis-comparativa-fila > span { display:flex; justify-content:space-between; gap:8px; color:var(--texto-suave); font-size:12px; }
+.analisis-comparativa-fila > span b { color:var(--gris-oscuro); }
+.analisis-comparativa-pista { height:12px; border-radius:20px; overflow:hidden; background:var(--borde,#e5e7eb); }
+.analisis-comparativa-barra { height:100%; min-width:0; border-radius:20px; transition:width .2s ease; }
+.analisis-comparativa-barra.actual { background:var(--naranja,#f97316); }
+.analisis-comparativa-barra.anterior { background:#94a3b8; }
+.analisis-comparativa-pie { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; border-top:1px solid var(--borde); padding-top:11px; margin-top:12px; color:var(--texto-suave); font-size:11px; }
+.analisis-comparativa-pie b { font-size:14px; }
+@media(max-width:520px) { .analisis-comparativa { padding:12px; } .analisis-comparativa-fila { grid-template-columns:1fr; gap:5px; } .analisis-comparativa-fila > span { max-width:100%; } .analisis-comparativa-cabecera { align-items:flex-start; } .analisis-comparativa-cabecera > strong { font-size:15px; } }
+
+/* POS Pollería Pro2 v104: análisis unificado de productos */
+.analisis-productos-unificado { margin-top:18px; }
+.analisis-productos-controles { display:grid; grid-template-columns:repeat(3,minmax(130px,1fr)) minmax(180px,1.5fr); gap:10px; align-items:end; margin:12px 0 16px; }
+.analisis-productos-controles label { display:flex; flex-direction:column; gap:5px; color:var(--texto-suave); font-size:12px; font-weight:700; }
+.analisis-productos-controles select,.analisis-productos-controles input { width:100%; min-width:0; min-height:40px; border:1px solid var(--borde); border-radius:10px; padding:8px 10px; background:var(--superficie,#fff); color:var(--texto,#111827); font:inherit; }
+.analisis-productos-grafica { border:1px solid var(--borde); border-radius:14px; padding:14px; margin-bottom:14px; background:var(--superficie,#fff); }
+.analisis-productos-grafica-titulo { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; font-size:13px; }
+.analisis-productos-grafica-titulo span { display:flex; align-items:center; gap:6px; color:var(--texto-suave); font-size:11px; }
+.ap-leyenda-actual,.ap-leyenda-anterior { display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--rojo,#c8102e); }
+.ap-leyenda-anterior { margin-left:8px; background:#9ca3af; }
+.ap-barra-item { margin:11px 0; }
+.ap-barra-etiqueta { display:flex; justify-content:space-between; gap:12px; margin-bottom:5px; font-size:12px; }
+.ap-barra-etiqueta span { overflow-wrap:anywhere; }
+.ap-barra-pista { height:8px; border-radius:8px; overflow:hidden; background:var(--borde,#e5e7eb); margin-top:3px; }
+.ap-barra { height:100%; min-width:0; border-radius:8px; }
+.ap-barra.actual { background:var(--rojo,#c8102e); }
+.ap-barra.anterior { background:#9ca3af; }
+.ap-pista-anterior { height:5px; background:transparent; }
+.tabla-analisis-productos { min-width:740px; }
+.tabla-analisis-productos th,.tabla-analisis-productos td { white-space:nowrap; }
+.analisis-productos-nota { color:var(--texto-suave); font-size:11px; margin:9px 2px 0; }
+@media(max-width:760px) { .analisis-productos-controles { grid-template-columns:repeat(2,minmax(0,1fr)); } .analisis-productos-grafica { padding:11px; } }
+@media(max-width:420px) { .analisis-productos-controles { grid-template-columns:1fr; } .analisis-productos-grafica-titulo { align-items:flex-start; flex-direction:column; } }
+
+/* v105: comparativa como pantalla independiente con retorno claro */
+#reportes.comparativa-activa > .vista-header { display:none; }
+.comparativa-volver { display:flex; justify-content:flex-start; margin:0 0 14px; }
+.comparativa-volver .btn-secondary { min-height:40px; font-weight:800; }
+.analisis-productos-unificado .panel-seccion-titulo { gap:12px; flex-wrap:wrap; }
+
+
+/* v107: presentación refinada del Panel de ventas, sin alterar Reportes */
+#panelVentas .vista-header { margin-bottom:18px; }
+#panelVentas .vista-header h2 { letter-spacing:-.035em; }
+#panelVentas .reporte-controles { display:flex; align-items:center; justify-content:flex-end; gap:10px; flex-wrap:wrap; }
+#panelVentas .panel-resumen-cabecera { padding:18px 20px; margin:0 0 16px; border:1px solid var(--borde); border-left:5px solid var(--naranja,#f97316); border-radius:16px; background:linear-gradient(110deg,rgba(249,115,22,.09),rgba(249,115,22,.025) 60%,transparent); }
+#panelVentas .panel-resumen-cabecera .panel-eyebrow { display:inline-block; color:var(--naranja,#f97316); font-size:10px; font-weight:850; letter-spacing:.13em; }
+#panelVentas .panel-resumen-cabecera h3 { margin:5px 0 3px; font-size:clamp(23px,2.8vw,30px); line-height:1.12; }
+#panelVentas .panel-resumen-cabecera p { font-size:12px; }
+#panelVentas .panel-metricas-principales { grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin-bottom:14px; }
+#panelVentas .panel-metricas-secundarias { grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:0; }
+#panelVentas .panel-metrica { position:relative; min-height:132px; padding:18px; border-radius:16px; box-shadow:0 5px 18px rgba(15,23,42,.045); transition:transform .15s ease,box-shadow .15s ease; }
+#panelVentas .panel-metrica:hover { transform:translateY(-2px); box-shadow:0 9px 22px rgba(15,23,42,.08); }
+#panelVentas .panel-metrica-icono { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:11px; background:rgba(249,115,22,.12); font-size:19px; }
+#panelVentas .panel-metrica-label { font-size:12px; }
+#panelVentas .panel-metrica strong { font-size:clamp(22px,2.5vw,30px); letter-spacing:-.035em; line-height:1.12; }
+#panelVentas .panel-metrica small { font-size:11px; }
+#panelVentas .panel-metrica-principal { background:linear-gradient(135deg,#b91c1c,#ef4444); border-color:#b91c1c; }
+#panelVentas .panel-metrica-principal .panel-metrica-icono { background:rgba(255,255,255,.16); }
+#panelVentas .panel-metricas-secundarias .panel-metrica { min-height:112px; background:var(--gris-card); }
+@media (max-width:760px) {
+  #panelVentas .vista-header { align-items:flex-start; }
+  #panelVentas .reporte-controles { width:100%; justify-content:flex-start; }
+  #panelVentas .panel-metricas-principales { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  #panelVentas .panel-metrica-principal { grid-column:1 / -1; }
+}
+@media (max-width:480px) {
+  #panelVentas .panel-resumen-cabecera { padding:15px; }
+  #panelVentas .panel-metricas-principales,#panelVentas .panel-metricas-secundarias { grid-template-columns:1fr; gap:9px; }
+  #panelVentas .panel-metrica-principal { grid-column:auto; }
+  #panelVentas .panel-metrica,#panelVentas .panel-metricas-secundarias .panel-metrica { min-height:0; padding:14px; }
+  #panelVentas .panel-metrica strong { font-size:23px; }
+}
+
+/* v110: opciones de menú deshabilitadas al alcanzar el máximo de cinco accesos totales */
+.menu-opcion-deshabilitada { opacity: .48; }
+.menu-inferior-opcion input:disabled + .menu-opcion-switch { cursor: not-allowed; }

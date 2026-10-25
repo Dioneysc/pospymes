@@ -70,6 +70,7 @@ function androidImprimirCorte(corte) {
     const n = DB.negocio || {};
     const datos = {
         tipo: "corte",
+        codigo: obtenerCodigoImpresora(),
         negocio: n.nombre || "POS",
         slogan: n.slogan || "",
         direccion: n.direccion || "",
@@ -104,12 +105,24 @@ function androidImprimirCorte(corte) {
     }
 }
 
+/* Tabla de caracteres de la impresora (acentos y ñ). Es un ajuste del dispositivo, no se sincroniza. */
+function obtenerCodigoImpresora() {
+    const c = LS.get("impresoraCodigo", "latin1");
+    return ["latin1", "cp850", "cp1252", "ascii"].includes(c) ? c : "latin1";
+}
+
+function guardarCodigoImpresora(valor) {
+    LS.set("impresoraCodigo", ["latin1", "cp850", "cp1252", "ascii"].includes(valor) ? valor : "latin1");
+    toast("✅ Guardado. Imprime una prueba para comprobarlo");
+}
+
 function androidImprimirTicket(venta) {
     if (!EN_ANDROID) return false;
     if (!Android.isConnected()) return false;
 
     const n = DB.negocio;
     const ticket = {
+        codigo: obtenerCodigoImpresora(),
         negocio: n.nombre || "POS",
         slogan: n.slogan || "",
         direccion: n.direccion || "",
@@ -119,7 +132,7 @@ function androidImprimirTicket(venta) {
         id: venta.id,
         fecha: new Date(venta.fecha).toLocaleString("es-MX"),
         cajero: venta.usuario || "admin",
-        notas: venta.notas || "",
+        notas: venta.notas ? (venta.metodo === "PREVENTA PENDIENTE" ? venta.notas : "Nota: " + venta.notas) : "",
         items: venta.items.map(it => ({
             cantidad: it.cantidad,
             nombre: it.nombre,
@@ -232,7 +245,15 @@ function abrirModalImpresora() {
       <div style="text-align:center;padding:20px">
         <div style="font-size:48px;margin-bottom:12px">✅</div>
         <p style="color:#64748b;font-size:14px">Listo para imprimir</p>
-        <button class="btn-primary" onclick="imprimirPrueba()" style="margin-top:14px">
+        <div style="text-align:left;margin:14px 0 4px">
+          <label style="font-size:12px;font-weight:700;color:#64748b">Acentos y ñ</label>
+          <select id="selCodigoImpresora" onchange="guardarCodigoImpresora(this.value)" style="width:100%;margin-top:4px">
+            ${[["latin1","Estándar (actual)"],["cp850","Latina CP850 (Epson y compatibles)"],["cp1252","Windows 1252 (muchas 58 mm)"],["ascii","Sin acentos (siempre se lee bien)"]]
+              .map(([v, t]) => `<option value="${v}" ${obtenerCodigoImpresora() === v ? "selected" : ""}>${t}</option>`).join("")}
+          </select>
+          <p style="font-size:11px;color:#64748b;margin-top:6px">Imprime la prueba con cada opción y elige la que muestre bien «áéíóú ñ». Se guarda solo en este dispositivo.</p>
+        </div>
+        <button class="btn-primary" onclick="imprimirPrueba()" style="margin-top:10px">
           🖨️ Imprimir prueba
         </button>
       </div>
@@ -275,6 +296,7 @@ function imprimirPrueba() {
   if (!EN_ANDROID) return;
 
   const testTicket = {
+    codigo: obtenerCodigoImpresora(),
     negocio: DB.negocio.nombre || "POS",
     slogan: DB.negocio.slogan || "",
     direccion: DB.negocio.direccion || "",
@@ -283,7 +305,7 @@ function imprimirPrueba() {
     fecha: new Date().toLocaleString("es-MX"),
     cajero: "admin",
     items: [
-      { cantidad: 1, nombre: "Ticket de prueba", precio: 0 }
+      { cantidad: 1, nombre: "Prueba: áéíóú ñ Ñ ¿¡? ü", precio: 0 }
     ],
     subtotal: 0,
     descuento: 0,

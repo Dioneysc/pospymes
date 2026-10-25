@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<title>🧮 POS</title>
+<title>🧮 POS PyMes</title>
 
 <!-- CSS modular -->
 <link rel="stylesheet" href="css/base.css">
@@ -162,17 +162,33 @@
       <div id="historialCortes" class="tabla-wrap" style="margin-top:16px"></div>
     </section>
 
-    <!-- REPORTES -->
+    <!-- PANEL DE VENTAS: resumen rápido -->
+    <section id="panelVentas" class="vista">
+      <div class="vista-header">
+        <h2>🛒 Panel de ventas</h2>
+        <div class="reporte-controles">
+          <div class="rango" id="rangoPanelBotones" role="group" aria-label="Periodo del panel" style="--rango-index:0">
+            <button type="button" onclick="reporteRango('dia','panelVentas')" class="activo" aria-pressed="true">Hoy</button>
+            <button type="button" onclick="reporteRango('semana','panelVentas')" aria-pressed="false">Semana</button>
+            <button type="button" onclick="reporteRango('mes','panelVentas')" aria-pressed="false">Mes</button>
+          </div>
+          <button type="button" class="btn-secondary" onclick="cambiarVista('reportes')">Ver reportes detallados →</button>
+        </div>
+      </div>
+      <div id="panelVentasContenido"></div>
+    </section>
+
+    <!-- REPORTES: análisis detallado y comparación -->
     <section id="reportes" class="vista">
       <div class="vista-header">
-        <h2>📊 Panel de ventas</h2>
+        <h2>📊 Reportes</h2>
         <div class="reporte-controles">
           <div class="rango" id="rangoBotones" role="group" aria-label="Periodo del reporte" style="--rango-index:0">
-            <button type="button" onclick="reporteRango('dia')" class="activo" aria-pressed="true">Hoy</button>
-            <button type="button" onclick="reporteRango('semana')" aria-pressed="false">Semana</button>
-            <button type="button" onclick="reporteRango('mes')" aria-pressed="false">Mes</button>
+            <button type="button" onclick="reporteRango('dia','reportes')" class="activo" aria-pressed="true">Hoy</button>
+            <button type="button" onclick="reporteRango('semana','reportes')" aria-pressed="false">Semana</button>
+            <button type="button" onclick="reporteRango('mes','reportes')" aria-pressed="false">Mes</button>
           </div>
-          <button type="button" id="btnCompararVentas" class="btn-comparar-ventas" onclick="mostrarComparativaSemanal()" aria-pressed="false">⇄ Comparar</button>
+          <button type="button" id="btnCompararVentas" class="btn-comparar-ventas" onclick="mostrarComparativaSemanal('reportes')" aria-pressed="false">⇄ Comparar periodos</button>
         </div>
       </div>
       <div id="reporteContenido"></div>
@@ -350,16 +366,6 @@
             </div>
           </div>
         </div>
-        <div class="card-config">
-          <h3>🗑️ Papelera</h3>
-          <p style="color:#64748b;font-size:13px;margin-bottom:10px">Ventas, productos, gastos y demás registros eliminados en este dispositivo se guardan 30 días. Al restaurar una venta no se vuelve a descontar el inventario.</p>
-          <details ontoggle="if(this.open)renderPapelera()">
-            <summary style="cursor:pointer;font-weight:800">Ver papelera</summary>
-            <div id="papeleraResumen" style="margin:10px 0"></div>
-            <div id="listaPapelera"></div>
-            <button class="btn-secondary" type="button" onclick="vaciarPapelera()" style="margin-top:8px">Vaciar papelera</button>
-          </details>
-        </div>
         <div class="card-config peligro">
           <h3>⚠️ Zona peligrosa</h3>
           <p style="color:#64748b;font-size:13px;margin-bottom:12px">Opciones para reiniciar el sistema.</p>
@@ -369,6 +375,19 @@
             <button class="btn-danger" onclick="borrarTodo()" style="text-align:left">🗑️ Borrar TODO (sistema completo)</button>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- PAPELERA: acceso independiente desde el menú principal -->
+    <section id="papelera" class="vista">
+      <div class="vista-header">
+        <h2>🗑️ Papelera</h2>
+      </div>
+      <div class="card-config">
+        <p style="color:#64748b;font-size:13px;margin-bottom:10px">Ventas, productos, gastos y demás registros eliminados en este dispositivo se guardan 30 días. Al restaurar una venta no se vuelve a descontar el inventario.</p>
+        <div id="papeleraResumen" style="margin:10px 0"></div>
+        <div id="listaPapelera"></div>
+        <button class="btn-secondary" type="button" onclick="vaciarPapelera()" style="margin-top:8px">Vaciar papelera</button>
       </div>
     </section>
   </main>
@@ -386,9 +405,13 @@
       <span class="ico">💰</span>
       <span>Caja</span>
     </button>
+    <button data-view="panelVentas" data-menu="panelVentas" onclick="cambiarVista('panelVentas')">
+      <span class="ico">🛒</span>
+      <span>Panel</span>
+    </button>
     <button data-view="reportes" data-menu="reportes" onclick="cambiarVista('reportes')">
       <span class="ico">📊</span>
-      <span>Panel</span>
+      <span>Reportes</span>
     </button>
   </nav>
 </div>

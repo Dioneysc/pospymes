@@ -361,6 +361,7 @@ function importarBackup(e) {
 const OPCIONES_MENU_INFERIOR = [
   { id: "inventario", label: "Inventario", icon: "📦" },
   { id: "corte", label: "Caja", icon: "💰" },
+  { id: "panelVentas", label: "Panel de ventas", icon: "📈" },
   { id: "reportes", label: "Reportes", icon: "📊" },
   { id: "preventas", label: "Preventas", icon: "📋" },
   { id: "pendientes", label: "Compras y pendientes", icon: "📝" },
@@ -369,7 +370,7 @@ const OPCIONES_MENU_INFERIOR = [
   { id: "gastos", label: "Gastos", icon: "💸" },
   { id: "config", label: "Configuración", icon: "⚙️" }
 ];
-const MENU_INFERIOR_PREDETERMINADO = ["inventario", "corte", "reportes"];
+const MENU_INFERIOR_PREDETERMINADO = ["inventario", "corte", "panelVentas", "reportes"];
 function obtenerMenuInferior() {
   // Migración compatible con v87: menuInferior era la clave anterior.
   const nuevo = LS.get("menuInferiorPOS", null);
@@ -385,14 +386,34 @@ function obtenerMenuInferior() {
 function renderConfigMenuInferior() {
   const cont = document.getElementById("configMenuInferior");
   if (!cont) return;
-  const seleccion = obtenerMenuInferior();
-  cont.innerHTML = `<div class="menu-inferior-fijo"><span>🛒</span><span><b>Venta</b><small>Siempre visible</small></span><span class="menu-fijo-check">✓</span></div>` + OPCIONES_MENU_INFERIOR.map(o => `
-    <label class="menu-inferior-opcion"><span class="menu-opcion-icono">${o.icon}</span><span class="menu-opcion-texto">${o.label}</span><input type="checkbox" value="${o.id}" ${seleccion.includes(o.id) ? "checked" : ""}><span class="menu-opcion-switch"></span></label>`).join("");
+  const seleccion = obtenerMenuInferior().filter(id => id !== "caja").slice(0, 4);
+  cont.innerHTML = `<div class="menu-inferior-fijo"><span>🛒</span><span><b>Venta</b><small>Siempre visible · máximo 5 accesos en total</small></span><span class="menu-fijo-check">✓</span></div>` + OPCIONES_MENU_INFERIOR.map(o => `
+    <label class="menu-inferior-opcion"><span class="menu-opcion-icono">${o.icon}</span><span class="menu-opcion-texto">${o.label}</span><input type="checkbox" value="${o.id}" ${seleccion.includes(o.id) ? "checked" : ""} onchange="validarLimiteMenuInferior(this)"><span class="menu-opcion-switch"></span></label>`).join("");
+  actualizarControlesMenuInferior();
+}
+function validarLimiteMenuInferior(input) {
+  const cont = document.getElementById("configMenuInferior");
+  if (!cont || !input) return;
+  const marcados = [...cont.querySelectorAll('input[type="checkbox"]:checked')];
+  if (marcados.length > 4) {
+    input.checked = false;
+    toast("Puedes tener máximo 5 iconos en total. Venta ocupa uno; elige hasta 4 accesos adicionales.");
+  }
+  actualizarControlesMenuInferior();
+}
+function actualizarControlesMenuInferior() {
+  const cont = document.getElementById("configMenuInferior");
+  if (!cont) return;
+  const marcados = cont.querySelectorAll('input[type="checkbox"]:checked').length;
+  cont.querySelectorAll('input[type="checkbox"]:not(:checked)').forEach(input => {
+    input.disabled = marcados >= 4;
+    input.closest(".menu-inferior-opcion")?.classList.toggle("menu-opcion-deshabilitada", marcados >= 4);
+  });
 }
 function guardarMenuInferior() {
   const cont = document.getElementById("configMenuInferior");
   if (!cont) return;
-  const seleccion = [...cont.querySelectorAll('input[type="checkbox"]:checked')].map(el => el.value);
+  const seleccion = [...cont.querySelectorAll('input[type="checkbox"]:checked')].map(el => el.value).slice(0, 4);
   LS.set("menuInferiorPOS", seleccion);
   if (typeof aplicarMenuInferior === "function") aplicarMenuInferior();
   toast("✅ Menú inferior actualizado");

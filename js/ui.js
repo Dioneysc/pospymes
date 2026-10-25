@@ -43,10 +43,12 @@ function cambiarVista(nombre) {
   if (nombre === "caja") { renderCaja(); renderCategorias(); }
   if (nombre === "inventario") renderInsumos();
   if (nombre === "corte") { initDia(); renderEstadoCaja(); }
-  if (nombre === "reportes") reporteRango("dia");
+  if (nombre === "panelVentas") reporteRango("dia", "panelVentas");
+  if (nombre === "reportes") reporteRango("dia", "reportes");
   if (nombre === "gastos") { renderGastos(); renderCategoriasGastos(); }
   if (nombre === "productos") renderProductos();
   if (nombre === "config") { cargarNegocio(); if (typeof pintarEstadoSync === "function") pintarEstadoSync(); }
+  if (nombre === "papelera" && typeof renderPapelera === "function") renderPapelera();
   if (nombre === "historial") { renderHistorial(); }
   if (nombre === "preventas") { renderListaPreventas(); }
   if (nombre === "pendientes") { renderPendientes(); }
@@ -70,6 +72,7 @@ function abrirMenu() {
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('historial')" style="text-align:left;padding:14px;font-size:15px">📅 Historial de tickets</button>
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('productos')" style="text-align:left;padding:14px;font-size:15px">🍗 Productos</button>
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('gastos')" style="text-align:left;padding:14px;font-size:15px">💸 Gastos</button>
+      <button class="btn-secondary" onclick="cerrarModal();cambiarVista('papelera')" style="text-align:left;padding:14px;font-size:15px">🗑️ Papelera</button>
       <button class="btn-secondary" onclick="cerrarModal();cambiarVista('config')" style="text-align:left;padding:14px;font-size:15px">⚙️ Configuración</button>
       <hr style="border:none;border-top:1px solid #e2e8f0;margin:6px 0">
       <button class="btn-danger" onclick="cerrarModal();logout()" style="padding:14px;font-size:15px">🚪 Cerrar sesión</button>
@@ -127,14 +130,22 @@ function verInsumosBajos() {
 function aplicarMenuInferior() {
   const nav = document.querySelector(".nav-inferior");
   if (!nav) return;
-  const defaults = ["caja", "inventario", "corte", "reportes"];
+  const defaults = ["caja", "inventario", "corte", "panelVentas", "reportes"];
   let menu = defaults;
   try {
     const raw = localStorage.getItem("menuInferiorPOS");
-    if (raw !== null) { const parsed = JSON.parse(raw); if (Array.isArray(parsed)) menu = ["caja", ...parsed.filter((id, i, a) => ["inventario","corte","reportes","preventas","pendientes","historial","productos","gastos","config"].includes(id) && a.indexOf(id) === i)]; }
+    if (raw !== null) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        // Venta es fijo; se permiten como máximo cuatro accesos configurables (5 iconos en total).
+        const validos = parsed.filter((id, i, a) => ["inventario","corte","panelVentas","reportes","preventas","pendientes","historial","productos","gastos","config"].includes(id) && a.indexOf(id) === i);
+        menu = ["caja", ...validos.slice(0, 4)];
+        if (validos.length > 4) localStorage.setItem("menuInferiorPOS", JSON.stringify(validos.slice(0, 4)));
+      }
+    }
   } catch (_) {}
   const mapa = {
-    caja:["🛒","Venta"], inventario:["📦","Inventario"], corte:["💰","Caja"], reportes:["📊","Reportes"],
+    caja:["🛒","Venta"], inventario:["📦","Inventario"], corte:["💰","Caja"], panelVentas:["📈","Panel"], reportes:["📊","Reportes"],
     preventas:["📋","Preventas"], pendientes:["📝","Compras"], historial:["🧾","Historial"], productos:["🍗","Productos"], gastos:["💸","Gastos"], config:["⚙️","Config."]
   };
   menu.forEach(id => {
@@ -144,6 +155,9 @@ function aplicarMenuInferior() {
     btn.style.display = "";
   });
   nav.querySelectorAll("button[data-menu]").forEach(btn => { btn.style.display = menu.includes(btn.dataset.menu) ? "" : "none"; });
+  const visibles = menu.filter((id, i, a) => a.indexOf(id) === i).length;
+  nav.style.gridTemplateColumns = `repeat(${Math.max(1, Math.min(5, visibles))}, minmax(0, 1fr))`;
+  nav.style.overflowX = "hidden";
   const activo = nav.querySelector(`button[data-menu="${document.querySelector(".vista.activa")?.id || "caja"}"]`);
   nav.querySelectorAll("button").forEach(b => b.classList.toggle("activo", b === activo));
 }
