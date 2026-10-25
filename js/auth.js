@@ -96,6 +96,9 @@ function pedirFondoSiFalta() {
 
 function logout() {
   sessionStorage.removeItem("sesion");
+  document.body.classList.remove("app-autenticada");
+  const navInferior = document.querySelector(".nav-inferior");
+  if (navInferior) navInferior.style.display = "none";
   $("#app").classList.add("oculto");
   $("#login").style.display = "flex";
 
@@ -113,6 +116,9 @@ function logout() {
 
 function entrarApp() {
   const s = JSON.parse(sessionStorage.getItem("sesion") || "{}");
+  document.body.classList.add("app-autenticada");
+  const navInferior = document.querySelector(".nav-inferior");
+  if (navInferior && typeof aplicarMenuInferior === "function") aplicarMenuInferior();
   $("#login").style.display = "none";
   $("#app").classList.remove("oculto");
   seed();
