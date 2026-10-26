@@ -4,7 +4,7 @@
 
 /* ============ CONFIG ============ */
 function cargarNegocio() {
-  renderConfigMenuInferior();
+  if (typeof renderMantenimiento === "function") renderMantenimiento();
   const elN = $("#cfgNombre");
   const elS = $("#cfgSlogan");
   const elD = $("#cfgDireccion");
@@ -110,6 +110,8 @@ function crearObjetoRespaldo() {
     cajaFuerteSaldoAjuste: LS.get("cajaFuerteSaldoAjuste", 0),
     preventasPendientes: LS.get("preventasPendientes", []),
     negocioLogoLocal: LS.get("negocioLogoLocal", ""),
+    pendientes: typeof leerPendientes === "function" ? leerPendientes() : [],
+    resumenHistorico: LS.get("resumenHistorico", []),
     modoOscuro: LS.get("modoOscuro", false),
     sonidoActivado: LS.get("sonidoActivado", true)
   };
@@ -151,6 +153,7 @@ function exportarBackup() {
     if (!guardarArchivoRespaldo(nombre, respaldo)) {
       throw new Error("El dispositivo no pudo guardar el archivo");
     }
+    if (typeof registrarRespaldo === "function") registrarRespaldo();
     toast("✅ Respaldo exportado. Guárdalo fuera del dispositivo para mayor seguridad.");
   } catch (err) {
     console.error("Error exportando respaldo:", err);
@@ -306,6 +309,7 @@ function importarBackup(e) {
       // Restaurar datos adicionales; en respaldos antiguos, conservar los datos
       // locales que ese formato no incluía para no borrarlos accidentalmente.
       LS.set("cortes", Array.isArray(extras.cortes) ? extras.cortes : LS.get("cortes", []));
+      if (Array.isArray(extras.resumenHistorico)) LS.set("resumenHistorico", extras.resumenHistorico);
       LS.set("catsGasto", Array.isArray(extras.catsGasto) ? extras.catsGasto : LS.get("catsGasto", []));
 
       const caja = extras.cajaHoy;
@@ -321,6 +325,7 @@ function importarBackup(e) {
         ? Number(extras.cajaFuerteSaldoAjuste) : LS.get("cajaFuerteSaldoAjuste", 0));
       LS.set("preventasPendientes", Array.isArray(extras.preventasPendientes)
         ? extras.preventasPendientes : LS.get("preventasPendientes", []));
+      if (Array.isArray(extras.pendientes) && typeof guardarPendientes === "function") guardarPendientes(extras.pendientes);
       LS.set("negocioLogoLocal", typeof extras.negocioLogoLocal === "string"
         ? extras.negocioLogoLocal : LS.get("negocioLogoLocal", ""));
       LS.set("modoOscuro", typeof extras.modoOscuro === "boolean"
@@ -356,71 +361,117 @@ function importarBackup(e) {
 }
 
 
-
 /* ============ MENÚ INFERIOR PERSONALIZABLE ============ */
-const OPCIONES_MENU_INFERIOR = [
-  { id: "inventario", label: "Inventario", icon: "📦" },
-  { id: "corte", label: "Caja", icon: "💰" },
-  { id: "panelVentas", label: "Panel de ventas", icon: "📈" },
-  { id: "reportes", label: "Reportes", icon: "📊" },
-  { id: "preventas", label: "Preventas", icon: "📋" },
-  { id: "pendientes", label: "Compras y pendientes", icon: "📝" },
-  { id: "historial", label: "Historial", icon: "🧾" },
-  { id: "productos", label: "Productos", icon: "🍗" },
-  { id: "gastos", label: "Gastos", icon: "💸" },
-  { id: "config", label: "Configuración", icon: "⚙️" }
+const MENU_INFERIOR_OPCIONES = [
+  { id: "caja", icono: "🛒", nombre: "Venta" },
+  { id: "inventario", icono: "📦", nombre: "Inventario" },
+  { id: "corte", icono: "💰", nombre: "Caja" },
+  { id: "panelVentas", icono: "📈", nombre: "Panel" },
+  { id: "reportes", icono: "📊", nombre: "Reportes" },
+  { id: "preventas", icono: "📋", nombre: "Preventas" },
+  { id: "pendientes", icono: "📝", nombre: "Pendientes" },
+  { id: "historial", icono: "🧾", nombre: "Historial" }
 ];
-const MENU_INFERIOR_PREDETERMINADO = ["inventario", "corte", "panelVentas", "reportes"];
-function obtenerMenuInferior() {
-  // Migración compatible con v87: menuInferior era la clave anterior.
-  const nuevo = LS.get("menuInferiorPOS", null);
-  const anterior = LS.get("menuInferior", null);
-  const guardado = Array.isArray(nuevo) ? nuevo : Array.isArray(anterior) ? anterior : null;
-  const limpio = Array.isArray(guardado)
-    ? [...new Set(guardado.filter(id => id !== "caja" && OPCIONES_MENU_INFERIOR.some(o => o.id === id)))]
-    : [...MENU_INFERIOR_PREDETERMINADO];
-  // Solo migra si la clave nueva todavía no existía; la preferencia nueva siempre gana.
-  if (!Array.isArray(nuevo) && Array.isArray(anterior)) LS.set("menuInferiorPOS", limpio);
-  return ["caja", ...limpio];
+const MENU_INFERIOR_DEFECTO = ["caja", "inventario", "corte", "panelVentas", "reportes"];
+function menuInferiorClaveUsuario(usuario) {
+  const u = usuario || (typeof usuarioActual === "function" ? usuarioActual() : {});
+  const identidad = u && u.id != null ? `id_${u.id}` : `user_${String(u && (u.username || u.nombre) || "admin").toLowerCase().replace(/[^a-z0-9_-]/g, "_")}`;
+  return `menuInferiorPOS_usuario_${identidad}`;
+}
+function menuInferiorUsuarioConfigurado() {
+  const sel = document.getElementById("configMenuUsuario");
+  if (sel && sel.value && typeof DB !== "undefined") {
+    const id = Number(sel.value);
+    return DB.usuarios.find(u => String(u.id) === String(sel.value)) || (typeof usuarioActual === "function" ? usuarioActual() : {});
+  }
+  return typeof usuarioActual === "function" ? usuarioActual() : {};
+}
+function menuInferiorPorDefecto(usuario) {
+  const rol = usuario && usuario.rol || "admin";
+  const defaults = {
+    admin: ["caja", "inventario", "corte", "panelVentas", "reportes"],
+    encargado: ["caja", "inventario", "corte", "historial", "reportes"],
+    cajero: ["caja", "preventas", "pendientes", "historial"]
+  };
+  return [...(defaults[rol] || MENU_INFERIOR_DEFECTO)];
+}
+function leerMenuInferior(usuario) {
+  const u = usuario || (typeof usuarioActual === "function" ? usuarioActual() : {});
+  const clave = menuInferiorClaveUsuario(u);
+  let guardado = LS.get(clave, null);
+  // Migración de la preferencia global antigua: se asigna solo al administrador, una vez.
+  if (!Array.isArray(guardado)) {
+    const globalAntiguo = LS.get("menuInferiorPOS", null);
+    guardado = (u && u.rol === "admin" && Array.isArray(globalAntiguo)) ? globalAntiguo : menuInferiorPorDefecto(u);
+    LS.set(clave, guardado);
+  }
+  const validos = guardado.filter((id, i, arr) => MENU_INFERIOR_OPCIONES.some(o => o.id === id) && arr.indexOf(id) === i && id !== "caja");
+  return ["caja", ...validos].slice(0, 5);
+}
+function guardarMenuInferiorUsuario(usuario, lista) {
+  const u = usuario || (typeof usuarioActual === "function" ? usuarioActual() : {});
+  LS.set(menuInferiorClaveUsuario(u), ["caja", ...lista.filter(id => id !== "caja")].slice(0, 5));
+}
+function renderSelectorMenuInferior() {
+  const sel = document.getElementById("configMenuUsuario");
+  if (!sel) return;
+  const previo = sel.value;
+  const usuarios = (typeof DB !== "undefined" && Array.isArray(DB.usuarios)) ? DB.usuarios : [];
+  sel.innerHTML = usuarios.map(u => `<option value="${u.id}">${escapeHTML(u.nombre || u.username || "Usuario")} · ${escapeHTML((typeof ROLES !== "undefined" && ROLES[u.rol]) || u.rol || "admin")}</option>`).join("");
+  if (usuarios.some(u => String(u.id) === previo)) sel.value = previo;
+  else if (usuarios.length) {
+    const actual = typeof usuarioActual === "function" ? usuarioActual() : {};
+    sel.value = String(usuarios.some(u => u.id === actual.id) ? actual.id : usuarios[0].id);
+  }
 }
 function renderConfigMenuInferior() {
-  const cont = document.getElementById("configMenuInferior");
+  const cont = document.getElementById("configMenuInferiorOpciones");
   if (!cont) return;
-  const seleccion = obtenerMenuInferior().filter(id => id !== "caja").slice(0, 4);
-  cont.innerHTML = `<div class="menu-inferior-fijo"><span>🛒</span><span><b>Venta</b><small>Siempre visible · máximo 5 accesos en total</small></span><span class="menu-fijo-check">✓</span></div>` + OPCIONES_MENU_INFERIOR.map(o => `
-    <label class="menu-inferior-opcion"><span class="menu-opcion-icono">${o.icon}</span><span class="menu-opcion-texto">${o.label}</span><input type="checkbox" value="${o.id}" ${seleccion.includes(o.id) ? "checked" : ""} onchange="validarLimiteMenuInferior(this)"><span class="menu-opcion-switch"></span></label>`).join("");
-  actualizarControlesMenuInferior();
+  renderSelectorMenuInferior();
+  const usuario = menuInferiorUsuarioConfigurado();
+  const seleccion = leerMenuInferior(usuario);
+  cont.innerHTML = MENU_INFERIOR_OPCIONES.map(op => {
+    const activo = seleccion.includes(op.id);
+    const pos = seleccion.indexOf(op.id);
+    const fijo = op.id === "caja";
+    return `<div class="menu-inferior-fila ${activo ? "seleccionada" : ""}">
+      <label class="menu-inferior-opcion"><span class="menu-opcion-icono">${op.icono}</span><span class="menu-opcion-texto">${op.nombre}</span><input type="checkbox" data-menu-config="${op.id}" ${activo ? "checked" : ""} ${fijo ? "disabled checked" : ""} onchange="cambiarSeleccionMenuInferior('${op.id}',this.checked)"><span class="menu-opcion-switch" aria-hidden="true"></span></label>
+      <span class="menu-orden">${activo ? pos + 1 : "—"}</span>
+      <button type="button" class="btn-mini" aria-label="Subir ${op.nombre}" ${!activo || pos <= 1 ? "disabled" : ""} onclick="moverMenuInferior('${op.id}',-1)">↑</button>
+      <button type="button" class="btn-mini" aria-label="Bajar ${op.nombre}" ${!activo || pos < 1 || pos >= seleccion.length - 1 ? "disabled" : ""} onclick="moverMenuInferior('${op.id}',1)">↓</button>
+    </div>`;
+  }).join("");
 }
-function validarLimiteMenuInferior(input) {
-  const cont = document.getElementById("configMenuInferior");
-  if (!cont || !input) return;
-  const marcados = [...cont.querySelectorAll('input[type="checkbox"]:checked')];
-  if (marcados.length > 4) {
-    input.checked = false;
-    toast("Puedes tener máximo 5 iconos en total. Venta ocupa uno; elige hasta 4 accesos adicionales.");
-  }
-  actualizarControlesMenuInferior();
+function cambiarSeleccionMenuInferior(id, agregar) {
+  const usuario = menuInferiorUsuarioConfigurado();
+  let lista = leerMenuInferior(usuario);
+  if (id === "caja") return renderConfigMenuInferior();
+  if (agregar) { if (lista.length >= 5) { toast("Puedes elegir hasta 5 accesos, incluyendo Venta"); return renderConfigMenuInferior(); } if (!lista.includes(id)) lista.push(id); }
+  else lista = lista.filter(x => x !== id);
+  guardarMenuInferiorUsuario(usuario, lista);
+  renderConfigMenuInferior();
 }
-function actualizarControlesMenuInferior() {
-  const cont = document.getElementById("configMenuInferior");
-  if (!cont) return;
-  const marcados = cont.querySelectorAll('input[type="checkbox"]:checked').length;
-  cont.querySelectorAll('input[type="checkbox"]:not(:checked)').forEach(input => {
-    input.disabled = marcados >= 4;
-    input.closest(".menu-inferior-opcion")?.classList.toggle("menu-opcion-deshabilitada", marcados >= 4);
-  });
+function moverMenuInferior(id, delta) {
+  const usuario = menuInferiorUsuarioConfigurado();
+  const lista = leerMenuInferior(usuario); const i = lista.indexOf(id); const j = i + delta;
+  if (i < 1 || j < 1 || j >= lista.length) return;
+  [lista[i], lista[j]] = [lista[j], lista[i]];
+  guardarMenuInferiorUsuario(usuario, lista); renderConfigMenuInferior();
 }
 function guardarMenuInferior() {
-  const cont = document.getElementById("configMenuInferior");
-  if (!cont) return;
-  const seleccion = [...cont.querySelectorAll('input[type="checkbox"]:checked')].map(el => el.value).slice(0, 4);
-  LS.set("menuInferiorPOS", seleccion);
-  if (typeof aplicarMenuInferior === "function") aplicarMenuInferior();
-  toast("✅ Menú inferior actualizado");
+  const usuario = menuInferiorUsuarioConfigurado();
+  const lista = leerMenuInferior(usuario);
+  guardarMenuInferiorUsuario(usuario, lista);
+  const actual = typeof usuarioActual === "function" ? usuarioActual() : {};
+  if (actual && String(actual.id) === String(usuario.id) && typeof aplicarMenuInferior === "function") aplicarMenuInferior();
+  toast("✅ Menú guardado para " + (usuario.nombre || usuario.username || "el usuario seleccionado"));
 }
 function restablecerMenuInferior() {
-  LS.set("menuInferiorPOS", MENU_INFERIOR_PREDETERMINADO);
+  if (!confirm("¿Restablecer el menú del usuario seleccionado a los accesos predeterminados de su rol?")) return;
+  const usuario = menuInferiorUsuarioConfigurado();
+  guardarMenuInferiorUsuario(usuario, menuInferiorPorDefecto(usuario));
   renderConfigMenuInferior();
-  if (typeof aplicarMenuInferior === "function") aplicarMenuInferior();
-  toast("Menú predeterminado restaurado");
+  const actual = typeof usuarioActual === "function" ? usuarioActual() : {};
+  if (actual && String(actual.id) === String(usuario.id) && typeof aplicarMenuInferior === "function") aplicarMenuInferior();
+  toast("Menú restablecido para " + (usuario.nombre || usuario.username || "el usuario seleccionado"));
 }

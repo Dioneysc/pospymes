@@ -166,7 +166,7 @@ function cambiarCantidad(i, d) {
   if (!carrito[i]) return;
   carrito[i].cantidad += d;
   if (carrito[i].cantidad <= 0) carrito.splice(i, 1);
-  if (!carrito.length) window._preventaEnProcesoId = null;
+  if (!carrito.length) { window._preventaEnProcesoId = null; cerrarCarritoModal(); }
   renderCarrito();
 }
 
@@ -253,7 +253,7 @@ function stockFaltante() {
     (p && p.insumos || []).forEach(g => { need[g.insumoId] = (need[g.insumoId] || 0) + g.cantidad * it.cantidad; });
   });
   return Object.entries(need).map(([id, q]) => ({ ins: DB.insumos.find(x => x.id == id), q }))
-    .filter(o => o.ins && o.ins.stock < o.q)
+    .filter(o => o.ins && o.ins.stock + 1e-9 < o.q)
     .map(o => `${o.ins.nombre}: hay ${o.ins.stock} ${o.ins.unidad}, faltan ${+(o.q - o.ins.stock).toFixed(2)}`);
 }
 
@@ -402,7 +402,7 @@ function finalizarVenta(metodo, total, pagoCon, cambio) {
     if (!prod || !prod.insumos) return;
     prod.insumos.forEach(ing => {
       const ins = DB.insumos.find(x => x.id === ing.insumoId);
-      if (ins) ins.stock = Math.max(0, ins.stock - ing.cantidad * item.cantidad);
+      if (ins) ins.stock = Math.max(0, Math.round((ins.stock - ing.cantidad * item.cantidad) * 1e6) / 1e6);
     });
   });
 
@@ -424,6 +424,7 @@ function finalizarVenta(metodo, total, pagoCon, cambio) {
   cerrarCarritoModal();
   renderCarrito();
   renderEstadoCaja();
+  mostrarAlertaStock();
   reproducirSonido("cobro");
   mostrarTicketImpresion(venta);
 

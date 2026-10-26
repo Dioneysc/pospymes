@@ -13,21 +13,27 @@ function guardarPreventa() {
   const nota = (document.getElementById("notaPedido")?.value || "").trim().slice(0, 300);
   const sesion = JSON.parse(sessionStorage.getItem("sesion") || "{}");
   const preventas = LS.get("preventasPendientes", []);
-  const siguienteId = nuevoId(preventas);
+
+  // Si el carrito viene de una preventa cargada, se actualiza esa misma en lugar de duplicarla
+  const idEnProceso = Number(window._preventaEnProcesoId) || 0;
+  const existente = idEnProceso
+    ? preventas.find(p => Number(p.id) === idEnProceso && (p.estado || "Pendiente").toLowerCase() === "pendiente")
+    : null;
 
   const pedido = {
-    id: siguienteId,
-    fecha: new Date().toISOString(),
+    id: existente ? existente.id : nuevoId(preventas),
+    fecha: existente ? existente.fecha : new Date().toISOString(),
     estado: "Pendiente",
     items: JSON.parse(JSON.stringify(carrito)),
     subtotal,
     descuento: descuentoAplicado,
     total,
     nota,
-    usuario: sesion.nombre || "admin"
+    usuario: existente ? (existente.usuario || sesion.nombre || "admin") : (sesion.nombre || "admin")
   };
 
-  preventas.push(pedido);
+  if (existente) preventas[preventas.indexOf(existente)] = pedido;
+  else preventas.push(pedido);
   LS.set("preventasPendientes", preventas);
   window._preventaActual = pedido;
 

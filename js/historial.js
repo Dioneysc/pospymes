@@ -71,7 +71,6 @@ function eliminarTicketHistorial(id) {
   guardar();
   renderHistorial();
   if (typeof renderEstadoCaja === "function") renderEstadoCaja();
-  if (typeof reporteRango === "function") reporteRango("dia");
   if (typeof mostrarAlertaStock === "function") mostrarAlertaStock();
   toast(`🗑️ Ticket #${String(id).padStart(6, "0")} eliminado del historial`);
 }
@@ -140,13 +139,12 @@ function exportarHistorial() {
       v.motivoCancelacion || ""
     ]);
   });
-  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
-  const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `historial_${hoy()}.csv`;
-  a.click();
-  toast("📥 Historial exportado");
+  // Un texto que empiece con = + - @ se interpretaría como fórmula al abrir el CSV en Excel
+  const celda = c => { let s = String(c ?? ""); if (/^[=+\-@\t\r]/.test(s) && isNaN(Number(s))) s = "'" + s; return `"${s.replace(/"/g, '""')}"`; };
+  const csv = rows.map(r => r.map(celda).join(",")).join("\n");
+  // guardarArchivoTexto usa el puente nativo en la APK (las descargas blob: no funcionan allí)
+  if (guardarArchivoTexto(`historial_${hoy()}.csv`, "\ufeff" + csv, "text/csv;charset=utf-8")) toast("📥 Historial exportado");
+  else toast("⚠️ No se pudo guardar el archivo");
 }
 
 function limpiarFiltroHistorial() {

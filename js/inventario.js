@@ -98,8 +98,8 @@ function aplicarMovimiento() {
   const ins = DB.insumos.find(x => x.id === id);
   if (!ins) return toast("Insumo no encontrado");
   if (!Number.isFinite(cant) || cant <= 0) return toast("⚠️ Ingresa una cantidad mayor que cero");
-  if (tipo === "entrada") ins.stock += cant;
-  else ins.stock = Math.max(0, ins.stock - cant);
+  if (tipo === "entrada") ins.stock = Math.round((ins.stock + cant) * 1e6) / 1e6;
+  else ins.stock = Math.max(0, Math.round((ins.stock - cant) * 1e6) / 1e6);
   guardar(); cerrarModal(); renderInsumos();
   mostrarAlertaStock();
   toast("✅ Movimiento aplicado");

@@ -47,7 +47,7 @@ function cambiarVista(nombre) {
   if (nombre === "reportes") reporteRango("dia", "reportes");
   if (nombre === "gastos") { renderGastos(); renderCategoriasGastos(); }
   if (nombre === "productos") renderProductos();
-  if (nombre === "config") { cargarNegocio(); if (typeof pintarEstadoSync === "function") pintarEstadoSync(); }
+  if (nombre === "config") { cargarNegocio(); if (typeof pintarEstadoSync === "function") pintarEstadoSync(); if (typeof renderConfigMenuInferior === "function") renderConfigMenuInferior(); }
   if (nombre === "papelera" && typeof renderPapelera === "function") renderPapelera();
   if (nombre === "historial") { renderHistorial(); }
   if (nombre === "preventas") { renderListaPreventas(); }
@@ -126,38 +126,37 @@ function verInsumosBajos() {
 }
 
 
-/* Aplica las preferencias locales de la barra inferior sin afectar la navegación general. */
+/* Menú inferior: preferencias del administrador filtradas siempre por permisos del usuario. */
 function aplicarMenuInferior() {
   const nav = document.querySelector(".nav-inferior");
   if (!nav) return;
-  const defaults = ["caja", "inventario", "corte", "panelVentas", "reportes"];
-  let menu = defaults;
-  try {
-    const raw = localStorage.getItem("menuInferiorPOS");
-    if (raw !== null) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        // Venta es fijo; se permiten como máximo cuatro accesos configurables (5 iconos en total).
-        const validos = parsed.filter((id, i, a) => ["inventario","corte","panelVentas","reportes","preventas","pendientes","historial","productos","gastos","config"].includes(id) && a.indexOf(id) === i);
-        menu = ["caja", ...validos.slice(0, 4)];
-        if (validos.length > 4) localStorage.setItem("menuInferiorPOS", JSON.stringify(validos.slice(0, 4)));
-      }
-    }
-  } catch (_) {}
-  const mapa = {
-    caja:["🛒","Venta"], inventario:["📦","Inventario"], corte:["💰","Caja"], panelVentas:["📈","Panel"], reportes:["📊","Reportes"],
-    preventas:["📋","Preventas"], pendientes:["📝","Compras"], historial:["🧾","Historial"], productos:["🍗","Productos"], gastos:["💸","Gastos"], config:["⚙️","Config."]
+  const rol = typeof rolActual === "function" ? rolActual() : "admin";
+  const predeterminados = {
+    admin: ["caja", "inventario", "corte", "panelVentas", "reportes"],
+    encargado: ["caja", "inventario", "corte", "historial", "reportes"],
+    cajero: ["caja", "preventas", "pendientes", "historial"]
   };
+  const mapa = {
+    caja: ["🛒", "Venta"], inventario: ["📦", "Inventario"], corte: ["💰", "Caja"],
+    panelVentas: ["📈", "Panel"], reportes: ["📊", "Reportes"], preventas: ["📋", "Preventas"],
+    pendientes: ["📝", "Pendientes"], historial: ["🧾", "Historial"]
+  };
+  const guardado = typeof leerMenuInferior === "function" ? leerMenuInferior(typeof usuarioActual === "function" ? usuarioActual() : { rol }) : (typeof LS !== "undefined" ? LS.get("menuInferiorPOS", null) : null);
+  let menu = Array.isArray(guardado) ? guardado.filter((id, i, arr) => mapa[id] && arr.indexOf(id) === i).slice(0, 5) : [...(predeterminados[rol] || predeterminados.cajero)];
+  if (!menu.includes("caja")) menu.unshift("caja");
+  menu = ["caja", ...menu.filter(id => id !== "caja")].slice(0, 5);
+  nav.querySelectorAll("button[data-menu]").forEach(btn => { btn.style.display = "none"; });
   menu.forEach(id => {
+    if (typeof vistaPermitida === "function" && !vistaPermitida(id)) return;
     let btn = nav.querySelector(`button[data-menu="${id}"]`);
-    if (!btn) { btn = document.createElement("button"); btn.dataset.view = id; btn.dataset.menu = id; btn.onclick = () => cambiarVista(id); nav.appendChild(btn); }
-    btn.innerHTML = `<span class="ico">${mapa[id][0]}</span><span>${mapa[id][1]}</span>`;
-    btn.style.display = "";
+    if (!btn) { btn = document.createElement("button"); btn.dataset.view = id; btn.dataset.menu = id; btn.onclick = () => cambiarVista(id); }
+    const [icono, texto] = mapa[id];
+    btn.innerHTML = `<span class="ico">${icono}</span><span>${texto}</span>`;
+    btn.style.display = ""; nav.appendChild(btn);
   });
-  nav.querySelectorAll("button[data-menu]").forEach(btn => { btn.style.display = menu.includes(btn.dataset.menu) ? "" : "none"; });
-  const visibles = menu.filter((id, i, a) => a.indexOf(id) === i).length;
-  nav.style.gridTemplateColumns = `repeat(${Math.max(1, Math.min(5, visibles))}, minmax(0, 1fr))`;
-  nav.style.overflowX = "hidden";
-  const activo = nav.querySelector(`button[data-menu="${document.querySelector(".vista.activa")?.id || "caja"}"]`);
-  nav.querySelectorAll("button").forEach(b => b.classList.toggle("activo", b === activo));
+  const visibles = [...nav.querySelectorAll("button[data-menu]")].filter(b => b.style.display !== "none");
+  nav.style.display = "flex"; nav.style.flexWrap = "nowrap"; nav.style.justifyContent = "space-around"; nav.style.overflowX = "hidden";
+  visibles.forEach(btn => { btn.style.flex = "1 1 0"; btn.style.minWidth = "0"; btn.style.width = "auto"; });
+  const vistaActiva = document.querySelector(".vista.activa")?.id || "caja";
+  nav.querySelectorAll("button").forEach(b => b.classList.toggle("activo", b.dataset.menu === vistaActiva));
 }

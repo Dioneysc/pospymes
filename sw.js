@@ -1,5 +1,5 @@
 // Sube este número cada vez que publiques cambios (v39 → v40 …)
-const VERSION = "103-menu-inferior-ancho-completo";
+const VERSION = "104-menu-por-usuario";
 const CACHE = `pos-polleria-${VERSION}`;
 
 // Sin estos archivos la app no funciona: si falta alguno, la instalación falla y se conserva la versión anterior
@@ -34,6 +34,8 @@ const NUCLEO = [
   "./js/firebase-config.js",
   "./js/sync.js",
   "./js/papelera.js",
+  "./js/mantenimiento.js",
+  "./js/usuarios.js",
   "./js/app.js"
 ];
 

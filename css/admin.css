@@ -290,7 +290,7 @@
 
 
 /* Selector compacto del menú inferior: reduce altura sin cambiar funciones */
-.config-menu-card { grid-column: 1 / -1; }
+.config-menu-card { margin-bottom: 14px; }
 .config-ayuda { color: var(--texto-secundario, #64748b); font-size: 12px; line-height: 1.35; margin: 0 0 8px; }
 .menu-inferior-opciones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .menu-inferior-fijo, .menu-inferior-opcion { min-height: 38px; display: flex; align-items: center; gap: 7px; padding: 6px 8px; border: 1px solid var(--borde, #e2e8f0); border-radius: 9px; background: var(--fondo-card, #fff); color: var(--texto, #0f172a); box-sizing: border-box; }
@@ -307,10 +307,10 @@
 .menu-inferior-opcion input:checked + .menu-opcion-switch::after { transform: translateX(11px); }
 .menu-inferior-opcion input:focus-visible + .menu-opcion-switch { outline: 3px solid color-mix(in srgb, var(--naranja, #f97316) 35%, transparent); outline-offset: 2px; }
 .config-menu-acciones { display:flex; justify-content:flex-end; gap:8px; margin-top:8px; flex-wrap:wrap; }
-.nav-inferior { overflow-x: auto; justify-content: flex-start; scrollbar-width: none; }
+.nav-inferior { display: flex; flex-wrap: nowrap; overflow-x: hidden; justify-content: space-around; align-items: stretch; }
 .nav-inferior::-webkit-scrollbar { display:none; }
-.nav-inferior button { flex: 1 0 68px; min-width: 62px; }
-@media (max-width: 520px) { .menu-inferior-opciones { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; } .menu-inferior-opcion { min-height: 36px; padding: 5px 6px; gap: 5px; } .menu-opcion-texto { font-size: 11px; } .menu-opcion-icono { font-size: 15px; } .menu-opcion-switch { width: 27px; height: 17px; flex-basis: 27px; } .menu-opcion-switch::after { width: 11px; height: 11px; } .menu-inferior-opcion input:checked + .menu-opcion-switch::after { transform: translateX(10px); } .config-menu-acciones button { flex:1; } .nav-inferior button { flex: initial; min-width: 0; width: 100%; padding-inline: 1px; font-size: 9px; } }
+.nav-inferior button { flex: 1 1 0; min-width: 0; width: auto; box-sizing: border-box; }
+@media (max-width: 520px) { .menu-inferior-opciones { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; } .menu-inferior-opcion { min-height: 36px; padding: 5px 6px; gap: 5px; } .menu-opcion-texto { font-size: 11px; } .menu-opcion-icono { font-size: 15px; } .menu-opcion-switch { width: 27px; height: 17px; flex-basis: 27px; } .menu-opcion-switch::after { width: 11px; height: 11px; } .menu-inferior-opcion input:checked + .menu-opcion-switch::after { transform: translateX(10px); } .config-menu-acciones button { flex:1; } .nav-inferior button { flex: 1 1 0; min-width: 0; width: auto; padding-inline: 1px; font-size: 9px; } }
 
 
 /* Análisis detallado simplificado: comparación visual entre periodos */
@@ -397,3 +397,28 @@
 /* v110: opciones de menú deshabilitadas al alcanzar el máximo de cinco accesos totales */
 .menu-opcion-deshabilitada { opacity: .48; }
 .menu-inferior-opcion input:disabled + .menu-opcion-switch { cursor: not-allowed; }
+
+/* Menú inferior ordenable: las opciones ahora son botones */
+button.menu-inferior-opcion { font: inherit; text-align: left; width: 100%; }
+.menu-inferior-ordenable .btn-mini { min-width: 30px; padding: 4px 8px; }
+.menu-inferior-ordenable .btn-mini:disabled, button.menu-inferior-opcion:disabled { opacity: .45; cursor: not-allowed; }
+
+/* Asa de arrastre del menú inferior (táctil) */
+.menu-arrastre { touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; font-size: 22px; line-height: 1; padding: 8px 10px; margin: -6px 0 -6px -6px; color: var(--texto-secundario, #64748b); border-radius: 8px; }
+.menu-inferior-ordenable { user-select: none; -webkit-user-select: none; transition: box-shadow .15s, transform .15s; }
+.menu-inferior-ordenable.arrastrando { border-color: var(--naranja, #f97316); box-shadow: 0 8px 22px rgba(249,115,22,.35); transform: scale(1.02); position: relative; z-index: 5; }
+.menu-inferior-ordenable.arrastrando .menu-arrastre { cursor: grabbing; color: var(--naranja, #f97316); }
+
+
+/* Configuración compacta del menú inferior */
+.config-menu-card { padding: 12px 14px; }
+.config-menu-summary { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px 12px; cursor:pointer; list-style:none; font-weight:800; }
+.config-menu-summary::-webkit-details-marker { display:none; }
+.config-menu-summary::after { content:"＋"; margin-left:auto; color:var(--naranja,#f97316); font-size:18px; }
+.config-menu-card[open] .config-menu-summary::after { content:"−"; }
+.config-menu-summary small { color:var(--texto-secundario,#64748b); font-size:11px; font-weight:500; }
+.menu-inferior-fila { display:grid; grid-template-columns:minmax(0,1fr) 20px 30px 30px; align-items:center; gap:5px; margin:5px 0; }
+.menu-inferior-fila .menu-inferior-opcion { min-width:0; }
+.menu-inferior-fila .menu-orden { text-align:center; font-size:11px; color:var(--texto-secundario,#64748b); }
+.menu-inferior-fila .btn-mini { min-width:28px; padding:5px; }
+@media(max-width:520px){ .config-menu-card{padding:10px;} .config-menu-summary{font-size:14px;} .config-menu-summary small{flex-basis:100%;} .menu-inferior-fila{grid-template-columns:minmax(0,1fr) 16px 27px 27px;gap:3px;} }

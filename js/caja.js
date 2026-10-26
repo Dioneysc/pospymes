@@ -452,6 +452,7 @@ function guardarCorte(esperado, efectivo, tarjeta, transf, total) {
   window._fechaHistorialCortes = corte.dia;
   renderHistorialCortes();
   mostrarAlertaStock();
+  if (typeof respaldoAutomatico === "function") respaldoAutomatico("corte"); // antes de imprimir: no debe depender de la impresora
   imprimirCorte(corte);
 }
 
@@ -559,7 +560,7 @@ function imprimirCorte(c) {
   const resultado = resumenResultadoCorte(c);
   const logoNegocio = typeof obtenerLogoNegocio === "function" ? obtenerLogoNegocio() : "";
   imprimirHTML(`
-    ${logoNegocio ? `<div class="c"><img src="${logoNegocio}" alt="Logotipo" style="max-width:90px;max-height:70px;object-fit:contain"></div>` : ""}
+    ${logoNegocio ? `<div class="c"><img src="${escapeHTML(logoNegocio)}" alt="Logotipo" style="max-width:90px;max-height:70px;object-fit:contain"></div>` : ""}
     <div class="c b g">${escapeHTML(n.nombre || "POS")}</div>
     ${n.slogan ? `<div class="c">${escapeHTML(n.slogan)}</div>` : ""}
     ${n.direccion ? `<div class="c">${escapeHTML(n.direccion)}</div>` : ""}

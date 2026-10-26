@@ -26,6 +26,12 @@
   --texto-suave: #64748b;
   --ok: #10b981;
   --warn: #f59e0b;
+  /* Alias usados en JS/HTML (antes sin definir: en modo oscuro quedaban fondos blancos con texto claro) */
+  --card: #ffffff;
+  --fondo-card: #ffffff;
+  --superficie: #ffffff;
+  --fondo: #f8fafc;
+  --texto-secundario: #64748b;
 }
 
 .oculto { display: none !important; }
@@ -92,11 +98,11 @@ main { padding: 14px; padding-bottom: 96px; max-width: 1600px; margin: 0 auto; }
 
 .vista-header h2 { font-size: 20px; color: var(--gris-oscuro); font-weight: 800; }
 
-.nav-inferior { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--borde); display: none; grid-template-columns: repeat(5, minmax(0, 1fr)); z-index: 200; box-shadow: 0 -4px 20px rgba(0,0,0,.06); padding-bottom: env(safe-area-inset-bottom); }
+.nav-inferior { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--borde); display: none; display: none; flex-wrap: nowrap; align-items: stretch; justify-content: space-around; z-index: 200; box-shadow: 0 -4px 20px rgba(0,0,0,.06); padding-bottom: env(safe-area-inset-bottom); }
 
-body.app-autenticada .nav-inferior { display: grid; }
+body.app-autenticada .nav-inferior { display: flex; }
 
-.nav-inferior button { background: transparent; border: none; padding: 10px 4px; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; color: var(--texto-suave); cursor: pointer; font-weight: 700; transition: all .15s; border-radius: 0; }
+.nav-inferior button { flex: 1 1 0; min-width: 0; width: auto; background: transparent; border: none; padding: 10px 4px; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; color: var(--texto-suave); cursor: pointer; font-weight: 700; transition: all .15s; border-radius: 0; }
 
 .nav-inferior button .ico { font-size: 22px; line-height: 1; }
 

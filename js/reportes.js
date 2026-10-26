@@ -436,7 +436,8 @@ function exportarCSV() {
     v.subtotal || 0, v.descuento || 0, v.propina || 0, v.total || 0, v.metodo || "",
     v.cancelada ? "Cancelada" : "Activa"
   ]));
-  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const celda = c => { let s = String(c ?? ""); if (/^[=+\-@\t\r]/.test(s) && isNaN(Number(s))) s = "'" + s; return `"${s.replace(/"/g, '""')}"`; };
+  const csv = rows.map(r => r.map(celda).join(",")).join("\n");
   const ok = guardarArchivoTexto(`ventas_${hoy()}.csv`, "\ufeff" + csv, "text/csv;charset=utf-8");
   if (ok) toast("📥 CSV descargado");
 }

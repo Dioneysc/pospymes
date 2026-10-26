@@ -98,7 +98,8 @@ function androidImprimirCorte(corte) {
     };
 
     try {
-        return Android.printTicket(JSON.stringify(datos)) === true;
+        // Igual que en el ticket: solo un false explícito es fallo (si el puente no devuelve nada, se da por enviado)
+        return Android.printTicket(JSON.stringify(datos)) !== false;
     } catch (e) {
         console.error("Error al imprimir corte:", e);
         return false;
@@ -318,7 +319,7 @@ function imprimirPrueba() {
 
   try {
     const ok = Android.printTicket(JSON.stringify(testTicket));
-    if (ok) {
+    if (ok !== false) {
       toast("✅ Impresión enviada");
     } else {
       toast("❌ Error al imprimir");

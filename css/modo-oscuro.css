@@ -9,6 +9,11 @@ body.modo-oscuro {
   --texto: #f1f5f9;
   --texto-suave: #94a3b8;
   --gris-oscuro: #f8fafc;
+  --card: #1e293b;
+  --fondo-card: #1e293b;
+  --superficie: #1e293b;
+  --fondo: #0f172a;
+  --texto-secundario: #94a3b8;
 }
 
 body.modo-oscuro {

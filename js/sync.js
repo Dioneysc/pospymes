@@ -5,9 +5,9 @@
    Datos en: negocios/{uid}/{productos|insumos|ventas|gastos|usuarios|cortes|config}
    ============================================ */
 
-const SYNC_COLS = ["productos", "insumos", "ventas", "gastos", "usuarios", "cortes", "preventasPendientes", "gastosPersonales", "cajaFuerteMovimientos"]; // listas de registros con id
+const SYNC_COLS = ["productos", "insumos", "ventas", "gastos", "usuarios", "cortes", "preventasPendientes", "gastosPersonales", "cajaFuerteMovimientos", "bitacora"]; // listas de registros con id
 const SYNC_CFG = ["negocio", "catsGasto", "cajaHoy", "cajaFuerteSaldoAjuste", "menuInferiorPOS"]; // valores únicos (carpeta config)
-const SYNC_LOCAL_LISTS = new Set(["preventasPendientes", "gastosPersonales", "cajaFuerteMovimientos"]);
+const SYNC_LOCAL_LISTS = new Set(["preventasPendientes", "gastosPersonales", "cajaFuerteMovimientos", "bitacora"]);
 const SYNC_CLAVES = new Set([...SYNC_COLS, ...SYNC_CFG]);
 const FB_VER = "10.12.2";
 
@@ -193,6 +193,8 @@ async function descargarTodo() {
     const k = d.id, o = d.data();
     if (SYNC_CFG.includes(k) && o.valor !== undefined) { escribir(k, o.valor); syncMeta.synced.config[k] = hashDe(o.valor); syncMeta.cfgT[k] = o._t || 0; }
   });
+  // Si la nube no tenía usuarios, escribir([]) dejaba el sistema sin acceso hasta recargar
+  if (typeof actualizarPantallaLogin === "function") actualizarPantallaLogin(); // sin usuarios en la nube: el próximo ingreso pedirá crear contraseña
   guardarMeta();
 }
 

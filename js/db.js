@@ -36,15 +36,13 @@ function guardar() {
 }
 
 function nuevoId(arr) {
-  const max = arr.length ? Math.max(...arr.map(x => x.id)) : 0;
+  const max = arr.reduce((m, x) => Math.max(m, Number(x && x.id) || 0), 0); // reduce: evita el límite de argumentos de Math.max(...)
   const slot = typeof SYNC_SLOT !== "undefined" ? SYNC_SLOT : 0;
   if (!slot) return max + 1;                     // sin sincronización: consecutivo, como siempre
   return Math.floor(max / 10) * 10 + 10 + slot;  // con varios dispositivos: cada uno usa su terminación (1-9) y nunca chocan
 }
 
 /* ============ SEED LIMPIO ============ */
-function seed() {
-  if (DB.usuarios.length) return;
-  DB.usuarios = [{ id: 1, username: "admin", password: "admin123", rol: "admin", nombre: "Administrador", cambiarPass: true }];
-  guardar();
-}
+// Ya no se crea un usuario con contraseña por defecto: en el primer uso la pantalla de
+// inicio pide crear la contraseña del administrador (ver auth.js → crearAdministradorInicial).
+function seed() { /* sin datos iniciales de usuarios */ }

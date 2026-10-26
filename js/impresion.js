@@ -16,7 +16,7 @@ function mostrarTicketImpresion(v) {
   const logoNegocio = typeof obtenerLogoNegocio === "function" ? obtenerLogoNegocio() : "";
   abrirModal("🧾 Ticket de venta", `
     <div class="ticket-preview">
-      ${logoNegocio ? `<div class="centro"><img src="${logoNegocio}" alt="Logotipo" style="max-width:90px;max-height:70px;object-fit:contain"></div>` : ""}
+      ${logoNegocio ? `<div class="centro"><img src="${escapeHTML(logoNegocio)}" alt="Logotipo" style="max-width:90px;max-height:70px;object-fit:contain"></div>` : ""}
       <div class="centro bold grande">${escapeHTML(n.nombre || "POS")}</div>
       <div class="centro">${escapeHTML(n.slogan || "")}</div>
       ${n.direccion ? `<div class="centro">${escapeHTML(n.direccion)}</div>` : ""}
@@ -116,6 +116,7 @@ function imprimirHTML(html, clase) {
   setTimeout(() => {
     try { window.print(); } catch (e) { toast("⚠️ No se pudo imprimir"); return limpiar(); }
     setTimeout(() => {
+      if (hecho) return; // ya se limpió con afterprint: no dejar listeners huérfanos
       window.addEventListener("focus", limpiar);
       document.addEventListener("pointerdown", limpiar);
     }, 1500);
@@ -130,7 +131,7 @@ function imprimirTicket(v) {
 
   const logoNegocio = typeof obtenerLogoNegocio === "function" ? obtenerLogoNegocio() : "";
   imprimirHTML(`
-    ${logoNegocio ? `<div class="c"><img src="${logoNegocio}" alt="Logotipo" style="max-width:90px;max-height:70px;object-fit:contain"></div>` : ""}
+    ${logoNegocio ? `<div class="c"><img src="${escapeHTML(logoNegocio)}" alt="Logotipo" style="max-width:90px;max-height:70px;object-fit:contain"></div>` : ""}
     <div class="c b g">${escapeHTML(n.nombre || "POS")}</div>
     <div class="c">${escapeHTML(n.slogan || "")}</div>
     <div class="c">${escapeHTML(n.direccion || "")}</div>

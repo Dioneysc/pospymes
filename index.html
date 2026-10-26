@@ -30,9 +30,10 @@
     <form id="formLogin" autocomplete="off" onsubmit="event.preventDefault(); hacerLogin();">
       <input id="user" placeholder="Usuario" value="admin" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" name="pos_u">
       <input id="pass" type="password" placeholder="Contraseña" autocomplete="new-password" name="pos_p">
-      <button type="submit">Entrar</button>
+      <input id="passLoginConfirm" class="oculto" type="password" placeholder="Repite la contraseña" autocomplete="new-password" name="pos_p2">
+      <button type="submit" id="btnLogin">Entrar</button>
     </form>
-    <p class="hint">Usuario inicial: <b>admin</b> · Cambia la contraseña en Configuración</p>
+    <p class="hint" id="loginHint">Cambia tu contraseña desde Configuración</p>
   </div>
 </div>
 
@@ -202,7 +203,7 @@
       </div>
       <div id="resumenPreventas" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px"></div>
       <div style="margin-bottom:14px">
-        <input id="buscarPreventa" type="search" placeholder="🔍 Buscar por número, producto o nota..." oninput="renderListaPreventas()" style="width:100%;padding:12px;border:2px solid var(--borde);border-radius:12px;background:#fff;box-sizing:border-box">
+        <input id="buscarPreventa" type="search" placeholder="🔍 Buscar por número, producto o nota..." oninput="renderListaPreventas()" style="width:100%;padding:12px;border:2px solid var(--borde);border-radius:12px;background:var(--fondo,#fff);color:var(--texto);box-sizing:border-box">
       </div>
       <div id="listaPreventasContenido"></div>
     </section>
@@ -243,7 +244,7 @@
         <h2>💸 Gastos</h2>
         <button class="btn-primary" onclick="abrirFormGasto()">+ Nuevo gasto</button>
       </div>
-      <details id="seccionCategoriasGastos" class="card-config" style="margin-bottom:14px">
+      <details id="seccionCategoriasGastos" class="card-config" data-permiso="catalogo" style="margin-bottom:14px">
         <summary id="resumenCategoriasGastos" style="cursor:pointer;font-weight:800;font-size:15px">🏷️ Categorías de gasto</summary>
         <div id="listaCategoriasGastos" style="margin:12px 0"></div>
         <div style="display:flex;gap:6px">
@@ -268,17 +269,23 @@
       <div class="vista-header">
         <h2>⚙️ Configuración</h2>
       </div>
-      <div class="config-grid">
-        <div class="card-config config-menu-card">
-          <h3>📱 Menú inferior</h3>
-          <p class="config-ayuda">Elige qué accesos quieres tener visibles en la barra inferior. Venta siempre estará disponible.</p>
-          <div id="configMenuInferior" class="menu-inferior-opciones"></div>
+      <details class="card-config config-menu-card" data-permiso="config_total" id="configMenuInferior" style="margin-bottom:14px">
+          <summary class="config-menu-summary">
+            <span>📱 Menú inferior de Ventas</span>
+            <small>Elegir y ordenar accesos</small>
+          </summary>
+          <p class="config-ayuda">Configura el menú de cada usuario. Venta siempre estará disponible y los permisos siguen teniendo prioridad.</p>
+          <label for="configMenuUsuario">Usuario</label>
+          <select id="configMenuUsuario" onchange="renderConfigMenuInferior()"></select>
+          <div id="configMenuInferiorOpciones" class="menu-inferior-opciones"></div>
           <div class="config-menu-acciones">
             <button type="button" class="btn-secondary" onclick="restablecerMenuInferior()">Restablecer</button>
             <button type="button" class="btn-primary" onclick="guardarMenuInferior()">Guardar menú</button>
           </div>
-        </div>
-        <div class="card-config">
+        </details>
+
+      <div class="config-grid">
+        <div class="card-config" data-permiso="config_total">
           <h3>🏪 Datos del negocio</h3>
           <input id="cfgNombre" placeholder="Nombre del negocio">
           <input id="cfgSlogan" placeholder="Eslogan (ej: Asados al carbón)">
@@ -305,7 +312,7 @@
           <button class="btn-primary" onclick="cambiarPassword()" style="margin-top:8px">🔐 Cambiar</button>
         </div>
 
-        <div class="card-config">
+        <div class="card-config" data-permiso="config_total">
           <h3>☁️ Sincronización (Firebase)</h3>
           <p id="syncEstado" style="font-size:13px;color:#64748b;margin-bottom:10px">No conectado.</p>
           <div id="syncForm">
@@ -328,7 +335,7 @@
           </div>
         </div>
 
-        <div class="card-config">
+        <div class="card-config" data-permiso="config_total">
           <h3>💾 Respaldo de datos</h3>
           <p style="color:#64748b;font-size:13px;margin-bottom:12px">Exporta y restaura productos, ventas, gastos, caja, preventas y configuración local (incluido el logotipo). Al importar, se intentará guardar primero una copia de seguridad de los datos actuales.</p>
           <div style="display:flex;gap:8px">
@@ -336,6 +343,45 @@
             <input type="file" id="fileImport" accept=".json" style="display:none" onchange="importarBackup(event)">
             <button class="btn-secondary" onclick="document.getElementById('fileImport').click()">📤 Importar</button>
           </div>
+          <div id="mantRespaldoInfo" style="font-size:13px;margin-top:10px"></div>
+          <label style="display:flex;gap:8px;align-items:center;font-size:13px;margin-top:8px">
+            <input type="checkbox" id="mantAutoCorte" onchange="alternarRespaldoAutoCorte(this.checked)" style="width:auto">
+            Guardar un respaldo automático al hacer el corte
+          </label>
+        </div>
+
+        <div class="card-config" data-permiso="config_total">
+          <h3>👥 Usuarios y roles</h3>
+          <p style="color:#64748b;font-size:13px;margin-bottom:8px">
+            <b>Administrador:</b> todo. <b>Encargado:</b> catálogo, inventario, reportes, cancelar tickets y gastos. <b>Cajero:</b> vender y cobrar; cancelar, gastos y descuentos mayores a 10% requieren la contraseña de un supervisor.
+          </p>
+          <div id="listaUsuarios"></div>
+          <button class="btn-secondary" style="margin-top:10px" onclick="abrirFormUsuario()">➕ Nuevo usuario</button>
+        </div>
+
+        <div class="card-config" data-permiso="config_total">
+          <h3>📜 Bitácora</h3>
+          <p style="color:#64748b;font-size:13px;margin-bottom:8px">Quién hizo qué: cancelaciones, eliminaciones, descuentos, gastos, cambios de precio, inventario, cortes y accesos. Se conservan los últimos 1000 registros.</p>
+          <select id="bitFiltro" onchange="renderBitacora()" style="margin-bottom:8px">
+            <option value="">Todas las categorías</option>
+            <option value="ventas">🧾 Ventas</option><option value="caja">💰 Caja</option><option value="inventario">📦 Inventario</option>
+            <option value="catalogo">🍗 Catálogo</option><option value="usuarios">👥 Usuarios</option><option value="sistema">⚙️ Sistema</option>
+          </select>
+          <div id="listaBitacora" style="max-height:360px;overflow-y:auto"></div>
+        </div>
+
+        <div class="card-config" data-permiso="config_total">
+          <h3>🗄️ Almacenamiento</h3>
+          <div id="mantAlmacenamiento"></div>
+          <p style="color:#64748b;font-size:13px;margin-bottom:10px">
+            <b>Archivar ventas antiguas:</b> guarda en un archivo las ventas y gastos con más de
+            <select id="mantMeses" style="width:auto;display:inline-block;padding:4px 8px">
+              <option value="3">3 meses</option><option value="6" selected>6 meses</option><option value="12">12 meses</option>
+            </select>
+            y los quita del sistema para liberar espacio. Queda un resumen por mes. Con la sincronización activa, también se quitan de la nube y de los demás dispositivos.
+          </p>
+          <button class="btn-secondary" onclick="archivarVentasAntiguas()">📦 Archivar ahora</button>
+          <div id="mantResumenHistorico"></div>
         </div>
         <div class="card-config">
           
@@ -366,7 +412,7 @@
             </div>
           </div>
         </div>
-        <div class="card-config peligro">
+        <div class="card-config peligro" data-permiso="config_total">
           <h3>⚠️ Zona peligrosa</h3>
           <p style="color:#64748b;font-size:13px;margin-bottom:12px">Opciones para reiniciar el sistema.</p>
           <div style="display:flex;flex-direction:column;gap:6px">
@@ -451,6 +497,8 @@
 <script src="js/firebase-config.js"></script>
 <script src="js/sync.js"></script>
 <script src="js/papelera.js"></script>
+<script src="js/mantenimiento.js"></script>
+<script src="js/usuarios.js"></script>
 <script src="js/app.js"></script>
 <script src="js/android-bridge.js"></script>
 
