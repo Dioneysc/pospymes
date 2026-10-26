@@ -421,4 +421,21 @@ button.menu-inferior-opcion { font: inherit; text-align: left; width: 100%; }
 .menu-inferior-fila .menu-inferior-opcion { min-width:0; }
 .menu-inferior-fila .menu-orden { text-align:center; font-size:11px; color:var(--texto-secundario,#64748b); }
 .menu-inferior-fila .btn-mini { min-width:28px; padding:5px; }
-@media(max-width:520px){ .config-menu-card{padding:10px;} .config-menu-summary{font-size:14px;} .config-menu-summary small{flex-basis:100%;} .menu-inferior-fila{grid-template-columns:minmax(0,1fr) 16px 27px 27px;gap:3px;} }
+@media(max-width:520px){
+  .config-menu-card{padding:12px;}
+  .config-menu-summary{font-size:16px;}
+  .config-menu-summary small{flex-basis:100%;}
+  /* En celular cada opción ocupa todo el ancho para evitar textos y switches cortados. */
+  .menu-inferior-opciones{grid-template-columns:minmax(0,1fr);gap:7px;}
+  .menu-inferior-fila{grid-template-columns:minmax(0,1fr) 26px 36px 36px;gap:6px;margin:7px 0;}
+  .menu-inferior-fila .menu-inferior-opcion{min-height:46px;padding:8px 10px;gap:8px;}
+  .menu-inferior-fila .menu-opcion-texto{font-size:14px;line-height:1.2;overflow-wrap:anywhere;}
+  .menu-inferior-fila .menu-opcion-icono{font-size:19px;flex-shrink:0;}
+  .menu-inferior-fila .menu-opcion-switch{width:31px;height:19px;flex-basis:31px;flex-shrink:0;}
+  .menu-inferior-fila .menu-opcion-switch::after{width:13px;height:13px;top:3px;left:3px;}
+  .menu-inferior-fila .menu-inferior-opcion input:checked + .menu-opcion-switch::after{transform:translateX(12px);}
+  .menu-inferior-fila .menu-orden{font-size:13px;}
+  .menu-inferior-fila .btn-mini{min-width:34px;min-height:38px;padding:6px;}
+  .config-menu-acciones{gap:8px;}
+  .config-menu-acciones button{flex:1;min-width:0;}
+}
