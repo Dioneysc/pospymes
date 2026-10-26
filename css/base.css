@@ -98,7 +98,7 @@ main { padding: 14px; padding-bottom: 96px; max-width: 1600px; margin: 0 auto; }
 
 .vista-header h2 { font-size: 20px; color: var(--gris-oscuro); font-weight: 800; }
 
-.nav-inferior { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--borde); display: none; display: none; flex-wrap: nowrap; align-items: stretch; justify-content: space-around; z-index: 200; box-shadow: 0 -4px 20px rgba(0,0,0,.06); padding-bottom: env(safe-area-inset-bottom); }
+.nav-inferior { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--borde); display: none; flex-wrap: nowrap; align-items: stretch; justify-content: space-around; z-index: 200; box-shadow: 0 -4px 20px rgba(0,0,0,.06); padding-bottom: env(safe-area-inset-bottom); }
 
 body.app-autenticada .nav-inferior { display: flex; }
 

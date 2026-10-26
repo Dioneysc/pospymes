@@ -133,7 +133,7 @@ function renderCarrito() {
     c.innerHTML = carrito.map((it, i) => `
       <div class="carrito-item">
         <div class="carrito-item-info">
-          <b>${it.emoji || ""} ${escapeHTML(it.nombre)}</b>
+          <b>${escapeHTML(it.emoji || "")} ${escapeHTML(it.nombre)}</b>
           <div class="item-controles">
             <button onclick="cambiarCantidad(${i}, -1)">−</button>
             <span>${it.cantidad}</span>

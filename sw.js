@@ -1,5 +1,5 @@
 // Sube este número cada vez que publiques cambios (v39 → v40 …)
-const VERSION = "105-menu-por-usuario";
+const VERSION = "118-menu-sincronizado-y-correcciones";
 const CACHE = `pos-polleria-${VERSION}`;
 
 // Sin estos archivos la app no funciona: si falta alguno, la instalación falla y se conserva la versión anterior

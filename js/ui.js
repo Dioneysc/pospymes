@@ -131,6 +131,7 @@ function aplicarMenuInferior() {
   const nav = document.querySelector(".nav-inferior");
   if (!nav) return;
   const rol = typeof rolActual === "function" ? rolActual() : "admin";
+  if (!rol) return; // sin sesión (pantalla de acceso): no tocar la barra ni leer/escribir menús
   const predeterminados = {
     admin: ["caja", "inventario", "corte", "panelVentas", "reportes"],
     encargado: ["caja", "inventario", "corte", "historial", "reportes"],
@@ -155,7 +156,8 @@ function aplicarMenuInferior() {
     btn.style.display = ""; nav.appendChild(btn);
   });
   const visibles = [...nav.querySelectorAll("button[data-menu]")].filter(b => b.style.display !== "none");
-  nav.style.display = "flex"; nav.style.flexWrap = "nowrap"; nav.style.justifyContent = "space-around"; nav.style.overflowX = "hidden";
+  // La visibilidad de la barra la controla el CSS (body.app-autenticada); no poner display en línea
+  nav.style.flexWrap = "nowrap"; nav.style.justifyContent = "space-around"; nav.style.overflowX = "hidden";
   visibles.forEach(btn => { btn.style.flex = "1 1 0"; btn.style.minWidth = "0"; btn.style.width = "auto"; });
   const vistaActiva = document.querySelector(".vista.activa")?.id || "caja";
   nav.querySelectorAll("button").forEach(b => b.classList.toggle("activo", b.dataset.menu === vistaActiva));

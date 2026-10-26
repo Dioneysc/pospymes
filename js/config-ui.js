@@ -373,15 +373,16 @@ const MENU_INFERIOR_OPCIONES = [
   { id: "historial", icono: "🧾", nombre: "Historial" }
 ];
 const MENU_INFERIOR_DEFECTO = ["caja", "inventario", "corte", "panelVentas", "reportes"];
-function menuInferiorClaveUsuario(usuario) {
+// Identidad estable del usuario (el id viaja con la sincronización)
+function menuInferiorIdentidad(usuario) {
   const u = usuario || (typeof usuarioActual === "function" ? usuarioActual() : {});
-  const identidad = u && u.id != null ? `id_${u.id}` : `user_${String(u && (u.username || u.nombre) || "admin").toLowerCase().replace(/[^a-z0-9_-]/g, "_")}`;
-  return `menuInferiorPOS_usuario_${identidad}`;
+  return u && u.id != null ? `id_${u.id}` : `user_${String(u && (u.username || u.nombre) || "admin").toLowerCase().replace(/[^a-z0-9_-]/g, "_")}`;
 }
+// Clave antigua (v115-v117): solo existía en el dispositivo donde se configuró; se usa únicamente para migrar
+const menuInferiorClaveUsuario = usuario => `menuInferiorPOS_usuario_${menuInferiorIdentidad(usuario)}`;
 function menuInferiorUsuarioConfigurado() {
   const sel = document.getElementById("configMenuUsuario");
   if (sel && sel.value && typeof DB !== "undefined") {
-    const id = Number(sel.value);
     return DB.usuarios.find(u => String(u.id) === String(sel.value)) || (typeof usuarioActual === "function" ? usuarioActual() : {});
   }
   return typeof usuarioActual === "function" ? usuarioActual() : {};
@@ -395,22 +396,32 @@ function menuInferiorPorDefecto(usuario) {
   };
   return [...(defaults[rol] || MENU_INFERIOR_DEFECTO)];
 }
+// Todos los menús viven en UN valor sincronizado: { id_1: [...], id_3: [...] }.
+// Leer NO escribe nada (antes creaba claves al consultar, incluso sin sesión).
 function leerMenuInferior(usuario) {
   const u = usuario || (typeof usuarioActual === "function" ? usuarioActual() : {});
-  const clave = menuInferiorClaveUsuario(u);
-  let guardado = LS.get(clave, null);
-  // Migración de la preferencia global antigua: se asigna solo al administrador, una vez.
-  if (!Array.isArray(guardado)) {
+  const todos = LS.get("menusPorUsuario", {});
+  let guardado = todos && !Array.isArray(todos) && Array.isArray(todos[menuInferiorIdentidad(u)]) ? todos[menuInferiorIdentidad(u)] : null;
+  if (!guardado) {
+    const porUsuarioAntiguo = LS.get(menuInferiorClaveUsuario(u), null);
     const globalAntiguo = LS.get("menuInferiorPOS", null);
-    guardado = (u && u.rol === "admin" && Array.isArray(globalAntiguo)) ? globalAntiguo : menuInferiorPorDefecto(u);
-    LS.set(clave, guardado);
+    guardado = Array.isArray(porUsuarioAntiguo) ? porUsuarioAntiguo
+      : ((u && u.rol || "admin") === "admin" && Array.isArray(globalAntiguo)) ? globalAntiguo
+      : menuInferiorPorDefecto(u);
   }
   const validos = guardado.filter((id, i, arr) => MENU_INFERIOR_OPCIONES.some(o => o.id === id) && arr.indexOf(id) === i && id !== "caja");
   return ["caja", ...validos].slice(0, 5);
 }
 function guardarMenuInferiorUsuario(usuario, lista) {
-  const u = usuario || (typeof usuarioActual === "function" ? usuarioActual() : {});
-  LS.set(menuInferiorClaveUsuario(u), ["caja", ...lista.filter(id => id !== "caja")].slice(0, 5));
+  const actuales = LS.get("menusPorUsuario", {});
+  const todos = actuales && !Array.isArray(actuales) && typeof actuales === "object" ? { ...actuales } : {};
+  todos[menuInferiorIdentidad(usuario)] = ["caja", ...lista.filter(id => id !== "caja")].slice(0, 5);
+  LS.set("menusPorUsuario", todos);
+}
+// Si el menú editado es el del usuario que tiene la sesión abierta, se refleja al instante
+function aplicarMenuSiEsUsuarioActual(usuario) {
+  const actual = typeof usuarioActual === "function" ? usuarioActual() : {};
+  if (actual && usuario && menuInferiorIdentidad(actual) === menuInferiorIdentidad(usuario) && typeof aplicarMenuInferior === "function") aplicarMenuInferior();
 }
 function renderSelectorMenuInferior() {
   const sel = document.getElementById("configMenuUsuario");
@@ -427,6 +438,7 @@ function renderSelectorMenuInferior() {
 function renderConfigMenuInferior() {
   const cont = document.getElementById("configMenuInferiorOpciones");
   if (!cont) return;
+  if (typeof puede === "function" && !puede("config_total")) return; // solo el administrador configura menús
   renderSelectorMenuInferior();
   const usuario = menuInferiorUsuarioConfigurado();
   const seleccion = leerMenuInferior(usuario);
@@ -449,6 +461,7 @@ function cambiarSeleccionMenuInferior(id, agregar) {
   if (agregar) { if (lista.length >= 5) { toast("Puedes elegir hasta 5 accesos, incluyendo Venta"); return renderConfigMenuInferior(); } if (!lista.includes(id)) lista.push(id); }
   else lista = lista.filter(x => x !== id);
   guardarMenuInferiorUsuario(usuario, lista);
+  aplicarMenuSiEsUsuarioActual(usuario);
   renderConfigMenuInferior();
 }
 function moverMenuInferior(id, delta) {
@@ -456,22 +469,22 @@ function moverMenuInferior(id, delta) {
   const lista = leerMenuInferior(usuario); const i = lista.indexOf(id); const j = i + delta;
   if (i < 1 || j < 1 || j >= lista.length) return;
   [lista[i], lista[j]] = [lista[j], lista[i]];
-  guardarMenuInferiorUsuario(usuario, lista); renderConfigMenuInferior();
+  guardarMenuInferiorUsuario(usuario, lista);
+  aplicarMenuSiEsUsuarioActual(usuario);
+  renderConfigMenuInferior();
 }
+// Los cambios ya se guardan al marcar/mover; este botón confirma y refleja el menú de inmediato
 function guardarMenuInferior() {
   const usuario = menuInferiorUsuarioConfigurado();
-  const lista = leerMenuInferior(usuario);
-  guardarMenuInferiorUsuario(usuario, lista);
-  const actual = typeof usuarioActual === "function" ? usuarioActual() : {};
-  if (actual && String(actual.id) === String(usuario.id) && typeof aplicarMenuInferior === "function") aplicarMenuInferior();
+  guardarMenuInferiorUsuario(usuario, leerMenuInferior(usuario));
+  aplicarMenuSiEsUsuarioActual(usuario);
   toast("✅ Menú guardado para " + (usuario.nombre || usuario.username || "el usuario seleccionado"));
 }
 function restablecerMenuInferior() {
   if (!confirm("¿Restablecer el menú del usuario seleccionado a los accesos predeterminados de su rol?")) return;
   const usuario = menuInferiorUsuarioConfigurado();
   guardarMenuInferiorUsuario(usuario, menuInferiorPorDefecto(usuario));
+  aplicarMenuSiEsUsuarioActual(usuario);
   renderConfigMenuInferior();
-  const actual = typeof usuarioActual === "function" ? usuarioActual() : {};
-  if (actual && String(actual.id) === String(usuario.id) && typeof aplicarMenuInferior === "function") aplicarMenuInferior();
   toast("Menú restablecido para " + (usuario.nombre || usuario.username || "el usuario seleccionado"));
 }

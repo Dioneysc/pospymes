@@ -307,7 +307,8 @@
 .menu-inferior-opcion input:checked + .menu-opcion-switch::after { transform: translateX(11px); }
 .menu-inferior-opcion input:focus-visible + .menu-opcion-switch { outline: 3px solid color-mix(in srgb, var(--naranja, #f97316) 35%, transparent); outline-offset: 2px; }
 .config-menu-acciones { display:flex; justify-content:flex-end; gap:8px; margin-top:8px; flex-wrap:wrap; }
-.nav-inferior { display: flex; flex-wrap: nowrap; overflow-x: hidden; justify-content: space-around; align-items: stretch; }
+/* No fijar display aquí: base.css la muestra solo con body.app-autenticada (si no, aparece sobre el login) */
+.nav-inferior { flex-wrap: nowrap; overflow-x: hidden; justify-content: space-around; align-items: stretch; }
 .nav-inferior::-webkit-scrollbar { display:none; }
 .nav-inferior button { flex: 1 1 0; min-width: 0; width: auto; box-sizing: border-box; }
 @media (max-width: 520px) { .menu-inferior-opciones { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; } .menu-inferior-opcion { min-height: 36px; padding: 5px 6px; gap: 5px; } .menu-opcion-texto { font-size: 11px; } .menu-opcion-icono { font-size: 15px; } .menu-opcion-switch { width: 27px; height: 17px; flex-basis: 27px; } .menu-opcion-switch::after { width: 11px; height: 11px; } .menu-inferior-opcion input:checked + .menu-opcion-switch::after { transform: translateX(10px); } .config-menu-acciones button { flex:1; } .nav-inferior button { flex: 1 1 0; min-width: 0; width: auto; padding-inline: 1px; font-size: 9px; } }

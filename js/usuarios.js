@@ -224,7 +224,7 @@ function instalarProtecciones() {
   proteger("exportarCSV", "ver_reportes");
 
   // Configuración (solo administrador)
-  ["previsualizarLogoNegocio", "conectarSync", "sincronizarAhora", "alternarRespaldoAutoCorte"].forEach(n => proteger(n, "config_total"));
+  ["previsualizarLogoNegocio", "conectarSync", "sincronizarAhora", "alternarRespaldoAutoCorte", "guardarMenuInferior", "restablecerMenuInferior", "cambiarSeleccionMenuInferior", "moverMenuInferior"].forEach(n => proteger(n, "config_total"));
   proteger("guardarNegocio", "config_total", { antes: () => JSON.stringify(DB.negocio), log: (a, ya) => JSON.stringify(DB.negocio) !== ya ? ["sistema", "Datos del negocio modificados", DB.negocio.nombre || ""] : null });
   proteger("eliminarLogoNegocio", "config_total", { log: () => ["sistema", "Logotipo eliminado", ""] });
   proteger("exportarBackup", "config_total", { log: () => ["sistema", "Respaldo exportado", ""] });
@@ -308,35 +308,6 @@ function instalarNavegacion() {
     aplicarPermisosUI();
     if (nombre === "config" && puede("config_total")) { renderUsuarios(); renderBitacora(); }
     return r;
-  };
-  const am = window.aplicarMenuInferior;
-  window.aplicarMenuInferior = function () {
-    // Primero, ui.js aplica la selección guardada del administrador y mantiene Venta fija.
-    if (typeof am === "function") am();
-    const nav = document.querySelector(".nav-inferior"); if (!nav) return;
-    const botones = [...nav.querySelectorAll("button[data-menu]")];
-    // Importante: no volver a mostrar botones que el administrador quitó del menú.
-    // Esta capa solo puede ocultar opciones no autorizadas; nunca agregar opciones.
-    botones.forEach(b => {
-      if (!vistaPermitida(b.dataset.menu)) b.style.display = "none";
-    });
-    // Venta es el acceso fijo y predeterminado, incluso si la configuración guardada está dañada.
-    const venta = nav.querySelector('button[data-menu="caja"]');
-    if (venta) {
-      venta.style.display = "";
-      nav.prepend(venta);
-    }
-    const visibles = botones.filter(b => b.style.display !== "none");
-    nav.style.display = "flex";
-    nav.style.flexWrap = "nowrap";
-    nav.style.gridTemplateColumns = "none";
-    nav.style.justifyContent = "space-around";
-    nav.style.overflowX = "hidden";
-    visibles.forEach(b => {
-      b.style.flex = `1 1 0`;
-      b.style.minWidth = "0";
-      b.style.width = "auto";
-    });
   };
   const ea = window.entrarApp;
   window.entrarApp = function () {
