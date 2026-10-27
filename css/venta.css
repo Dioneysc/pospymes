@@ -34,6 +34,11 @@
 
 .prod-precio { font-weight: 800; font-size: 16px; color: var(--gris-oscuro); margin-top: auto; }
 
+/* Existencias estimadas por receta, sin alterar el diseño de los productos sin inventario. */
+.prod-stock { display: inline-flex; align-items: center; justify-content: center; margin-top: 1px; padding: 3px 7px; border-radius: 999px; background: #dcfce7; color: #166534; font-size: 11px; font-weight: 800; line-height: 1.2; }
+.prod-stock.stock-bajo { background: #fef3c7; color: #92400e; }
+.prod-stock.sin-stock { background: #fee2e2; color: #b91c1c; }
+
 .carrito-panel { background: #fff; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; box-shadow: 0 4px 20px rgba(0,0,0,.06); overflow: hidden; border: 1px solid var(--borde); }
 
 .carrito-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 2px solid var(--gris); margin-bottom: 10px; }

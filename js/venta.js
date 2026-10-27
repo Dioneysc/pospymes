@@ -19,6 +19,30 @@ function cambiarCategoria(c) {
   renderCaja();
 }
 
+// Calcula cuántas unidades completas pueden venderse según los insumos de la receta.
+// Los productos sin receta (por ejemplo, servicios) no muestran stock de insumos.
+function stockDisponibleProducto(p) {
+  if (!p || !Array.isArray(p.insumos) || !p.insumos.length) return null;
+  const receta = p.insumos
+    .map(g => ({ ins: DB.insumos.find(i => String(i.id) === String(g.insumoId)), cantidad: Number(g.cantidad) }))
+    .filter(g => g.cantidad > 0);
+  if (!receta.length || receta.some(g => !g.ins || !Number.isFinite(g.cantidad))) return null;
+  return Math.max(0, Math.min(...receta.map(g => Math.floor((Number(g.ins.stock) + 1e-9) / g.cantidad))));
+}
+
+function actualizarEtiquetasStockProductos() {
+  document.querySelectorAll('#gridProductos .prod-btn[data-product-id]').forEach(btn => {
+    const p = DB.productos.find(x => String(x.id) === btn.dataset.productId);
+    const stock = stockDisponibleProducto(p);
+    const etiqueta = btn.querySelector('.prod-stock');
+    if (!etiqueta) return;
+    if (stock === null) { etiqueta.remove(); return; }
+    etiqueta.textContent = stock === 0 ? 'Agotado' : `Stock: ${stock}`;
+    etiqueta.classList.toggle('sin-stock', stock === 0);
+    etiqueta.classList.toggle('stock-bajo', stock > 0 && stock <= 3);
+  });
+}
+
 function renderCaja() {
   const busq = ($("#buscarProducto")?.value || "").toLowerCase();
   let prods = DB.productos.filter(p => p.activo);
@@ -46,10 +70,11 @@ function renderCaja() {
       ? `<img src="${escapeHTML(p.imagen)}" class="prod-imagen" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'prod-emoji',textContent:this.dataset.e}))" data-e="${emojiSeguro}">`
       : `<div class="prod-emoji">${emojiSeguro}</div>`;
     return `
-      <button class="prod-btn" data-cat="${escapeHTML(p.categoria)}" onclick="agregarAlCarrito(${p.id})">
+      <button class="prod-btn" data-product-id="${String(p.id)}" data-cat="${escapeHTML(p.categoria)}" onclick="agregarAlCarrito(${p.id})">
         ${contenido}
         <span class="prod-nombre">${escapeHTML(p.nombre)}</span>
         <span class="prod-precio">${fmt(p.precio)}</span>
+        ${stockDisponibleProducto(p) === null ? "" : `<span class="prod-stock${stockDisponibleProducto(p) === 0 ? " sin-stock" : stockDisponibleProducto(p) <= 3 ? " stock-bajo" : ""}">${stockDisponibleProducto(p) === 0 ? "Agotado" : `Stock: ${stockDisponibleProducto(p)}`}</span>`}
       </button>
     `;
   }).join("") || `<p style="color:#94a3b8;padding:20px;grid-column:1/-1;text-align:center">Sin resultados</p>`;
@@ -410,6 +435,7 @@ function finalizarVenta(metodo, total, pagoCon, cambio) {
     prod.insumos.forEach(ing => lineasInsumos.push({ i: ing.insumoId, d: -(ing.cantidad * item.cantidad) }));
   });
   registrarMovimientoInventario("venta", lineasInsumos, { ref: venta.id });
+  actualizarEtiquetasStockProductos();
 
   guardar();
   const preventaIdFinalizada = Number(window._preventaEnProcesoId) || 0;
