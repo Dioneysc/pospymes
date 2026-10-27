@@ -440,3 +440,47 @@ button.menu-inferior-opcion { font: inherit; text-align: left; width: 100%; }
   .config-menu-acciones{gap:8px;}
   .config-menu-acciones button{flex:1;min-width:0;}
 }
+
+
+/* v121: conservar la tabla de comparación de productos en móvil; evitar la conversión global a tarjetas */
+@media (max-width: 900px) {
+  #reportes .analisis-productos-unificado .tabla-wrap {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    background: var(--superficie, #fff);
+    border: 1px solid var(--borde);
+    border-radius: 14px;
+  }
+  #reportes .analisis-productos-unificado .tabla-analisis-productos {
+    display: table;
+    width: 100%;
+    min-width: 740px;
+    table-layout: auto;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  #reportes .analisis-productos-unificado .tabla-analisis-productos thead { display: table-header-group; }
+  #reportes .analisis-productos-unificado .tabla-analisis-productos tbody { display: table-row-group; }
+  #reportes .analisis-productos-unificado .tabla-analisis-productos tr {
+    display: table-row;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: var(--superficie, #fff);
+  }
+  #reportes .analisis-productos-unificado .tabla-analisis-productos th,
+  #reportes .analisis-productos-unificado .tabla-analisis-productos td {
+    display: table-cell;
+    padding: 12px 10px;
+    white-space: nowrap;
+    vertical-align: middle;
+    font-size: 12px;
+  }
+  #reportes .analisis-productos-unificado .tabla-analisis-productos td::before { content: none !important; display: none !important; }
+}
