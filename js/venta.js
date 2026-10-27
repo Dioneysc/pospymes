@@ -166,7 +166,7 @@ function cambiarCantidad(i, d) {
   if (!carrito[i]) return;
   carrito[i].cantidad += d;
   if (carrito[i].cantidad <= 0) carrito.splice(i, 1);
-  if (!carrito.length) { window._preventaEnProcesoId = null; cerrarCarritoModal(); }
+  if (!carrito.length) { window._preventaEnProcesoId = null; reiniciarTipoPedido(); cerrarCarritoModal(); }
   renderCarrito();
 }
 
@@ -177,6 +177,7 @@ function limpiarCarrito() {
   window._preventaEnProcesoId = null;
   const campoNotaPedido = document.getElementById("notaPedido");
   if (campoNotaPedido) campoNotaPedido.value = "";
+  reiniciarTipoPedido();
 
   const pD = $("#panelDescuento");
   const tD = $("#toggleDescuento");
@@ -228,6 +229,8 @@ function actualizarToggleValores() {
 
 function cobrar(metodo) {
   if (!carrito.length) return toast("⚠️ Ticket vacío");
+  if (!validarTipoPedido()) return;
+  if (typeof almacenamientoDisponible === "function" && !almacenamientoDisponible()) return; // sin espacio, la venta se perdería al recargar
   initDia(); // si la app quedó abierta pasada la medianoche, la caja del día anterior ya no vale
   if (estadoCajaHoy.fondoInicial === null) {
     toast("⚠️ Abre la caja primero");
@@ -393,18 +396,20 @@ function finalizarVenta(metodo, total, pagoCon, cambio) {
     metodo,
     pagoCon: metodo === "Efectivo" ? pagoCon : total,
     cambio: metodo === "Efectivo" ? cambio : 0,
-    usuario: sesion.nombre || "admin"
+    usuario: sesion.nombre || "admin",
+    tipoPedido,
+    cliente: tipoPedido === "mostrador" ? "" : leerClientePedido()
   };
   DB.ventas.push(venta);
 
+  // Inventario por movimientos: un solo registro por venta (se suma al stock de cada insumo)
+  const lineasInsumos = [];
   carrito.forEach(item => {
     const prod = DB.productos.find(p => p.id === item.productoId);
     if (!prod || !prod.insumos) return;
-    prod.insumos.forEach(ing => {
-      const ins = DB.insumos.find(x => x.id === ing.insumoId);
-      if (ins) ins.stock = Math.max(0, Math.round((ins.stock - ing.cantidad * item.cantidad) * 1e6) / 1e6);
-    });
+    prod.insumos.forEach(ing => lineasInsumos.push({ i: ing.insumoId, d: -(ing.cantidad * item.cantidad) }));
   });
+  registrarMovimientoInventario("venta", lineasInsumos, { ref: venta.id });
 
   guardar();
   const preventaIdFinalizada = Number(window._preventaEnProcesoId) || 0;
@@ -415,6 +420,7 @@ function finalizarVenta(metodo, total, pagoCon, cambio) {
   carrito = []; descuento = 0; descuentoPct = 0; propina = 0;
   const campoNotaPedido = document.getElementById("notaPedido");
   if (campoNotaPedido) campoNotaPedido.value = "";
+  reiniciarTipoPedido();
 
   const pD = $("#panelDescuento");
   const tD = $("#toggleDescuento");
@@ -433,4 +439,52 @@ function finalizarVenta(metodo, total, pagoCon, cambio) {
   } else {
     toast(`✅ Venta #${venta.id} cobrada: ${fmt(total)}`);
   }
+}
+
+
+/* ============ TIPO DE PEDIDO ============ */
+const TIPOS_PEDIDO = {
+  mostrador: { icono: "🏪", nombre: "Mostrador" },
+  llevar: { icono: "🥡", nombre: "Para llevar" },
+  domicilio: { icono: "🛵", nombre: "Domicilio" }
+};
+let tipoPedido = "mostrador";
+
+function seleccionarTipoPedido(t) {
+  if (!TIPOS_PEDIDO[t]) t = "mostrador";
+  tipoPedido = t;
+  document.querySelectorAll("[data-tipo-pedido]").forEach(b => {
+    const on = b.dataset.tipoPedido === t;
+    b.classList.toggle("activo", on);
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+  });
+  const wrap = document.getElementById("clientePedidoWrap");
+  if (wrap) wrap.classList.toggle("oculto", t === "mostrador");
+  const c = document.getElementById("clientePedido");
+  if (c) c.placeholder = t === "domicilio" ? "Nombre, teléfono y dirección (obligatorio)" : "Nombre o teléfono (opcional)";
+}
+const leerClientePedido = () => (document.getElementById("clientePedido")?.value || "").trim().slice(0, 120);
+function reiniciarTipoPedido() {
+  seleccionarTipoPedido("mostrador");
+  const c = document.getElementById("clientePedido");
+  if (c) c.value = "";
+}
+function validarTipoPedido() {
+  if (tipoPedido === "domicilio" && !leerClientePedido()) {
+    toast("🛵 Escribe nombre, teléfono y dirección para el domicilio");
+    const c = document.getElementById("clientePedido");
+    if (c) c.focus();
+    return false;
+  }
+  return true;
+}
+// Texto corto para tickets, historial y WhatsApp ("" para mostrador)
+function lineaTipoPedido(v) {
+  const t = v && v.tipoPedido;
+  if (!t || t === "mostrador" || !TIPOS_PEDIDO[t]) return "";
+  return `${TIPOS_PEDIDO[t].icono} ${TIPOS_PEDIDO[t].nombre}${v.cliente ? " · " + v.cliente : ""}`;
+}
+function tipoPedidoHTML(v, clase) {
+  const l = lineaTipoPedido(v);
+  return l ? `<div class="${clase || "ticket-notas-preview"}"><strong>${escapeHTML(l)}</strong></div>` : "";
 }

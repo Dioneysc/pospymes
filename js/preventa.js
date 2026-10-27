@@ -7,6 +7,7 @@ function guardarPreventa() {
     return toast("⚠️ Agrega productos al carrito antes de guardar una preventa");
   }
 
+  if (!validarTipoPedido()) return;
   const subtotal = redondear2(carrito.reduce((s, item) => s + (Number(item.precio) || 0) * (Number(item.cantidad) || 0), 0));
   const descuentoAplicado = Math.min(redondear2(Number(descuento) || 0), subtotal);
   const total = redondear2(subtotal - descuentoAplicado);
@@ -29,6 +30,8 @@ function guardarPreventa() {
     descuento: descuentoAplicado,
     total,
     nota,
+    tipoPedido,
+    cliente: tipoPedido === "mostrador" ? "" : leerClientePedido(),
     usuario: existente ? (existente.usuario || sesion.nombre || "admin") : (sesion.nombre || "admin")
   };
 
@@ -47,6 +50,7 @@ function guardarPreventa() {
 
   const campoNotaPedido = document.getElementById("notaPedido");
   if (campoNotaPedido) campoNotaPedido.value = "";
+  reiniciarTipoPedido();
 
   const panelDescuento = document.getElementById("panelDescuento");
   const toggleDescuento = document.getElementById("toggleDescuento");
@@ -167,6 +171,7 @@ function compartirPreventaWhatsApp(id) {
   texto += `Subtotal: ${fmt(pedido.subtotal)}\n`;
   if (pedido.descuento) texto += `Descuento: -${fmt(pedido.descuento)}\n`;
   texto += `*TOTAL: ${fmt(pedido.total)}*\n`;
+  if (lineaTipoPedido(pedido)) texto += `${lineaTipoPedido(pedido)}\n`;
   if (pedido.nota) texto += `📝 Nota: ${pedido.nota}\n`;
   texto += `⚠️ Pedido pendiente de cobro.\n`;
   texto += `━━━━━━━━━━━━━━━\n¡Gracias por su preferencia! 🍗`;
@@ -251,6 +256,7 @@ function renderListaPreventas() {
           <span style="color:var(--texto-secundario,#64748b);font-size:13px">Total del pedido</span>
           <strong style="font-size:21px">${fmt(Number(p.total) || 0)}</strong>
         </div>
+        ${lineaTipoPedido(p) ? `<div style="margin-top:10px;padding:9px 10px;background:var(--fondo,#f8fafc);border-radius:9px;font-size:13px"><strong>${escapeHTML(lineaTipoPedido(p))}</strong></div>` : ""}
         ${p.nota ? `<div style="margin-top:10px;padding:9px 10px;background:var(--fondo,#f8fafc);border-radius:9px;font-size:13px"><strong>📝 Nota:</strong> ${escapeHTML(p.nota)}</div>` : ""}
         <details style="margin-top:12px">
           <summary style="cursor:pointer;font-weight:750;font-size:13px;padding:5px 0">Ver productos y detalle</summary>
@@ -315,6 +321,9 @@ function prepararPreventaVenta(id) {
   window._preventaEnProcesoId = Number(pedido.id);
   const campoNota = document.getElementById("notaPedido");
   if (campoNota) campoNota.value = (pedido.nota || "").slice(0, 300);
+  seleccionarTipoPedido(pedido.tipoPedido || "mostrador");
+  const campoCliente = document.getElementById("clientePedido");
+  if (campoCliente) campoCliente.value = (pedido.cliente || "").slice(0, 120);
 
   cambiarVista("caja");
   renderCarrito();

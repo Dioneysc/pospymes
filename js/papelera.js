@@ -70,7 +70,7 @@ function papeleraObservar(col, nueva) {
   // Cambios recibidos desde Firestore no se registran en la papelera local.
   // Tampoco se registran los que se archivan a propósito (ya quedaron en el archivo histórico)
   // ni los recortes automáticos de la bitácora.
-  if (!(typeof syncAplicando !== "undefined" && syncAplicando) && !window._sinPapelera && col !== "bitacora") {
+  if (!(typeof syncAplicando !== "undefined" && syncAplicando) && !window._sinPapelera && col !== "bitacora" && col !== "movimientosInventario") {
     const borrados = [];
     anterior.forEach((reg, id) => {
       if (!ahora.has(id)) borrados.push(reg);

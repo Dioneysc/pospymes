@@ -5,9 +5,9 @@
    Datos en: negocios/{uid}/{productos|insumos|ventas|gastos|usuarios|cortes|config}
    ============================================ */
 
-const SYNC_COLS = ["productos", "insumos", "ventas", "gastos", "usuarios", "cortes", "preventasPendientes", "gastosPersonales", "cajaFuerteMovimientos", "bitacora"]; // listas de registros con id
+const SYNC_COLS = ["productos", "insumos", "ventas", "gastos", "usuarios", "cortes", "preventasPendientes", "gastosPersonales", "cajaFuerteMovimientos", "bitacora", "movimientosInventario"]; // listas de registros con id
 const SYNC_CFG = ["negocio", "catsGasto", "cajaHoy", "cajaFuerteSaldoAjuste", "menusPorUsuario"]; // valores únicos (carpeta config)
-const SYNC_LOCAL_LISTS = new Set(["preventasPendientes", "gastosPersonales", "cajaFuerteMovimientos", "bitacora"]);
+const SYNC_LOCAL_LISTS = new Set(["preventasPendientes", "gastosPersonales", "cajaFuerteMovimientos", "bitacora", "movimientosInventario"]);
 const SYNC_CLAVES = new Set([...SYNC_COLS, ...SYNC_CFG]);
 const FB_VER = "10.12.2";
 
@@ -156,7 +156,7 @@ function aplicarRemoto(c, cambios) {
     if (quitar.size) lista = lista.filter((_, i) => !quitar.has(i));
     if (hubo) escribir(c, lista);
   }
-  if (hubo) { guardarMeta(); refrescarUI(); }
+  if (hubo) { if (typeof alinearInventarioConMovimientos === "function") alinearInventarioConMovimientos(); guardarMeta(); refrescarUI(); }
 }
 
 function refrescarUI() {
@@ -195,6 +195,7 @@ async function descargarTodo() {
   });
   // Si la nube no tenía usuarios, escribir([]) dejaba el sistema sin acceso hasta recargar
   if (typeof actualizarPantallaLogin === "function") actualizarPantallaLogin(); // sin usuarios en la nube: el próximo ingreso pedirá crear contraseña
+  if (typeof alinearInventarioConMovimientos === "function") alinearInventarioConMovimientos(); // stock = suma de los movimientos de todos los dispositivos
   guardarMeta();
 }
 

@@ -3,12 +3,6 @@
    Lee DB existente; no crea ni modifica registros.
    ============================================ */
 
-function fechaInicioLocal(fecha) {
-  const d = new Date(fecha);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
 function obtenerRangoReporte(tipo) {
   const ahora = new Date();
   const desde = new Date(ahora);

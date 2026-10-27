@@ -1,5 +1,5 @@
 // Sube este número cada vez que publiques cambios (v39 → v40 …)
-const VERSION = "118-menu-sincronizado-y-correcciones";
+const VERSION = "v120";
 const CACHE = `pos-polleria-${VERSION}`;
 
 // Sin estos archivos la app no funciona: si falta alguno, la instalación falla y se conserva la versión anterior
@@ -18,6 +18,7 @@ const NUCLEO = [
   "./js/ui.js",
   "./js/productos.js",
   "./js/inventario.js",
+  "./js/movimientos.js",
   "./js/venta.js",
   "./js/preventa.js",
   "./js/impresion.js",
@@ -26,6 +27,7 @@ const NUCLEO = [
   "./js/gastos.js",
   "./js/caja.js",
   "./js/reportes.js",
+  "./js/reportes-equipo.js",
   "./js/pendientes.js",
   "./js/historial.js",
   "./js/config-ui.js",

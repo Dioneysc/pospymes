@@ -24,7 +24,7 @@ function mostrarTicketImpresion(v) {
       <hr>
       <div>Ticket No. ${String(v.id).padStart(6, "0")}</div>
       <div>Fecha: ${new Date(v.fecha).toLocaleDateString("es-MX")} ${new Date(v.fecha).toLocaleTimeString("es-MX", {hour:"2-digit",minute:"2-digit"})}</div>
-      ${v.notas ? `<div class="ticket-notas-preview"><strong>Nota:</strong> ${escapeHTML(v.notas).replace(/\n/g, "<br>")}</div>` : ""}
+      ${tipoPedidoHTML(v)}${v.notas ? `<div class="ticket-notas-preview"><strong>Nota:</strong> ${escapeHTML(v.notas).replace(/\n/g, "<br>")}</div>` : ""}
       <hr>
       <div class="fila bold"><span>Cant.</span><span>Total</span></div>
       <hr>
@@ -140,7 +140,7 @@ function imprimirTicket(v) {
     <div>Ticket #${String(v.id).padStart(6, "0")}</div>
     <div>${new Date(v.fecha).toLocaleString("es-MX")}</div>
     <div>Cajero: ${escapeHTML(v.usuario || "admin")}</div>
-    ${v.notas ? `<div class="ticket-notas-impresion"><strong>Nota:</strong> ${escapeHTML(v.notas).replace(/\n/g, "<br>")}</div>` : ""}
+    ${tipoPedidoHTML(v, "ticket-notas-impresion")}${v.notas ? `<div class="ticket-notas-impresion"><strong>Nota:</strong> ${escapeHTML(v.notas).replace(/\n/g, "<br>")}</div>` : ""}
     <hr>
     ${items}
     <hr>

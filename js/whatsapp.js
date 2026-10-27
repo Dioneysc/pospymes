@@ -49,27 +49,3 @@ function compartirWhatsApp(ventaId) {
   toast("📤 Abriendo WhatsApp...");
 }
 
-/* Compartir con número específico (opcional) */
-function compartirWhatsAppNumero(ventaId) {
-  const v = DB.ventas.find(x => String(x.id) === String(ventaId));
-  if (!v) return;
-
-  const numero = prompt("Número de WhatsApp (con código de país, ej: 521234567890):");
-  if (!numero) return;
-
-  const limpio = numero.replace(/\D/g, "");
-  const n = DB.negocio;
-
-  let texto = `*${n.nombre || "POS"}*\n`;
-  texto += `🧾 Ticket #${String(v.id).padStart(6, "0")}\n`;
-  texto += `━━━━━━━━━━━━━━━\n`;
-  v.items.forEach(it => {
-    texto += `${it.cantidad}x ${it.nombre} — ${fmt(it.precio * it.cantidad)}\n`;
-  });
-  texto += `━━━━━━━━━━━━━━━\n`;
-  texto += `*TOTAL: ${fmt(v.total)}*\n`;
-  texto += `¡Gracias por su compra! 🍗`;
-
-  const url = `https://wa.me/${limpio}?text=${encodeURIComponent(texto)}`;
-  window.open(url, "_blank", "noopener");
-}

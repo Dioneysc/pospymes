@@ -3,7 +3,7 @@
    ============================================ */
 
 /* ============ CONTRASEÑAS (PBKDF2-SHA256 con sal) ============ */
-const PASS_ITER = 100000;
+const PASS_ITER = 310000; // los hashes anteriores (100 mil) siguen funcionando y se actualizan solos al iniciar sesión
 const hayCrypto = () => !!(window.crypto && crypto.subtle);
 const aB64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
 const deB64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
@@ -92,6 +92,7 @@ async function hacerLogin() {
     return toast("🚫 Este usuario está desactivado. Consulta al administrador");
   }
   if (!user.hash && user.password) { await fijarPassword(user, p); guardar(); }
+  else if (user.hash && user.iter && user.iter < PASS_ITER && hayCrypto()) { try { await fijarPassword(user, p); guardar(); } catch (_) {} } // sube la dificultad del hash con la contraseña ya validada
   sessionStorage.setItem("sesion", sesionSegura(user));
   $("#pass").value = "";
   if (typeof registrarBitacora === "function") registrarBitacora("sistema", "Inicio de sesión", "");
@@ -149,6 +150,7 @@ function logout() {
   window._preventaEnProcesoId = null;
   const nota = document.getElementById("notaPedido");
   if (nota) nota.value = "";
+  if (typeof reiniciarTipoPedido === "function") reiniciarTipoPedido();
   cerrarCarritoModal();
   renderCarrito();
 }

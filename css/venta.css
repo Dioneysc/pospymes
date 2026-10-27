@@ -481,3 +481,39 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+
+/* Tipo de pedido (mostrador / para llevar / domicilio) */
+.tipo-pedido-wrap { margin: 10px 0; }
+.tipo-pedido-wrap > label { display: block; font-size: 12px; font-weight: 800; color: var(--texto-suave, #64748b); margin-bottom: 6px; }
+.tipo-pedido-chips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.tipo-chip { border: 2px solid var(--borde, #e2e8f0); background: var(--gris-card, #fff); color: var(--texto, #0f172a); border-radius: 10px; padding: 8px 4px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; line-height: 1.2; }
+.tipo-chip.activo { border-color: var(--naranja, #f97316); background: rgba(249, 115, 22, .12); color: var(--naranja, #f97316); }
+#clientePedidoWrap { margin-top: 6px; }
+#clientePedidoWrap input { width: 100%; box-sizing: border-box; }
+
+
+/* ===== Panel del carrito: encabezado fijo · cuerpo con scroll · pie fijo (Total + pagos + COBRAR siempre visibles) ===== */
+.carrito-panel { overflow: hidden; }
+.carrito-cuerpo { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-right: 2px; }
+.carrito-cuerpo .carrito-lista { flex: 1 1 auto; min-height: 96px; }
+.carrito-cuerpo > * { flex-shrink: 0; }
+.carrito-cuerpo > .carrito-lista { flex-shrink: 1; }
+.carrito-header { flex: 0 0 auto; }
+.carrito-pie { flex: 0 0 auto; padding-top: 6px; }
+.carrito-pie .total-box { margin-bottom: 8px; }
+
+/* Pantallas de poca altura (laptops, tablets en horizontal): compactar para que quepa todo */
+@media (max-height: 760px) {
+  .carrito-panel { padding: 12px; }
+  .carrito-header { padding-bottom: 6px; margin-bottom: 6px; }
+  .tipo-pedido-wrap { margin: 6px 0; }
+  .tipo-pedido-wrap > label { display: none; }           /* los botones se explican solos (tienen aria-label) */
+  .tipo-chip { padding: 6px 4px; }
+  .nota-pedido-wrap { margin: 6px 0; gap: 0; }
+  .nota-pedido-wrap label { display: none; }             /* el textarea conserva su aria-label */
+  .nota-pedido-wrap textarea { min-height: 38px; height: 38px; padding: 7px 9px; }
+  .carrito-pie .total-box { padding: 8px 14px; margin-bottom: 6px; }
+  .carrito-pie .btn-pago { padding-top: 8px; padding-bottom: 8px; }
+  .carrito-pie .btn-cobrar { min-height: 48px; padding: 8px 14px; }
+}

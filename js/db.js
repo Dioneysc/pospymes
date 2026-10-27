@@ -1,5 +1,5 @@
 /* ============================================
-   DB.JS — DATOS: LOCALSTORAGE, DB, GUARDAR Y SEED
+   DB.JS — DATOS: LOCALSTORAGE, DB Y GUARDAR
    ============================================ */
 
 /* ============ DATOS ============ */
@@ -14,7 +14,16 @@ const LS = {
       return def;
     }
   },
-  set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { toast("⚠️ No se pudo guardar: almacenamiento lleno"); } }
+  set: (k, v) => {
+    try {
+      localStorage.setItem(k, JSON.stringify(v));
+      if (window._almacenamientoLleno) { window._almacenamientoLleno = false; if (typeof avisoAlmacenamiento === "function") avisoAlmacenamiento(false); }
+    } catch (e) {
+      window._almacenamientoLleno = true; // aviso permanente hasta que vuelva a guardarse algo
+      toast("⚠️ No se pudo guardar: almacenamiento lleno");
+      if (typeof avisoAlmacenamiento === "function") avisoAlmacenamiento(true);
+    }
+  }
 };
 
 let DB = {
@@ -41,8 +50,3 @@ function nuevoId(arr) {
   if (!slot) return max + 1;                     // sin sincronización: consecutivo, como siempre
   return Math.floor(max / 10) * 10 + 10 + slot;  // con varios dispositivos: cada uno usa su terminación (1-9) y nunca chocan
 }
-
-/* ============ SEED LIMPIO ============ */
-// Ya no se crea un usuario con contraseña por defecto: en el primer uso la pantalla de
-// inicio pide crear la contraseña del administrador (ver auth.js → crearAdministradorInicial).
-function seed() { /* sin datos iniciales de usuarios */ }

@@ -67,7 +67,8 @@
             <h3>🛒 Carrito de venta</h3>
             <button class="btn-trash" onclick="limpiarCarrito()" title="Vaciar">🗑️</button>
           </div>
-          <div id="carrito" class="carrito-lista"></div>
+          <div class="carrito-cuerpo">
+            <div id="carrito" class="carrito-lista"></div>
 
           <div class="toggles-extra">
             <button class="toggle-btn" id="toggleDescuento" onclick="toggleDescuento()">
@@ -78,6 +79,18 @@
               <span>📅 Preventa</span>
               <span class="toggle-val" id="preventaVal"></span>
             </button>
+          </div>
+
+          <div class="tipo-pedido-wrap">
+            <label>Tipo de pedido</label>
+            <div class="tipo-pedido-chips" role="group" aria-label="Tipo de pedido">
+              <button type="button" class="tipo-chip activo" data-tipo-pedido="mostrador" aria-pressed="true" onclick="seleccionarTipoPedido('mostrador')">🏪 Mostrador</button>
+              <button type="button" class="tipo-chip" data-tipo-pedido="llevar" aria-pressed="false" onclick="seleccionarTipoPedido('llevar')">🥡 Para llevar</button>
+              <button type="button" class="tipo-chip" data-tipo-pedido="domicilio" aria-pressed="false" onclick="seleccionarTipoPedido('domicilio')">🛵 Domicilio</button>
+            </div>
+            <div id="clientePedidoWrap" class="oculto">
+              <input id="clientePedido" maxlength="120" placeholder="Nombre o teléfono (opcional)" autocomplete="off" aria-label="Cliente del pedido">
+            </div>
           </div>
 
           <div class="nota-pedido-wrap">
@@ -100,6 +113,9 @@
 
 
 
+          </div><!-- /carrito-cuerpo -->
+
+          <div class="carrito-pie">
           <div class="total-box">
             <span class="label">Total:</span>
             <span class="monto" id="total">$0.00</span>
@@ -124,6 +140,7 @@
             <span>💳 COBRAR</span>
             <span class="total-cobrar" id="totalCobrar">$0</span>
           </button>
+          </div><!-- /carrito-pie -->
 
         </aside>
         
@@ -280,7 +297,6 @@
           <div id="configMenuInferiorOpciones" class="menu-inferior-opciones"></div>
           <div class="config-menu-acciones">
             <button type="button" class="btn-secondary" onclick="restablecerMenuInferior()">Restablecer</button>
-            <button type="button" class="btn-primary" onclick="guardarMenuInferior()">Guardar menú</button>
           </div>
         </details>
 
@@ -381,6 +397,8 @@
             y los quita del sistema para liberar espacio. Queda un resumen por mes. Con la sincronización activa, también se quitan de la nube y de los demás dispositivos.
           </p>
           <button class="btn-secondary" onclick="archivarVentasAntiguas()">📦 Archivar ahora</button>
+          <p id="mantMovInfo" style="color:#64748b;font-size:12px;margin:12px 0 6px"></p>
+          <button class="btn-secondary" onclick="compactarMovimientosManual()" title="Junta los movimientos de más de 14 días en un solo saldo; el stock no cambia">🧹 Compactar movimientos de inventario</button>
           <div id="mantResumenHistorico"></div>
         </div>
         <div class="card-config">
@@ -482,6 +500,7 @@
 <script src="js/ui.js"></script>
 <script src="js/productos.js"></script>
 <script src="js/inventario.js"></script>
+<script src="js/movimientos.js"></script>
 <script src="js/venta.js"></script>
 <script src="js/preventa.js"></script>
 <script src="js/impresion.js"></script>
@@ -489,6 +508,7 @@
 <script src="js/gastos.js"></script>
 <script src="js/caja.js"></script>
 <script src="js/reportes.js"></script>
+<script src="js/reportes-equipo.js"></script>
 <script src="js/pendientes.js"></script>
 <script src="js/historial.js"></script>
 <script src="js/config-ui.js"></script>

@@ -57,16 +57,7 @@ function eliminarTicketHistorial(id) {
     ? `¿Eliminar permanentemente el ticket cancelado #${String(venta.id).padStart(6, "0")} del historial?`
     : `¿Eliminar permanentemente el ticket #${String(venta.id).padStart(6, "0")} por ${fmt(venta.total)}?\n\nSe quitará de historial, reportes y cálculos de caja. Los insumos asociados a la venta se devolverán al inventario. Esta acción no se puede deshacer.`;
   if (!confirm(mensaje)) return;
-  if (!venta.cancelada) {
-    (venta.items || []).forEach(item => {
-      const prod = DB.productos.find(p => String(p.id) === String(item.productoId));
-      if (!prod || !Array.isArray(prod.insumos)) return;
-      prod.insumos.forEach(ing => {
-        const ins = DB.insumos.find(x => String(x.id) === String(ing.insumoId));
-        if (ins) ins.stock = (Number(ins.stock) || 0) + (Number(ing.cantidad) || 0) * (Number(item.cantidad) || 0);
-      });
-    });
-  }
+  if (!venta.cancelada) registrarMovimientoInventario("eliminacion", lineasInsumosDeVenta(venta), { ref: venta.id });
   DB.ventas = DB.ventas.filter(v => String(v.id) !== String(id));
   guardar();
   renderHistorial();
@@ -94,7 +85,7 @@ function verTicketHistorial(ref) {
       <div>Ticket No. ${String(v.id).padStart(6, "0")}</div>
       <div>Fecha: ${new Date(v.fecha).toLocaleString("es-MX")}</div>
       <div>Cajero: ${escapeHTML(v.usuario || "admin")}</div>
-      ${v.notas ? `<div class="ticket-notas-preview"><strong>Nota:</strong> ${escapeHTML(v.notas).replace(/\n/g, "<br>")}</div>` : ""}
+      ${tipoPedidoHTML(v)}${v.notas ? `<div class="ticket-notas-preview"><strong>Nota:</strong> ${escapeHTML(v.notas).replace(/\n/g, "<br>")}</div>` : ""}
       <hr>
       <div class="fila bold"><span>Cant.</span><span>Total</span></div>
       <hr>
@@ -200,14 +191,8 @@ function confirmarCancelarVenta(id) {
 
   if (!confirm(`¿Cancelar la venta #${v.id} por ${fmt(v.total)}?\n\nMotivo: ${motivo}`)) return;
 
-  v.items.forEach(item => {
-    const prod = DB.productos.find(p => p.id === item.productoId);
-    if (!prod || !prod.insumos) return;
-    prod.insumos.forEach(ing => {
-      const ins = DB.insumos.find(x => x.id === ing.insumoId);
-      if (ins) ins.stock += ing.cantidad * item.cantidad;
-    });
-  });
+  // Se devuelve exactamente lo que esa venta descontó (movimiento inverso)
+  registrarMovimientoInventario("cancelacion", lineasInsumosDeVenta(v), { ref: v.id, motivo });
 
   v.cancelada = true;
   v.motivoCancelacion = motivo;

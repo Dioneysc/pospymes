@@ -32,6 +32,7 @@ function renderInsumos() {
             <td data-label="Acciones">
               <button class="btn-mini" onclick="abrirFormInsumo(${i.id})">✏️</button>
               <button class="btn-mini" onclick="abrirMovimiento(${i.id})">↕</button>
+              <button class="btn-mini" onclick="verMovimientosInsumo(${i.id})" title="Historial de movimientos">📜</button>
               <button class="btn-mini" onclick="borrarInsumo(${i.id})">🗑️</button>
             </td>
           </tr>`;
@@ -68,8 +69,17 @@ function guardarInsumo(id) {
     return toast("⚠️ Stock, mínimo y costo deben ser números válidos (no negativos)");
   const existente = id ? DB.insumos.find(x => x.id === id) : null;
   if (id && !existente) { cerrarModal(); return toast("⚠️ El insumo ya no existe (¿se borró en otro dispositivo?)"); }
-  if (id) Object.assign(existente, data);
-  else DB.insumos.push({ id: nuevoId(DB.insumos), ...data });
+  if (id) {
+    // El stock ya no se pisa: la diferencia queda registrada como un ajuste (y así se sincroniza sin perderse)
+    const { stock: nuevoStock, ...resto } = data;
+    const delta = redondear6(nuevoStock - (Number(existente.stock) || 0));
+    Object.assign(existente, resto);
+    if (delta !== 0) registrarMovimientoInventario("ajuste", [{ i: id, d: delta }], { motivo: "Edición de stock" });
+  } else {
+    const nuevo = { id: nuevoId(DB.insumos), ...data, stock: 0 };
+    DB.insumos.push(nuevo);
+    if (data.stock > 0) registrarMovimientoInventario("inicial", [{ i: nuevo.id, d: data.stock }], { motivo: "Alta de insumo" });
+  }
   guardar(); cerrarModal(); renderInsumos(); toast("💾 Guardado");
 }
 
@@ -98,8 +108,9 @@ function aplicarMovimiento() {
   const ins = DB.insumos.find(x => x.id === id);
   if (!ins) return toast("Insumo no encontrado");
   if (!Number.isFinite(cant) || cant <= 0) return toast("⚠️ Ingresa una cantidad mayor que cero");
-  if (tipo === "entrada") ins.stock = Math.round((ins.stock + cant) * 1e6) / 1e6;
-  else ins.stock = Math.max(0, Math.round((ins.stock - cant) * 1e6) / 1e6);
+  const delta = tipo === "entrada" ? cant : -Math.min(cant, Math.max(0, Number(ins.stock) || 0));
+  if (delta === 0) return toast("⚠️ No hay stock para descontar");
+  registrarMovimientoInventario(tipo === "entrada" ? "entrada" : "salida", [{ i: id, d: delta }], { motivo: ($("#mvMotivo").value || "").trim() });
   guardar(); cerrarModal(); renderInsumos();
   mostrarAlertaStock();
   toast("✅ Movimiento aplicado");
@@ -108,5 +119,6 @@ function aplicarMovimiento() {
 function borrarInsumo(id) {
   if (!confirm("¿Borrar insumo?")) return;
   DB.insumos = DB.insumos.filter(x => x.id !== id);
+  eliminarMovimientosDeInsumo(id); // si no, un insumo nuevo con el mismo id heredaría este historial
   guardar(); renderInsumos(); mostrarAlertaStock();
 }

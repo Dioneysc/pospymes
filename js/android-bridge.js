@@ -133,7 +133,7 @@ function androidImprimirTicket(venta) {
         id: venta.id,
         fecha: new Date(venta.fecha).toLocaleString("es-MX"),
         cajero: venta.usuario || "admin",
-        notas: venta.notas ? (venta.metodo === "PREVENTA PENDIENTE" ? venta.notas : "Nota: " + venta.notas) : "",
+        notas: [typeof lineaTipoPedido === "function" ? lineaTipoPedido(venta) : "", venta.notas ? (venta.metodo === "PREVENTA PENDIENTE" ? venta.notas : "Nota: " + venta.notas) : ""].filter(Boolean).join("\n"),
         items: venta.items.map(it => ({
             cantidad: it.cantidad,
             nombre: it.nombre,

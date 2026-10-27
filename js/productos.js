@@ -3,6 +3,8 @@
    ============================================ */
 
 /* ============ PRODUCTOS ============ */
+const MARGEN_MINIMO = 0.30; // por debajo de este margen (sobre el precio) se avisa
+
 function renderProductos() {
   if (!DB.productos.length) {
     $("#listaProductos").innerHTML = `
@@ -16,7 +18,10 @@ function renderProductos() {
     return;
   }
 
+  const margenBajo = DB.productos.filter(p => p.activo && p.insumos && p.insumos.length && p.precio > 0 && (p.precio - calcularCostoReceta(p)) / p.precio < MARGEN_MINIMO);
   $("#listaProductos").innerHTML = `
+    ${margenBajo.length ? `<div style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:10px">
+      ⚠️ <b>${margenBajo.length} producto${margenBajo.length === 1 ? "" : "s"} con margen menor al ${Math.round(MARGEN_MINIMO * 100)}%:</b> ${margenBajo.slice(0, 6).map(p => escapeHTML(p.nombre)).join(", ")}${margenBajo.length > 6 ? "…" : ""}. Revisa su precio o el costo de sus insumos.</div>` : ""}
     <table>
       <thead><tr><th>Emoji</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr></thead>
       <tbody>
@@ -24,6 +29,8 @@ function renderProductos() {
           const tieneReceta = p.insumos && p.insumos.length > 0;
           const costo = calcularCostoReceta(p);
           const margen = p.precio - costo;
+          const pctMargen = p.precio > 0 ? margen / p.precio * 100 : 0;
+          const colorMargen = pctMargen < MARGEN_MINIMO * 100 ? "#dc2626" : pctMargen < 50 ? "#d97706" : "var(--verde)";
           return `
           <tr>
             <td data-label="Emoji" style="font-size:24px">${escapeHTML(p.emoji || "🍽️")}</td>
@@ -37,7 +44,7 @@ function renderProductos() {
               ${tieneReceta ? `
                 <div style="font-size:10px;color:#64748b;margin-top:2px">
                   Costo: ${fmt(costo)} ·
-                  <b style="color:var(--verde)">+${fmt(margen)}</b>
+                  <b style="color:${colorMargen}">${margen >= 0 ? "+" : ""}${fmt(margen)} (${Math.round(pctMargen)}%)</b>${pctMargen < MARGEN_MINIMO * 100 ? " ⚠️" : ""}
                 </div>
               ` : ""}
             </td>

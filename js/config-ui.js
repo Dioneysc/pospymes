@@ -111,6 +111,7 @@ function crearObjetoRespaldo() {
     preventasPendientes: LS.get("preventasPendientes", []),
     negocioLogoLocal: LS.get("negocioLogoLocal", ""),
     pendientes: typeof leerPendientes === "function" ? leerPendientes() : [],
+    movimientosInventario: typeof leerMovimientos === "function" ? leerMovimientos() : [],
     resumenHistorico: LS.get("resumenHistorico", []),
     modoOscuro: LS.get("modoOscuro", false),
     sonidoActivado: LS.get("sonidoActivado", true)
@@ -167,6 +168,7 @@ function borrarProductosInsumos() {
   DB.productos = [];
   DB.insumos = [];
   guardar();
+  window._sinPapelera = true; try { LS.set("movimientosInventario", []); } finally { window._sinPapelera = false; }
   toast("🍗 Productos e insumos borrados");
   carrito = [];
   renderCaja();
@@ -326,6 +328,8 @@ function importarBackup(e) {
       LS.set("preventasPendientes", Array.isArray(extras.preventasPendientes)
         ? extras.preventasPendientes : LS.get("preventasPendientes", []));
       if (Array.isArray(extras.pendientes) && typeof guardarPendientes === "function") guardarPendientes(extras.pendientes);
+      // Sin movimientos en el respaldo → lista vacía: el stock restaurado pasa a ser el saldo inicial (no se mezcla con el historial actual)
+      LS.set("movimientosInventario", Array.isArray(extras.movimientosInventario) ? extras.movimientosInventario : []);
       LS.set("negocioLogoLocal", typeof extras.negocioLogoLocal === "string"
         ? extras.negocioLogoLocal : LS.get("negocioLogoLocal", ""));
       LS.set("modoOscuro", typeof extras.modoOscuro === "boolean"
@@ -472,13 +476,6 @@ function moverMenuInferior(id, delta) {
   guardarMenuInferiorUsuario(usuario, lista);
   aplicarMenuSiEsUsuarioActual(usuario);
   renderConfigMenuInferior();
-}
-// Los cambios ya se guardan al marcar/mover; este botón confirma y refleja el menú de inmediato
-function guardarMenuInferior() {
-  const usuario = menuInferiorUsuarioConfigurado();
-  guardarMenuInferiorUsuario(usuario, leerMenuInferior(usuario));
-  aplicarMenuSiEsUsuarioActual(usuario);
-  toast("✅ Menú guardado para " + (usuario.nombre || usuario.username || "el usuario seleccionado"));
 }
 function restablecerMenuInferior() {
   if (!confirm("¿Restablecer el menú del usuario seleccionado a los accesos predeterminados de su rol?")) return;

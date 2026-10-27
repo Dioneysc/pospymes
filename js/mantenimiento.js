@@ -13,7 +13,7 @@ const mantEtiqueta = k => ({
   ventas: "Ventas", gastos: "Gastos", productos: "Productos", insumos: "Insumos", cortes: "Cortes de caja",
   papelera: "Papelera", negocioLogoLocal: "Logotipo", syncMeta: "Sincronización", usuarios: "Usuarios",
   preventasPendientes: "Preventas", gastosPersonales: "Gastos personales", cajaFuerteMovimientos: "Caja fuerte",
-  resumenHistorico: "Resumen histórico", bitacora: "Bitácora"
+  resumenHistorico: "Resumen histórico", bitacora: "Bitácora", movimientosInventario: "Movimientos de inventario"
 }[k] || k);
 
 /* ---------- 1) ALMACENAMIENTO ---------- */
@@ -66,6 +66,8 @@ function renderMantenimiento() {
   }
   const chk = document.getElementById("mantAutoCorte");
   if (chk) chk.checked = LS.get("respaldoAutoCorte", true) !== false;
+  const mov = document.getElementById("mantMovInfo");
+  if (mov && typeof leerMovimientos === "function") mov.textContent = `Movimientos de inventario guardados: ${leerMovimientos().length}`;
 }
 
 /* ---------- 2) ARCHIVAR VENTAS ANTIGUAS ---------- */
@@ -150,6 +152,7 @@ function recordarRespaldo() {
   const rol = typeof rolActual === "function" ? rolActual() : s.rol;
   if (rol !== "admin" || sessionStorage.getItem("avisoRespaldo")) return;
   sessionStorage.setItem("avisoRespaldo", "1");
+  try { if (typeof compactarMovimientos === "function" && leerMovimientos().length > 1500) compactarMovimientos(14); } catch (_) {} // mantiene liviana la lista de movimientos
   const ult = LS.get("ultimoRespaldo", null);
   if (ult || DB.ventas.length) {
     const dias = ult ? Math.floor((Date.now() - new Date(ult)) / 864e5) : null;
@@ -159,4 +162,36 @@ function recordarRespaldo() {
   }
   const u = usoAlmacenamiento();
   if (u.pct >= MANT_AVISO) toast(`⚠️ Almacenamiento al ${Math.round(u.pct * 100)}%. Revisa Configuración → Almacenamiento.`);
+}
+
+/* ---------- Almacenamiento lleno ---------- */
+function avisoAlmacenamiento(on) {
+  let b = document.getElementById("avisoAlmacenamiento");
+  if (!on) { if (b) b.remove(); return; }
+  if (b || !document.body) return;
+  b = document.createElement("div");
+  b.id = "avisoAlmacenamiento"; b.setAttribute("role", "alert");
+  b.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:99999;background:#dc2626;color:#fff;padding:10px 14px;font-size:13px;font-weight:700;text-align:center";
+  b.textContent = "⚠️ Almacenamiento lleno: los últimos cambios NO se guardaron. Archiva ventas antiguas o exporta un respaldo (Configuración → Almacenamiento).";
+  document.body.appendChild(b);
+}
+// Prueba real de escritura antes de cobrar: si no cabe, la venta se perdería al recargar
+function almacenamientoDisponible() {
+  try {
+    const k = "__prueba_espacio__";
+    localStorage.setItem(k, "x".repeat(20000)); localStorage.removeItem(k);
+    if (window._almacenamientoLleno) { window._almacenamientoLleno = false; avisoAlmacenamiento(false); }
+    return true;
+  } catch (_) {
+    window._almacenamientoLleno = true; avisoAlmacenamiento(true);
+    toast("🚫 Sin espacio: no se puede cobrar. Archiva ventas antiguas o exporta un respaldo");
+    return false;
+  }
+}
+function compactarMovimientosManual() {
+  const n = compactarMovimientos(14);
+  if (!n) return toast("No hay movimientos con más de 14 días para compactar");
+  if (typeof registrarBitacora === "function") registrarBitacora("inventario", "Movimientos de inventario compactados", n + " registros");
+  renderMantenimiento();
+  toast(`🧹 ${n} movimientos compactados (el stock no cambia)`);
 }

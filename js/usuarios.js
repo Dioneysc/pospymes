@@ -175,7 +175,7 @@ function instalarProtecciones() {
   ["irACategoriasGastos", "agregarCategoria", "borrarCategoria"].forEach(n => proteger(n, "catalogo"));
 
   // Catálogo e inventario
-  ["abrirFormProducto", "abrirReceta", "agregarItemReceta", "actualizarCantidadReceta", "borrarItemReceta", "abrirFormInsumo", "abrirMovimiento"].forEach(n => proteger(n, "catalogo"));
+  ["verMovimientosInsumo", "abrirFormProducto", "abrirReceta", "agregarItemReceta", "actualizarCantidadReceta", "borrarItemReceta", "abrirFormInsumo", "abrirMovimiento"].forEach(n => proteger(n, "catalogo"));
   proteger("guardarProducto", "catalogo", {
     antes: id => ({ p: id ? JSON.parse(JSON.stringify(DB.productos.find(x => x.id === id) || null)) : null, n: DB.productos.length }),
     log: (a, b) => {
@@ -224,7 +224,7 @@ function instalarProtecciones() {
   proteger("exportarCSV", "ver_reportes");
 
   // Configuración (solo administrador)
-  ["previsualizarLogoNegocio", "conectarSync", "sincronizarAhora", "alternarRespaldoAutoCorte", "guardarMenuInferior", "restablecerMenuInferior", "cambiarSeleccionMenuInferior", "moverMenuInferior"].forEach(n => proteger(n, "config_total"));
+  ["previsualizarLogoNegocio", "conectarSync", "sincronizarAhora", "alternarRespaldoAutoCorte", "compactarMovimientosManual", "restablecerMenuInferior", "cambiarSeleccionMenuInferior", "moverMenuInferior"].forEach(n => proteger(n, "config_total"));
   proteger("guardarNegocio", "config_total", { antes: () => JSON.stringify(DB.negocio), log: (a, ya) => JSON.stringify(DB.negocio) !== ya ? ["sistema", "Datos del negocio modificados", DB.negocio.nombre || ""] : null });
   proteger("eliminarLogoNegocio", "config_total", { log: () => ["sistema", "Logotipo eliminado", ""] });
   proteger("exportarBackup", "config_total", { log: () => ["sistema", "Respaldo exportado", ""] });
