@@ -6,7 +6,7 @@
    ============================================ */
 
 const SYNC_COLS = ["productos", "insumos", "ventas", "gastos", "usuarios", "cortes", "preventasPendientes", "gastosPersonales", "cajaFuerteMovimientos", "bitacora", "movimientosInventario"]; // listas de registros con id
-const SYNC_CFG = ["negocio", "catsGasto", "cajaHoy", "cajaFuerteSaldoAjuste", "menusPorUsuario"]; // valores únicos (carpeta config)
+const SYNC_CFG = ["negocio", "catsGasto", "cajaHoy", "cajaFuerteSaldoAjuste", "menusPorUsuario", "ordenProductos"]; // valores únicos (carpeta config)
 const SYNC_LOCAL_LISTS = new Set(["preventasPendientes", "gastosPersonales", "cajaFuerteMovimientos", "bitacora", "movimientosInventario"]);
 const SYNC_CLAVES = new Set([...SYNC_COLS, ...SYNC_CFG]);
 const FB_VER = "10.12.2";
@@ -53,10 +53,10 @@ const msgSync = e => ({
 }[e.code] || e.message || String(e));
 
 // Lectura / escritura de cada dato local
-const SYNC_LOCAL_VALUES = new Set(["cajaFuerteSaldoAjuste", "menusPorUsuario"]);
+const SYNC_LOCAL_VALUES = new Set(["cajaFuerteSaldoAjuste", "menusPorUsuario", "ordenProductos"]);
 const leer = k => k === "negocio" ? DB.negocio : k === "catsGasto" ? CATS_GASTO : k === "cajaHoy" ? estadoCajaHoy
   : k === "cortes" || SYNC_LOCAL_LISTS.has(k) ? LS.get(k, [])
-  : SYNC_LOCAL_VALUES.has(k) ? LS.get(k, k === "cajaFuerteSaldoAjuste" ? 0 : k === "menusPorUsuario" ? {} : null)
+  : SYNC_LOCAL_VALUES.has(k) ? LS.get(k, k === "cajaFuerteSaldoAjuste" ? 0 : k === "menusPorUsuario" ? {} : k === "ordenProductos" ? [] : null)
   : DB[k];
 function escribir(k, v) {
   if (k === "negocio") DB.negocio = v; else if (k === "catsGasto") CATS_GASTO = v;

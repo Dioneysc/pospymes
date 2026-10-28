@@ -3,6 +3,63 @@
    ============================================ */
 
 /* ============ PRODUCTOS ============ */
+/* ============ ORDEN GLOBAL DE PRODUCTOS ============ */
+// Se guarda por ID, no por nombre, para que renombrar un producto no cambie su prioridad.
+function obtenerOrdenProductos() {
+  const idsActuales = DB.productos.map(p => String(p.id));
+  const guardado = LS.get("ordenProductos", []);
+  const orden = Array.isArray(guardado) ? guardado.map(String).filter((id, i, a) => idsActuales.includes(id) && a.indexOf(id) === i) : [];
+  idsActuales.forEach(id => { if (!orden.includes(id)) orden.push(id); });
+  return orden;
+}
+
+function ordenarListaProductos(lista) {
+  const orden = obtenerOrdenProductos();
+  const posicion = new Map(orden.map((id, i) => [id, i]));
+  return [...lista].sort((a, b) => (posicion.get(String(a.id)) ?? Number.MAX_SAFE_INTEGER) - (posicion.get(String(b.id)) ?? Number.MAX_SAFE_INTEGER));
+}
+
+let _arrastreOrdenProducto = null;
+function iniciarArrastreOrdenProducto(event, id) {
+  if (event.button !== undefined && event.button !== 0) return;
+  const fila = event.currentTarget.closest("tr[data-product-order-id]");
+  if (!fila) return;
+  event.preventDefault();
+  _arrastreOrdenProducto = { id: String(id), fila, pointerId: event.pointerId };
+  fila.classList.add("producto-orden-arrastrando");
+  try { event.currentTarget.setPointerCapture(event.pointerId); } catch (_) {}
+  document.addEventListener("pointermove", moverArrastreOrdenProducto, { passive: false });
+  document.addEventListener("pointerup", terminarArrastreOrdenProducto, { once: true });
+  document.addEventListener("pointercancel", terminarArrastreOrdenProducto, { once: true });
+}
+
+function moverArrastreOrdenProducto(event) {
+  if (!_arrastreOrdenProducto || event.pointerId !== _arrastreOrdenProducto.pointerId) return;
+  event.preventDefault();
+  const tbody = _arrastreOrdenProducto.fila.closest("tbody");
+  const destino = document.elementFromPoint(event.clientX, event.clientY)?.closest("tr[data-product-order-id]");
+  if (!tbody || !destino || destino === _arrastreOrdenProducto.fila || destino.parentElement !== tbody) return;
+  const rect = destino.getBoundingClientRect();
+  tbody.insertBefore(_arrastreOrdenProducto.fila, event.clientY < rect.top + rect.height / 2 ? destino : destino.nextSibling);
+}
+
+function terminarArrastreOrdenProducto(event) {
+  document.removeEventListener("pointermove", moverArrastreOrdenProducto);
+  document.removeEventListener("pointerup", terminarArrastreOrdenProducto);
+  document.removeEventListener("pointercancel", terminarArrastreOrdenProducto);
+  const estado = _arrastreOrdenProducto;
+  _arrastreOrdenProducto = null;
+  if (!estado) return;
+  estado.fila.classList.remove("producto-orden-arrastrando");
+  const tbody = estado.fila.closest("tbody");
+  if (!tbody) { renderProductos(); return; }
+  const ids = [...tbody.querySelectorAll("tr[data-product-order-id]")].map(tr => tr.dataset.productOrderId);
+  LS.set("ordenProductos", ids);
+  renderProductos();
+  if (typeof renderCaja === "function") renderCaja();
+  toast("↕️ Orden de productos guardado y sincronizado");
+}
+
 const MARGEN_MINIMO = 0.30; // por debajo de este margen (sobre el precio) se avisa
 
 function renderProductos() {
@@ -23,16 +80,17 @@ function renderProductos() {
     ${margenBajo.length ? `<div style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:10px">
       ⚠️ <b>${margenBajo.length} producto${margenBajo.length === 1 ? "" : "s"} con margen menor al ${Math.round(MARGEN_MINIMO * 100)}%:</b> ${margenBajo.slice(0, 6).map(p => escapeHTML(p.nombre)).join(", ")}${margenBajo.length > 6 ? "…" : ""}. Revisa su precio o el costo de sus insumos.</div>` : ""}
     <table>
-      <thead><tr><th>Emoji</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr></thead>
+      <thead><tr><th>Orden</th><th>Emoji</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr></thead>
       <tbody>
-        ${DB.productos.map(p => {
+        ${ordenarListaProductos(DB.productos).map(p => {
           const tieneReceta = p.insumos && p.insumos.length > 0;
           const costo = calcularCostoReceta(p);
           const margen = p.precio - costo;
           const pctMargen = p.precio > 0 ? margen / p.precio * 100 : 0;
           const colorMargen = pctMargen < MARGEN_MINIMO * 100 ? "#dc2626" : pctMargen < 50 ? "#d97706" : "var(--verde)";
           return `
-          <tr>
+          <tr data-product-order-id="${String(p.id)}">
+            <td data-label="Orden"><button type="button" class="asa-orden-producto" title="Arrastrar para ordenar" aria-label="Arrastrar para ordenar ${escapeHTML(p.nombre)}" onpointerdown="iniciarArrastreOrdenProducto(event, '${String(p.id)}')">⠿</button></td>
             <td data-label="Emoji" style="font-size:24px">${escapeHTML(p.emoji || "🍽️")}</td>
             <td data-label="Nombre">${escapeHTML(p.nombre)}</td>
             <td data-label="Categoría">
@@ -111,6 +169,7 @@ function toggleProducto(id) {
 function borrarProducto(id) {
   if (!confirm("¿Borrar producto?")) return;
   DB.productos = DB.productos.filter(x => x.id !== id);
+  LS.set("ordenProductos", obtenerOrdenProductos().filter(pid => pid !== String(id)));
   guardar(); renderProductos(); renderCaja(); renderCategorias(); toast("🗑️ Borrado");
 }
 
