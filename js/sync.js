@@ -11,6 +11,18 @@ const SYNC_LOCAL_LISTS = new Set(["preventasPendientes", "gastosPersonales", "ca
 const SYNC_CLAVES = new Set([...SYNC_COLS, ...SYNC_CFG]);
 const FB_VER = "10.12.2";
 
+// Ventana de escucha: ventas y gastos muy antiguos ya no se vuelven a bajar en cada apertura de la app
+// (cada documento recibido cuenta como una lectura de Firestore). El historial completo se sigue
+// descargando UNA vez al conectar un dispositivo nuevo, y todo lo que subas se sigue enviando siempre.
+const SYNC_VENTANA_DIAS = 60;
+const SYNC_COLS_VENTANA = new Set(["ventas", "gastos"]);
+// Revisión parcial al subir: de las colecciones grandes solo se recalcula lo reciente o nuevo;
+// una revisión completa corre al abrir la app, cada 5 minutos, al reconectar o al forzarla.
+const SYNC_RECIENTE_MS = 3 * 864e5;
+const SYNC_COMPLETO_CADA_MS = 5 * 60 * 1000;
+let syncUltimoCompleto = 0, syncForzarCompleto = false;
+function marcarSyncCompleto() { syncForzarCompleto = true; }   // llamar tras editar un registro ANTIGUO en el lugar (p. ej. cancelar un ticket viejo)
+
 let syncMeta = LS.get("syncMeta", { activo: false, slot: 0, email: "", uid: "", synced: {}, cfgT: {}, ultima: 0 });
 let SYNC_SLOT = syncMeta.slot || 0; // terminación de los IDs de este dispositivo (ver nuevoId en db.js)
 let syncDb = null, syncUid = null, syncUnsubs = [];
@@ -70,11 +82,17 @@ async function empujarCambios() {
   syncOcupado = true;
   try {
     const ops = [];
+    const completo = syncForzarCompleto || Date.now() - syncUltimoCompleto > SYNC_COMPLETO_CADA_MS;
+    syncForzarCompleto = false;
+    const corteReciente = Date.now() - SYNC_RECIENTE_MS;
     for (const c of SYNC_COLS) {
       const lista = leer(c), s = (syncMeta.synced[c] = syncMeta.synced[c] || {}), ids = new Set();
+      const parcial = !completo && SYNC_COLS_VENTANA.has(c);
       let sello = false;
       for (const r of lista) {
         ids.add(String(r.id));
+        // Registro antiguo ya sincronizado: se asume sin cambios (la revisión completa periódica lo confirma)
+        if (parcial && s[r.id] !== undefined) { const t = Date.parse(r.fecha); if (Number.isFinite(t) && t < corteReciente) continue; }
         const h = hashDe(sinT(r));
         if (s[r.id] !== h) { r._t = Date.now(); sello = true; ops.push({ c, id: String(r.id), data: limpio(r), h }); }
       }
@@ -98,9 +116,11 @@ async function empujarCambios() {
       });
       guardarMeta();
     }
+    if (completo) syncUltimoCompleto = Date.now();
     syncMeta.ultima = Date.now(); syncUltimoError = ""; guardarMeta(); pintarEstadoSync();
     return true;
   } catch (e) {
+    syncForzarCompleto = true; // tras un fallo, el siguiente intento revisa todo
     syncUltimoError = msgSync(e); console.warn("Sync:", e); pintarEstadoSync("⚠️ Pendiente de subir: " + syncUltimoError + ". Tus datos locales se conservan; se reintentará al reconectar.");
     return false;
   } finally {
@@ -113,11 +133,16 @@ async function empujarCambios() {
 function escucharNube() {
   detenerEscucha();
   [...SYNC_COLS, "config"].forEach(c => syncUnsubs.push(
-    ref(c).onSnapshot(snap => aplicarRemoto(c, snap.docChanges()), e => {
+    consultaEscucha(c).onSnapshot(snap => aplicarRemoto(c, snap.docChanges()), e => {
       syncUltimoError = msgSync(e);
       pintarEstadoSync("⚠️ Firebase no confirmó lectura de " + c + ": " + syncUltimoError);
     })
   ));
+}
+function consultaEscucha(c) {
+  if (!SYNC_COLS_VENTANA.has(c)) return ref(c);
+  const desde = new Date(Date.now() - SYNC_VENTANA_DIAS * 864e5).toISOString();
+  return ref(c).where("fecha", ">=", desde);   // "fecha" es ISO: la comparación de texto equivale a la de fechas
 }
 function detenerEscucha() { syncUnsubs.forEach(f => { try { f(); } catch (e) {} }); syncUnsubs = []; }
 
@@ -180,7 +205,16 @@ function cargarFirebase() {
     document.head.appendChild(s);
   })), Promise.resolve());
 }
-function iniciarFirebase() { if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG); }
+function iniciarFirebase() {
+  if (firebase.apps.length) return;
+  firebase.initializeApp(FIREBASE_CONFIG);
+  // Caché local de Firestore (IndexedDB): al reabrir, lo ya descargado sale del dispositivo y no cuenta como lectura.
+  // Debe activarse antes de cualquier otra llamada a Firestore. Si el navegador no la soporta, la app sigue igual.
+  try {
+    firebase.firestore().enablePersistence({ synchronizeTabs: true })
+      .catch(e => console.warn("Caché de Firestore no disponible:", e && e.code));
+  } catch (e) { console.warn("Caché de Firestore no disponible:", e); }
+}
 
 async function descargarTodo() {
   syncMeta.synced = { config: {} }; syncMeta.cfgT = {};
@@ -324,6 +358,7 @@ async function desconectarSync() {
 async function sincronizarAhora() {
   if (!syncDb) return toast("⚠️ No hay sesión de nube activa todavía");
   if (!navigator.onLine) { pintarEstadoSync("📴 Sin internet. Los cambios quedan pendientes."); return toast("📴 Sin internet: los datos locales están guardados"); }
+  marcarSyncCompleto();
   const ok = await empujarCambios();
   if (ok) toast("✅ Sincronización completada");
   else toast("⚠️ No se confirmó la sincronización. Revisa el estado y vuelve a intentar.");
@@ -349,7 +384,7 @@ function pintarEstadoSync(msg) {
 // Al abrir la app: si ya estaba conectada, reanudar (sin bloquear el arranque)
 function iniciarSync() {
   pintarEstadoSync();
-  window.addEventListener("online", () => { pintarEstadoSync("🌐 Internet recuperado. Sincronizando cambios pendientes..."); programarSync(); });
+  window.addEventListener("online", () => { pintarEstadoSync("🌐 Internet recuperado. Sincronizando cambios pendientes..."); marcarSyncCompleto(); programarSync(); });
   window.addEventListener("offline", () => pintarEstadoSync("📴 Sin internet. Puedes seguir trabajando; los cambios se enviarán al reconectar."));
   const pend = LS.get("syncPendiente", null);
   if (pend && FIREBASE_CONFIG.apiKey) { // volvemos de iniciar sesión con Google por redirección

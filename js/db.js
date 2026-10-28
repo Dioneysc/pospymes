@@ -35,13 +35,12 @@ let DB = {
   negocio: LS.get("negocio", { nombre: "POS PyMes", slogan: "Sistema de venta", direccion: "", telefono: "" })
 };
 
-function guardar() {
-  LS.set("productos", DB.productos);
-  LS.set("insumos", DB.insumos);
-  LS.set("ventas", DB.ventas);
-  LS.set("gastos", DB.gastos);
-  LS.set("usuarios", DB.usuarios);
-  LS.set("negocio", DB.negocio);
+// Sin argumentos guarda todo (como siempre). Con nombres, guarda solo esas colecciones:
+// guardar("ventas", "insumos") evita reescribir productos, usuarios, etc. en cada venta.
+const DB_CLAVES = ["productos", "insumos", "ventas", "gastos", "usuarios", "negocio"];
+function guardar(...claves) {
+  const lista = claves.length ? claves.filter(k => DB_CLAVES.includes(k)) : DB_CLAVES;
+  lista.forEach(k => LS.set(k, DB[k]));
 }
 
 function nuevoId(arr) {

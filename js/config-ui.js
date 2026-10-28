@@ -227,6 +227,28 @@ async function cambiarPassword() {
   toast("✅ Contraseña actualizada");
 }
   
+/* Revisa cada registro del respaldo ANTES de reemplazar nada: un archivo dañado que "parece" un respaldo
+   podría romper pantallas completas. Devuelve la lista de problemas (vacía si todo está bien). */
+function validarDatosRespaldo(d) {
+  const errores = [];
+  const fechaValida = f => typeof f === "string" && !Number.isNaN(new Date(f).getTime());
+  const revisar = (nombre, lista, regla) => {
+    lista.forEach((r, i) => {
+      if (!r || typeof r !== "object" || Array.isArray(r)) return errores.push(`${nombre} #${i + 1}: no es un registro válido`);
+      if (r.id === undefined || r.id === null || r.id === "") return errores.push(`${nombre} #${i + 1}: no tiene id`);
+      const motivo = regla(r);
+      if (motivo) errores.push(`${nombre} #${r.id}: ${motivo}`);
+    });
+  };
+  revisar("Producto", d.productos, p => typeof p.nombre !== "string" ? "sin nombre" : !Number.isFinite(Number(p.precio)) ? "precio inválido" : p.insumos !== undefined && !Array.isArray(p.insumos) ? "receta inválida" : "");
+  revisar("Venta", d.ventas, v => !Array.isArray(v.items) ? "sin lista de productos" : !Number.isFinite(Number(v.total)) ? "total inválido" : !fechaValida(v.fecha) ? "fecha inválida" : "");
+  revisar("Insumo", d.insumos, i => typeof i.nombre !== "string" ? "sin nombre" : !Number.isFinite(Number(i.stock)) ? "stock inválido" : "");
+  revisar("Gasto", d.gastos, g => !Number.isFinite(Number(g.monto)) ? "monto inválido" : !fechaValida(g.fecha) ? "fecha inválida" : "");
+  revisar("Usuario", d.usuarios, u => typeof u.username !== "string" || !u.username ? "sin nombre de usuario" : !u.hash && !u.password ? "sin contraseña" : "");
+  if (!d.usuarios.some(u => (u.rol || "admin") === "admin" && u.activo !== false)) errores.push("No hay ningún administrador activo: nadie podría configurar el sistema");
+  return errores;
+}
+
 function importarBackup(e) {
   const input = e?.target;
   const archivo = input?.files?.[0];
@@ -281,6 +303,14 @@ function importarBackup(e) {
         respaldo.extras && typeof respaldo.extras === "object"
           ? respaldo.extras
           : {};
+
+      const problemas = validarDatosRespaldo(restaurado);
+      if (problemas.length) {
+        console.warn("Respaldo con problemas:", problemas);
+        alert("❌ El respaldo tiene " + problemas.length + " problema(s) y no se restauró nada:\n\n• " +
+          problemas.slice(0, 6).join("\n• ") + (problemas.length > 6 ? "\n• …y " + (problemas.length - 6) + " más (ver consola)" : ""));
+        return;
+      }
 
       if (
         !confirm(

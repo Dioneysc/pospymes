@@ -117,8 +117,15 @@ function aplicarMovimiento() {
 }
 
 function borrarInsumo(id) {
-  if (!confirm("¿Borrar insumo?")) return;
+  // Productos cuya receta usa este insumo: si no se limpian, su stock dejaría de mostrarse sin avisar
+  const afectados = DB.productos.filter(p => Array.isArray(p.insumos) && p.insumos.some(r => String(r.insumoId) === String(id)));
+  const aviso = afectados.length
+    ? `¿Borrar insumo?\n\nSe usa en la receta de: ${afectados.slice(0, 8).map(p => p.nombre).join(", ")}${afectados.length > 8 ? "…" : ""}.\nSe quitará de esas recetas y su costo se recalculará.`
+    : "¿Borrar insumo?";
+  if (!confirm(aviso)) return;
   DB.insumos = DB.insumos.filter(x => x.id !== id);
+  afectados.forEach(p => { p.insumos = p.insumos.filter(r => String(r.insumoId) !== String(id)); });
   eliminarMovimientosDeInsumo(id); // si no, un insumo nuevo con el mismo id heredaría este historial
   guardar(); renderInsumos(); mostrarAlertaStock();
+  if (afectados.length && typeof refrescarVistasTrasCambioReceta === "function") refrescarVistasTrasCambioReceta();
 }

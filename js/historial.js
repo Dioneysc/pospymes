@@ -199,7 +199,8 @@ function confirmarCancelarVenta(id) {
   v.fechaCancelacion = new Date().toISOString();
   v.usuarioCancelacion = JSON.parse(sessionStorage.getItem("sesion") || "{}").nombre || "admin";
 
-  guardar();
+  if (typeof marcarSyncCompleto === "function") marcarSyncCompleto(); // el ticket puede ser antiguo: que la sincronización lo detecte
+  guardar("ventas", "insumos");
   cerrarModal();
   toast(`✅ Venta #${v.id} cancelada · Insumos reintegrados`);
   renderHistorial();

@@ -522,3 +522,9 @@
   .carrito-pie .btn-pago { padding-top: 8px; padding-bottom: 8px; }
   .carrito-pie .btn-cobrar { min-height: 48px; padding: 8px 14px; }
 }
+
+/* Corrección v127: con muchos productos ("Todas") las filas de la cuadrícula se quedaban en el alto mínimo
+   del botón y el nombre —el único elemento que puede encogerse— se reducía a 0 y desaparecía.
+   Las filas ahora miden lo que mide su contenido y nada dentro del botón se encoge. */
+.productos-grid { grid-auto-rows: max-content; }
+.prod-btn > * { flex-shrink: 0; }

@@ -149,7 +149,7 @@ function instalarProtecciones() {
     antes: id => { const v = ventaDe(id); return !!(v && v.cancelada); },
     exito: (a) => { const v = ventaDe(a[0]); return !!(v && v.cancelada); },
     log: (a, ya) => { const v = ventaDe(a[0]); return v && v.cancelada && !ya ? ["ventas", "Venta cancelada", `Ticket #${pad6(v.id)} · ${fmt(v.total)} · Motivo: ${v.motivoCancelacion || "—"}`] : null; },
-    despues: (a, ya, auth) => { const v = ventaDe(a[0]); if (auth && v && v.cancelada && !ya) { v.autorizadoPor = auth.nombre; guardar(); } }
+    despues: (a, ya, auth) => { const v = ventaDe(a[0]); if (auth && v && v.cancelada && !ya) { v.autorizadoPor = auth.nombre; guardar("ventas"); } }
   });
   proteger("eliminarTicketHistorial", "eliminar_venta", {
     antes: id => { const v = ventaDe(id); return v ? { ...v } : null; },
@@ -247,7 +247,7 @@ function instalarProtecciones() {
   proteger("finalizarVenta", null, {
     antes: () => ({ n: DB.ventas.length, desc: descuento, pct: descuentoPct, tk: tokenVigente("descuento_libre") }),
     log: (a, b) => { if (DB.ventas.length <= b.n || !(b.desc > 0)) return null; const v = DB.ventas[DB.ventas.length - 1]; return ["ventas", "Descuento aplicado", `Ticket #${pad6(v.id)} · ${b.pct}% (−${fmt(b.desc)})${b.tk ? " · autorizó " + b.tk.nombre : ""}`, b.tk ? { autorizadoPor: b.tk.nombre } : undefined]; },
-    despues: (a, b) => { if (DB.ventas.length > b.n) { if (b.tk && b.desc > 0) { const v = DB.ventas[DB.ventas.length - 1]; v.descuentoAutorizadoPor = b.tk.nombre; guardar(); } delete autorizaciones.descuento_libre; } }
+    despues: (a, b) => { if (DB.ventas.length > b.n) { if (b.tk && b.desc > 0) { const v = DB.ventas[DB.ventas.length - 1]; v.descuentoAutorizadoPor = b.tk.nombre; guardar("ventas"); } delete autorizaciones.descuento_libre; } }
   });
   proteger("limpiarCarrito", null, { despues: () => { delete autorizaciones.descuento_libre; } });
 

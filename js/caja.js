@@ -4,11 +4,19 @@
 
 /* ============ GESTOR PERSONAL Y APERTURA DE CAJA ============ */
 
+// Un turno abierto sigue vigente al cruzar la medianoche hasta que se haga el corte,
+// siempre que lleve menos de TURNO_MAX_HORAS abierto. Pasado ese tiempo se considera olvidado.
+const TURNO_MAX_HORAS = 20;
+
 function initDia() {
-  if (estadoCajaHoy.fecha !== hoy()) {
-    estadoCajaHoy = { fecha: hoy(), fondoInicial: null, retiros: [], depositos: [] };
-    LS.set("cajaHoy", estadoCajaHoy);
-  }
+  const e = estadoCajaHoy;
+  if (e.fecha === hoy()) return;
+  const abierta = e.fondoInicial !== null && e.fondoInicial !== undefined;
+  const t = e.abiertaEn ? new Date(e.abiertaEn).getTime() : NaN;
+  if (abierta && Number.isFinite(t) && Date.now() - t < TURNO_MAX_HORAS * 36e5) return; // turno nocturno: sigue abierto
+  if (abierta && typeof registrarBitacora === "function") registrarBitacora("caja", "Turno anterior sin corte", `La caja abierta el ${e.fecha} no se cerró con corte`);
+  estadoCajaHoy = { fecha: hoy(), fondoInicial: null, retiros: [], depositos: [] };
+  LS.set("cajaHoy", estadoCajaHoy);
 }
 
 function abrirFondoInicial() {
@@ -26,7 +34,9 @@ function abrirFondoInicial() {
 function guardarFondo() {
   const monto = redondear2(+$("#fondoMonto").value || 0);
   if (monto < 0) return toast("⚠️ El fondo inicial no puede ser negativo");
+  const estabaCerrada = estadoCajaHoy.fondoInicial === null || estadoCajaHoy.fondoInicial === undefined;
   estadoCajaHoy.fondoInicial = monto;
+  if (estabaCerrada || !estadoCajaHoy.abiertaEn) estadoCajaHoy.abiertaEn = new Date().toISOString(); // editar el fondo no reinicia la hora de apertura
   LS.set("cajaHoy", estadoCajaHoy);
   cerrarModal();
   renderEstadoCaja();
@@ -233,8 +243,12 @@ function borrarGastoPersonal(id) { borrarMovimientoCajaFuerte(id, "antiguo"); }
 // false = la caja fuerte NO afecta el corte. Pon true si quieres que depósitos y retiros vuelvan a sumar/restar.
 const CORTE_INCLUYE_CAJA_FUERTE = false;
 
-// Un movimiento es "del turno" si es de hoy y posterior al último corte (cada corte reinicia la caja)
-const delTurno = fecha => fechaLocal(fecha) === hoy() && (!estadoCajaHoy.desde || new Date(fecha) > new Date(estadoCajaHoy.desde));
+// Un movimiento es "del turno" si ocurrió desde el inicio del día en que se abrió la caja y después del último corte.
+// Como la fecha de la caja es la de su apertura, un turno que cruza la medianoche sigue contando sus ventas.
+const delTurno = fecha => {
+  const t = new Date(fecha), dia = new Date(estadoCajaHoy.fecha + "T00:00:00");
+  return t >= dia && (!estadoCajaHoy.desde || t > new Date(estadoCajaHoy.desde));
+};
 
 function resumenDia() {
   const ventasHoy = DB.ventas.filter(v => delTurno(v.fecha) && !v.cancelada);
@@ -265,7 +279,14 @@ function renderEstadoCaja() {
   const { ventasHoy, efectivoVentas, tarjetaVentas, transfVentas, totalVentas, gastosEfectivo, gastosTransf, fondo } = r;
   const esperadoEnCaja = r.esperado;
 
+  const turnoDeAyer = estadoCajaHoy.fondoInicial !== null && estadoCajaHoy.fecha !== hoy();
   elEstado.innerHTML = `
+    ${turnoDeAyer ? `
+      <div class="card" style="background:#e0f2fe;border-left:4px solid #0284c7;margin-bottom:14px">
+        <b>🌙 Turno abierto desde el ${escapeHTML(estadoCajaHoy.fecha)}</b>
+        <p style="color:#64748b;font-size:13px;margin:6px 0 0">Las ventas siguen sumándose a este turno hasta que hagas el corte.</p>
+      </div>
+    ` : ""}
     ${estadoCajaHoy.fondoInicial === null ? `
       <div class="card" style="background:#fef3c7;border-left:4px solid var(--warn);margin-bottom:14px">
         <b>⚠️ Caja no abierta</b>

@@ -94,6 +94,13 @@ function reporteRango(tipo, destino = "reportes") {
       porProd[nombre].qty += cantidad;
       porProd[nombre].total += precio * cantidad;
 
+      // Ventas nuevas: el costo se guardó al vender y no cambia. Ventas anteriores: se estima con la receta actual.
+      const costoGuardado = it.costoUnitario;
+      if (costoGuardado !== undefined && costoGuardado !== null && Number.isFinite(Number(costoGuardado))) {
+        unidadesConReceta += cantidad;
+        costoRecetas += Number(costoGuardado) * cantidad;
+        return;
+      }
       const prod = (DB.productos || []).find(p => String(p.id) === String(it.productoId));
       const receta = prod && Array.isArray(prod.insumos) ? prod.insumos : [];
       const recetaCompleta = receta.length > 0 && receta.every(ing =>
@@ -179,7 +186,7 @@ function reporteRango(tipo, destino = "reportes") {
           <article class="panel-metrica"><span class="panel-metrica-icono">📦</span><span class="panel-metrica-label">Costo calculado de recetas</span><strong>${fmt(costoRecetas)}</strong><small>${cobertura}% de unidades con receta completa</small></article>
         </div>
         ${tieneCostosIncompletos ? `<div class="panel-aviso panel-aviso-amarillo"><strong>⚠️ Faltan costos de productos</strong><span>${unidadesSinReceta} unidad(es) vendidas no tienen una receta de costos completa. La ganancia mostrada puede ser mayor que la real. Completa las recetas en Productos.</span></div>` : ""}
-        <div class="panel-aviso panel-aviso-info"><strong>Cómo interpretar la ganancia</strong><span>Esta cifra es estimada. Si registraste como gasto la compra de un insumo cuyo costo también se calcula mediante recetas, ese costo podría descontarse dos veces. Revisa los conceptos de gastos antes de tomarla como utilidad definitiva.</span></div>
+        <div class="panel-aviso panel-aviso-info"><strong>Cómo interpretar la ganancia</strong><span>Esta cifra es estimada. Las ventas nuevas guardan su costo al momento de vender; las anteriores usan el costo actual de la receta. Si registraste como gasto la compra de un insumo cuyo costo también se calcula mediante recetas, ese costo podría descontarse dos veces. Revisa los conceptos de gastos antes de tomarla como utilidad definitiva.</span></div>
 
         <div class="panel-seccion-titulo"><div><h3>💳 Formas de pago</h3><p>Importes de ventas cobradas en el periodo</p></div></div>
         <div class="panel-pagos">

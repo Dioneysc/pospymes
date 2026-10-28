@@ -425,6 +425,20 @@ function confirmarPago() {
 }
 
 /* ============ FINALIZAR VENTA ============ */
+// Costo de una unidad del producto con los costos de insumo de HOY, para guardarlo en la venta.
+// null si el producto no tiene receta o falta algún costo (mismo criterio que usa el reporte).
+function costoUnitarioReceta(prod) {
+  const receta = prod && Array.isArray(prod.insumos) ? prod.insumos : [];
+  if (!receta.length) return null;
+  let total = 0;
+  for (const ing of receta) {
+    const ins = DB.insumos.find(x => String(x.id) === String(ing.insumoId));
+    if (!ins || !Number.isFinite(Number(ins.costo))) return null;
+    total += Number(ins.costo) * (Number(ing.cantidad) || 0);
+  }
+  return Math.round(total * 10000) / 10000;
+}
+
 function finalizarVenta(metodo, total, pagoCon, cambio) {
   if (!carrito.length) return toast("⚠️ Ticket vacío");
   const sub = redondear2(carrito.reduce((s, i) => s + i.precio * i.cantidad, 0));
@@ -434,7 +448,10 @@ function finalizarVenta(metodo, total, pagoCon, cambio) {
   const venta = {
     id: nuevoId(DB.ventas),
     fecha: new Date().toISOString(),
-    items: JSON.parse(JSON.stringify(carrito)),
+    items: JSON.parse(JSON.stringify(carrito.map(it => {
+      const c = costoUnitarioReceta(DB.productos.find(p => p.id === it.productoId));
+      return c === null ? { ...it } : { ...it, costoUnitario: c };   // el costo queda fijo: no cambia si luego sube el insumo
+    }))),
     subtotal: sub,
     descuento: redondear2(descuento),
     propina: 0,
@@ -459,7 +476,7 @@ function finalizarVenta(metodo, total, pagoCon, cambio) {
   registrarMovimientoInventario("venta", lineasInsumos, { ref: venta.id });
   actualizarEtiquetasStockProductos();
 
-  guardar();
+  guardar("ventas", "insumos"); // una venta solo cambia estas dos colecciones
   const preventaIdFinalizada = Number(window._preventaEnProcesoId) || 0;
   if (preventaIdFinalizada && typeof marcarPreventaConvertida === "function") {
     marcarPreventaConvertida(preventaIdFinalizada, venta.id);
