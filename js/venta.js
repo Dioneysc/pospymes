@@ -48,7 +48,31 @@ function actualizarEtiquetasStockProductos() {
   });
 }
 
+/* ============ VISTA DE PRODUCTOS: tarjetas o lista (preferencia de cada dispositivo, no se sincroniza) ============ */
+const ICONO_VISTA_LISTA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1" fill="currentColor"/><circle cx="3.5" cy="12" r="1" fill="currentColor"/><circle cx="3.5" cy="18" r="1" fill="currentColor"/></svg>';
+const ICONO_VISTA_TARJETAS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>';
+
+function vistaProductosActual() { return LS.get("vistaProductos", "tarjetas") === "lista" ? "lista" : "tarjetas"; }
+
+function aplicarVistaProductos() {
+  const lista = vistaProductosActual() === "lista";
+  const grid = document.getElementById("gridProductos");
+  if (grid) grid.classList.toggle("vista-lista", lista);
+  const btn = document.getElementById("btnVistaProductos");
+  if (btn) {
+    const texto = lista ? "Ver en tarjetas" : "Ver en lista";   // el botón muestra la vista a la que se cambiaría
+    btn.innerHTML = lista ? ICONO_VISTA_TARJETAS : ICONO_VISTA_LISTA;
+    btn.title = texto; btn.setAttribute("aria-label", texto);
+  }
+}
+
+function alternarVistaProductos() {
+  LS.set("vistaProductos", vistaProductosActual() === "lista" ? "tarjetas" : "lista");
+  aplicarVistaProductos();
+}
+
 function renderCaja() {
+  aplicarVistaProductos();
   const busq = ($("#buscarProducto")?.value || "").toLowerCase();
   let prods = DB.productos.filter(p => p.activo);
   if (categoriaActiva !== "Todas") prods = prods.filter(p => p.categoria === categoriaActiva);

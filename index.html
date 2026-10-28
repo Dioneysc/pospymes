@@ -56,7 +56,10 @@
       <div class="caja-layout">
         <div class="productos-wrap">
           <div class="barra-busqueda">
-            <input id="buscarProducto" placeholder="🔍 Buscar producto..." oninput="filtrarProductos()" autocomplete="off" enterkeyhint="done">
+            <div class="busqueda-fila">
+              <input id="buscarProducto" placeholder="🔍 Buscar producto..." oninput="filtrarProductos()" autocomplete="off" enterkeyhint="done">
+              <button type="button" id="btnVistaProductos" class="btn-vista" onclick="alternarVistaProductos()" title="Ver en lista" aria-label="Ver en lista"></button>
+            </div>
             <div class="categorias" id="categorias"></div>
           </div>
           <div class="productos-grid" id="gridProductos"></div>
@@ -269,6 +272,8 @@
           <button class="btn-primary" onclick="agregarCategoria()">+</button>
         </div>
       </details>
+      <div id="filtrosGastos" data-permiso="historial_completo"></div>
+      <div id="resumenGastos"></div>
       <div id="listaGastos" class="tabla-wrap"></div>
     </section>
 
