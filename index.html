@@ -269,6 +269,23 @@
           <button class="btn-primary" onclick="agregarCategoria()">+</button>
         </div>
       </details>
+      <div class="filtros" style="display:flex;align-items:end;gap:8px;margin-bottom:14px;flex-wrap:wrap;padding:12px;border:1px solid var(--borde);border-radius:12px;background:var(--superficie,#f8fafc)">
+        <div style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:145px">
+          <label for="gastosDesde" style="font-size:12px;font-weight:700">Desde</label>
+          <input type="date" id="gastosDesde" onchange="renderGastos()" style="padding:10px;border:2px solid var(--borde);border-radius:10px;min-width:0;background:var(--fondo,#fff);color:var(--texto)">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:145px">
+          <label for="gastosHasta" style="font-size:12px;font-weight:700">Hasta</label>
+          <input type="date" id="gastosHasta" onchange="renderGastos()" style="padding:10px;border:2px solid var(--borde);border-radius:10px;min-width:0;background:var(--fondo,#fff);color:var(--texto)">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:160px">
+          <label for="gastosCategoriaFiltro" style="font-size:12px;font-weight:700">Categoría</label>
+          <select id="gastosCategoriaFiltro" onchange="renderGastos()" style="padding:10px;border:2px solid var(--borde);border-radius:10px;min-width:0;background:var(--fondo,#fff);color:var(--texto)"><option value="">Todas las categorías</option></select>
+        </div>
+        <button class="btn-secondary" type="button" onclick="filtrarGastosHoy()">Hoy</button>
+        <button class="btn-secondary" type="button" onclick="limpiarFiltrosGastos()">Ver todos</button>
+      </div>
+      <div id="resumenGastosFecha" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px"></div>
       <div id="listaGastos" class="tabla-wrap"></div>
     </section>
 

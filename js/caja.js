@@ -345,6 +345,9 @@ function renderEstadoCaja() {
 }
 
 /* ============ CORTE ============ */
+// Bloqueo en memoria para evitar guardar dos veces el mismo corte por doble clic.
+let corteEnProceso = false;
+
 function abrirCorteDiario() {
   initDia();
   const r = resumenDia();
@@ -376,27 +379,27 @@ function abrirCorteDiario() {
     <div class="arqueo-grid">
       <div>
         <label>Billetes $1000</label>
-        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="1000" value="0" oninput="calcArqueo()"><span class="sub" id="s1000">$0</span></div>
+        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="1000" type="number" min="0" step="1" inputmode="numeric" value="0" oninput="calcArqueo()"><span class="sub" id="s1000">$0</span></div>
         <label>Billetes $500</label>
-        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="500" value="0" oninput="calcArqueo()"><span class="sub" id="s500">$0</span></div>
+        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="500" type="number" min="0" step="1" inputmode="numeric" value="0" oninput="calcArqueo()"><span class="sub" id="s500">$0</span></div>
         <label>Billetes $200</label>
-        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="200" value="0" oninput="calcArqueo()"><span class="sub" id="s200">$0</span></div>
+        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="200" type="number" min="0" step="1" inputmode="numeric" value="0" oninput="calcArqueo()"><span class="sub" id="s200">$0</span></div>
         <label>Billetes $100</label>
-        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="100" value="0" oninput="calcArqueo()"><span class="sub" id="s100">$0</span></div>
+        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="100" type="number" min="0" step="1" inputmode="numeric" value="0" oninput="calcArqueo()"><span class="sub" id="s100">$0</span></div>
         <label>Billetes $50</label>
-        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="50" value="0" oninput="calcArqueo()"><span class="sub" id="s50">$0</span></div>
+        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="50" type="number" min="0" step="1" inputmode="numeric" value="0" oninput="calcArqueo()"><span class="sub" id="s50">$0</span></div>
       </div>
       <div>
         <label>Billetes $20</label>
-        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="20" value="0" oninput="calcArqueo()"><span class="sub" id="s20">$0</span></div>
+        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="20" type="number" min="0" step="1" inputmode="numeric" value="0" oninput="calcArqueo()"><span class="sub" id="s20">$0</span></div>
         <label>Monedas $10</label>
-        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="10" value="0" oninput="calcArqueo()"><span class="sub" id="s10">$0</span></div>
+        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="10" type="number" min="0" step="1" inputmode="numeric" value="0" oninput="calcArqueo()"><span class="sub" id="s10">$0</span></div>
         <label>Monedas $5</label>
-        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="5" value="0" oninput="calcArqueo()"><span class="sub" id="s5">$0</span></div>
+        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="5" type="number" min="0" step="1" inputmode="numeric" value="0" oninput="calcArqueo()"><span class="sub" id="s5">$0</span></div>
         <label>Monedas $2</label>
-        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="2" value="0" oninput="calcArqueo()"><span class="sub" id="s2">$0</span></div>
+        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="2" type="number" min="0" step="1" inputmode="numeric" value="0" oninput="calcArqueo()"><span class="sub" id="s2">$0</span></div>
         <label>Monedas $1</label>
-        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="1" value="0" oninput="calcArqueo()"><span class="sub" id="s1">$0</span></div>
+        <div class="arqueo-fila"><input type="number" class="arqueo" data-v="1" type="number" min="0" step="1" inputmode="numeric" value="0" oninput="calcArqueo()"><span class="sub" id="s1">$0</span></div>
       </div>
     </div>
 
@@ -423,7 +426,7 @@ function calcArqueo() {
   let total = 0;
   $$(".arqueo").forEach(inp => {
     const v = +inp.dataset.v;
-    const cant = +inp.value || 0;
+    const cant = Math.max(0, +inp.value || 0);
     const sub = v * cant;
     total += sub;
     const span = $("#s" + v);
@@ -438,43 +441,80 @@ function calcArqueo() {
 }
 
 function guardarCorte(esperado, efectivo, tarjeta, transf, total) {
+  if (corteEnProceso) return toast("⏳ El corte ya se está guardando");
   if (!confirm("El corte reinicia la caja: fondo inicial y movimientos de caja fuerte.\n\nLas ventas y gastos se conservan en Historial y Reportes.\n\n¿Guardar el corte?")) return;
-  const contado = +$("#totalContado").textContent.replace(/[^0-9.-]/g, "");
-  const nota = $("#corteNota").value.trim();
-  const diferencia = contado - esperado;
+  corteEnProceso = true;
 
-  const corte = {
-    id: nuevoId(LS.get("cortes", [])),
-    fecha: new Date().toISOString(),
-    dia: hoy(),
-    fondo: estadoCajaHoy.fondoInicial || 0,
-    ventas: { efectivo, tarjeta, transf, total, tickets: resumenDia().ventasHoy.length },
-    gastos: resumenDia().gastosEfectivo,
-    gastosTransf: resumenDia().gastosTransf,
-    gastosCajaFuerte: resumenDia().gastosCajaFuerte,
-    retiros: CORTE_INCLUYE_CAJA_FUERTE ? resumenDia().retiros : 0,
-    depositos: CORTE_INCLUYE_CAJA_FUERTE ? resumenDia().depositos : 0,
-    movCajaFuerte: { retiros: estadoCajaHoy.retiros, depositos: estadoCajaHoy.depositos },
-    esperado, contado, diferencia, nota,
-    usuario: JSON.parse(sessionStorage.getItem("sesion") || "{}").nombre || "admin"
-  };
+  try {
+    // Validar cantidades enteras no negativas; los arqueos son conteos de piezas, no importes libres.
+    const arqueos = $$(".arqueo");
+    for (const inp of arqueos) {
+      const texto = String(inp.value ?? "").trim();
+      const cantidad = texto === "" ? 0 : Number(texto);
+      if (!Number.isSafeInteger(cantidad) || cantidad < 0) {
+        corteEnProceso = false;
+        return toast("⚠️ Las cantidades de billetes y monedas deben ser números enteros no negativos");
+      }
+    }
 
-  const cortes = LS.get("cortes", []);
-  cortes.push(corte);
-  LS.set("cortes", cortes);
+    // Volver a calcular al guardar: los datos pudieron cambiar mientras el modal estaba abierto.
+    const r = resumenDia();
+    esperado = redondear2(r.esperado);
+    efectivo = redondear2(r.efectivoVentas);
+    tarjeta = redondear2(r.tarjetaVentas);
+    transf = redondear2(r.transfVentas);
+    total = redondear2(r.totalVentas);
+    const contado = redondear2(arqueos.reduce((s, inp) =>
+      s + (Number(inp.dataset.v) || 0) * (String(inp.value ?? "").trim() === "" ? 0 : Number(inp.value)), 0));
+    const nota = $("#corteNota")?.value.trim() || "";
+    const diferencia = redondear2(contado - esperado);
+    let sesion = {};
+    try { sesion = JSON.parse(sessionStorage.getItem("sesion") || "{}"); } catch (_) { sesion = {}; }
 
-  // Reiniciar la caja: lo anterior queda en el corte, el Historial y los Reportes
-  estadoCajaHoy = { fecha: hoy(), fondoInicial: null, retiros: [], depositos: [], desde: new Date().toISOString() };
-  LS.set("cajaHoy", estadoCajaHoy);
+    const corte = {
+      id: nuevoId(LS.get("cortes", [])),
+      fecha: new Date().toISOString(),
+      dia: hoy(),
+      fondo: r.fondo,
+      ventas: { efectivo, tarjeta, transf, total, tickets: r.ventasHoy.length },
+      gastos: r.gastosEfectivo,
+      gastosTransf: r.gastosTransf,
+      gastosCajaFuerte: r.gastosCajaFuerte,
+      retiros: CORTE_INCLUYE_CAJA_FUERTE ? r.retiros : 0,
+      depositos: CORTE_INCLUYE_CAJA_FUERTE ? r.depositos : 0,
+      movCajaFuerte: { retiros: estadoCajaHoy.retiros, depositos: estadoCajaHoy.depositos },
+      esperado, contado, diferencia, nota,
+      usuario: sesion.nombre || "admin"
+    };
 
-  cerrarModal();
-  toast(`✅ Corte guardado · Diferencia: ${fmt(diferencia)} · Caja reiniciada`);
-  renderEstadoCaja();
-  window._fechaHistorialCortes = corte.dia;
-  renderHistorialCortes();
-  mostrarAlertaStock();
-  if (typeof respaldoAutomatico === "function") respaldoAutomatico("corte"); // antes de imprimir: no debe depender de la impresora
-  imprimirCorte(corte);
+    const cortes = LS.get("cortes", []);
+    cortes.push(corte);
+    LS.set("cortes", cortes);
+    // No reiniciar la caja si el navegador no pudo persistir el corte.
+    const cortesGuardados = LS.get("cortes", null);
+    if (!Array.isArray(cortesGuardados) || !cortesGuardados.some(c => String(c.id) === String(corte.id))) {
+      corteEnProceso = false;
+      return toast("⚠️ No se pudo confirmar el guardado del corte. La caja no se reinició; revisa el almacenamiento.");
+    }
+
+    // Reiniciar la caja solo después de confirmar que el corte quedó guardado.
+    estadoCajaHoy = { fecha: hoy(), fondoInicial: null, retiros: [], depositos: [], desde: new Date().toISOString() };
+    LS.set("cajaHoy", estadoCajaHoy);
+
+    cerrarModal();
+    toast(`✅ Corte guardado · Diferencia: ${fmt(diferencia)} · Caja reiniciada`);
+    renderEstadoCaja();
+    window._fechaHistorialCortes = corte.dia;
+    renderHistorialCortes();
+    mostrarAlertaStock();
+    if (typeof respaldoAutomatico === "function") respaldoAutomatico("corte"); // antes de imprimir: no debe depender de la impresora
+    imprimirCorte(corte);
+  } catch (error) {
+    console.error("Error al guardar corte:", error);
+    toast("⚠️ Ocurrió un error al guardar el corte. Revisa el historial antes de volver a intentarlo.");
+  } finally {
+    corteEnProceso = false;
+  }
 }
 
 function resumenResultadoCorte(corte) {

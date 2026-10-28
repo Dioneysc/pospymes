@@ -6,38 +6,99 @@
 
 function guardarCats() { LS.set("catsGasto", CATS_GASTO); }
 
+function fechaLocalGasto(valor) {
+  const d = new Date(valor);
+  if (Number.isNaN(d.getTime())) return "";
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dia = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dia}`;
+}
+
+function actualizarFiltroCategoriasGastos() {
+  const select = $("#gastosCategoriaFiltro");
+  if (!select) return;
+  const seleccion = select.value;
+  const categorias = [...new Set([...(CATS_GASTO || []), ...(DB.gastos || []).map(g => g.categoria).filter(Boolean)])]
+    .sort((a, b) => a.localeCompare(b, "es-MX"));
+  select.innerHTML = `<option value="">Todas las categorías</option>${categorias.map(c =>
+    `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`
+  ).join("")}`;
+  if (categorias.includes(seleccion)) select.value = seleccion;
+}
+
+function filtrarGastosHoy() {
+  const hoy = fechaLocalGasto(new Date());
+  if ($("#gastosDesde")) $("#gastosDesde").value = hoy;
+  if ($("#gastosHasta")) $("#gastosHasta").value = hoy;
+  renderGastos();
+}
+
+function limpiarFiltrosGastos() {
+  if ($("#gastosDesde")) $("#gastosDesde").value = "";
+  if ($("#gastosHasta")) $("#gastosHasta").value = "";
+  if ($("#gastosCategoriaFiltro")) $("#gastosCategoriaFiltro").value = "";
+  renderGastos();
+}
+
 function renderGastos() {
-  const gastos = [...DB.gastos].sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
-  if (!gastos.length) {
-    $("#listaGastos").innerHTML = `
-      <div style="text-align:center;padding:40px 20px;color:#94a3b8">
-        <div style="font-size:60px;margin-bottom:12px">💸</div>
-        <h3 style="color:#64748b;font-size:16px;margin-bottom:8px">Sin gastos registrados</h3>
-        <p style="font-size:13px;margin-bottom:16px">Aquí aparecerán tus gastos</p>
-        <button class="btn-primary" onclick="abrirFormGasto()" style="padding:12px 24px">+ Registrar gasto</button>
+  const todos = [...(DB.gastos || [])].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+  actualizarFiltroCategoriasGastos();
+  const desde = $("#gastosDesde")?.value || "";
+  const hasta = $("#gastosHasta")?.value || "";
+  const categoria = $("#gastosCategoriaFiltro")?.value || "";
+  const rangoInvalido = desde && hasta && desde > hasta;
+  const gastos = rangoInvalido ? [] : todos.filter(g => {
+    const fecha = fechaLocalGasto(g.fecha);
+    return fecha && (!desde || fecha >= desde) && (!hasta || fecha <= hasta) && (!categoria || g.categoria === categoria);
+  });
+  const total = gastos.reduce((s, g) => s + (Number(g.monto) || 0), 0);
+  const resumen = $("#resumenGastosFecha");
+  if (resumen) {
+    resumen.innerHTML = `
+      <div style="flex:1;min-width:145px;padding:14px;border:1px solid var(--borde);border-radius:12px;background:var(--superficie,#f8fafc)">
+        <div style="font-size:12px;color:var(--texto-secundario,#64748b);margin-bottom:5px">${desde || hasta ? "Gastos del periodo" : "Todos los gastos"}</div>
+        <div style="font-size:23px;font-weight:800;color:var(--peligro,#dc2626)">${fmt(total)}</div>
       </div>
-    `;
+      <div style="flex:1;min-width:120px;padding:14px;border:1px solid var(--borde);border-radius:12px;background:var(--superficie,#f8fafc)">
+        <div style="font-size:12px;color:var(--texto-secundario,#64748b);margin-bottom:5px">Movimientos</div>
+        <div style="font-size:23px;font-weight:800">${gastos.length}</div>
+      </div>`;
+  }
+  const contenedor = $("#listaGastos");
+  if (!contenedor) return;
+  if (rangoInvalido) {
+    contenedor.innerHTML = `<div style="text-align:center;padding:24px;color:#b91c1c">La fecha inicial no puede ser posterior a la fecha final.</div>`;
     return;
   }
-
-  $("#listaGastos").innerHTML = `
+  if (!gastos.length) {
+    contenedor.innerHTML = `
+      <div style="text-align:center;padding:32px 20px;color:#94a3b8">
+        <div style="font-size:48px;margin-bottom:10px">💸</div>
+        <h3 style="color:#64748b;font-size:16px;margin-bottom:8px">${todos.length ? "No hay gastos para estos filtros" : "Sin gastos registrados"}</h3>
+        <p style="font-size:13px;margin-bottom:16px">${todos.length ? "Cambia las fechas o la categoría para ver otros movimientos." : "Aquí aparecerán tus gastos"}</p>
+        ${todos.length ? `<button class="btn-secondary" onclick="limpiarFiltrosGastos()" style="padding:10px 18px">Ver todos</button>` : `<button class="btn-primary" onclick="abrirFormGasto()" style="padding:12px 24px">+ Registrar gasto</button>`}
+      </div>`;
+    return;
+  }
+  contenedor.innerHTML = `
     <table>
       <thead><tr><th>Fecha</th><th>Categoría</th><th>Nota</th><th>Método</th><th>Monto</th><th>Acciones</th></tr></thead>
       <tbody>
         ${gastos.map(g => `
           <tr>
-            <td data-label="Fecha">${new Date(g.fecha).toLocaleDateString("es-MX")}</td>
+            <td data-label="Fecha">${new Date(g.fecha).toLocaleDateString("es-MX")}<br><small style="color:var(--texto-secundario,#64748b)">${new Date(g.fecha).toLocaleTimeString("es-MX", {hour:"2-digit",minute:"2-digit"})}</small></td>
             <td data-label="Categoría">${escapeHTML(g.categoria)}</td>
             <td data-label="Nota">${escapeHTML(g.nota || "—")}</td>
             <td data-label="Método">${escapeHTML(g.metodo || "Efectivo")}</td>
             <td data-label="Monto">${fmt(g.monto)}</td>
-            <td data-label="Acciones"><button class="btn-mini" onclick="borrarGasto(${g.id})">🗑️</button></td>
+            <td data-label="Acciones"><button class="btn-mini" onclick="borrarGasto(${JSON.stringify(g.id)})" title="Borrar gasto">🗑️</button></td>
           </tr>
         `).join("")}
       </tbody>
+      <tfoot><tr><th colspan="4" style="text-align:right">Total del resultado</th><th>${fmt(total)}</th><th></th></tr></tfoot>
     </table>`;
 }
-
 function abrirFormGasto() {
   if (CATS_GASTO.length === 0) {
     return abrirModal("⚠️ Sin categorías", `
@@ -73,18 +134,33 @@ function abrirFormGasto() {
 }
 
 function guardarGasto() {
-  const monto = Number($("#fgMonto").value);
-  if (!Number.isFinite(monto) || monto <= 0) return toast("Ingresa un monto mayor que cero");
-  const metodo = $("#fgMetodo").value;
-  DB.gastos.push({
+  const inputMonto = $("#fgMonto");
+  const montoEntrada = Number(inputMonto?.value);
+  if (!Number.isFinite(montoEntrada) || montoEntrada <= 0 || !Number.isFinite(redondear2(montoEntrada)) || redondear2(montoEntrada) <= 0) {
+    return toast("Ingresa un monto mayor que cero y válido");
+  }
+  const categoria = $("#fgCategoria")?.value?.trim() || "";
+  if (!categoria) return toast("Selecciona una categoría para el gasto");
+  const metodo = $("#fgMetodo")?.value || "Efectivo";
+  if (!["Efectivo", "Transferencia", "Caja Fuerte"].includes(metodo)) return toast("Selecciona un método de pago válido");
+  const monto = redondear2(montoEntrada);
+  const gasto = {
     id: nuevoId(DB.gastos),
     fecha: new Date().toISOString(),
-    categoria: $("#fgCategoria").value,
+    categoria,
     monto,
     metodo,
-    nota: $("#fgNota").value.trim()
-  });
-  guardar(); cerrarModal(); renderGastos(); renderEstadoCaja();
+    nota: $("#fgNota")?.value.trim() || ""
+  };
+  DB.gastos.push(gasto);
+  guardar("gastos");
+  // Verificar persistencia antes de cerrar el formulario o dar éxito.
+  const guardados = LS.get("gastos", null);
+  if (!Array.isArray(guardados) || !guardados.some(g => String(g.id) === String(gasto.id))) {
+    DB.gastos = DB.gastos.filter(g => String(g.id) !== String(gasto.id));
+    return toast("⚠️ No se pudo guardar el gasto. Revisa el espacio disponible en el dispositivo.");
+  }
+  cerrarModal(); renderGastos(); renderEstadoCaja();
   toast(metodo === "Caja Fuerte"
     ? "🔐 Gasto registrado en Caja Fuerte; no se descontó de la caja del negocio"
     : "💾 Gasto registrado");
