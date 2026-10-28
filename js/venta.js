@@ -19,7 +19,7 @@ function cambiarCategoria(c) {
   renderCaja();
 }
 
-// Calcula cuántas unidades completas pueden venderse según los insumos de la receta.
+// Calcula el máximo teórico disponible, admitiendo cantidades fraccionarias según la receta.
 // Los productos sin receta (por ejemplo, servicios) no muestran stock de insumos.
 function stockDisponibleProducto(p) {
   if (!p || !Array.isArray(p.insumos) || !p.insumos.length) return null;
@@ -27,7 +27,12 @@ function stockDisponibleProducto(p) {
     .map(g => ({ ins: DB.insumos.find(i => String(i.id) === String(g.insumoId)), cantidad: Number(g.cantidad) }))
     .filter(g => g.cantidad > 0);
   if (!receta.length || receta.some(g => !g.ins || !Number.isFinite(g.cantidad))) return null;
-  return Math.max(0, Math.min(...receta.map(g => Math.floor((Number(g.ins.stock) + 1e-9) / g.cantidad))));
+  return Math.max(0, Math.round(Math.min(...receta.map(g => (Number(g.ins.stock) || 0) / g.cantidad)) * 100) / 100);
+}
+
+function formatearCantidad(cantidad) {
+  const n = Math.round((Number(cantidad) || 0) * 100) / 100;
+  return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
 }
 
 function actualizarEtiquetasStockProductos() {
@@ -37,7 +42,7 @@ function actualizarEtiquetasStockProductos() {
     const etiqueta = btn.querySelector('.prod-stock');
     if (!etiqueta) return;
     if (stock === null) { etiqueta.remove(); return; }
-    etiqueta.textContent = stock === 0 ? 'Agotado' : `Stock: ${stock}`;
+    etiqueta.textContent = stock <= 0 ? 'Agotado' : `Stock: ${formatearCantidad(stock)}`;
     etiqueta.classList.toggle('sin-stock', stock === 0);
     etiqueta.classList.toggle('stock-bajo', stock > 0 && stock <= 3);
   });
@@ -74,7 +79,7 @@ function renderCaja() {
         ${contenido}
         <span class="prod-nombre">${escapeHTML(p.nombre)}</span>
         <span class="prod-precio">${fmt(p.precio)}</span>
-        ${stockDisponibleProducto(p) === null ? "" : `<span class="prod-stock${stockDisponibleProducto(p) === 0 ? " sin-stock" : stockDisponibleProducto(p) <= 3 ? " stock-bajo" : ""}">${stockDisponibleProducto(p) === 0 ? "Agotado" : `Stock: ${stockDisponibleProducto(p)}`}</span>`}
+        ${stockDisponibleProducto(p) === null ? "" : `<span class="prod-stock${stockDisponibleProducto(p) === 0 ? " sin-stock" : stockDisponibleProducto(p) <= 3 ? " stock-bajo" : ""}">${stockDisponibleProducto(p) <= 0 ? "Agotado" : `Stock: ${formatearCantidad(stockDisponibleProducto(p))}`}</span>`}
       </button>
     `;
   }).join("") || `<p style="color:#94a3b8;padding:20px;grid-column:1/-1;text-align:center">Sin resultados</p>`;
@@ -161,7 +166,7 @@ function renderCarrito() {
           <b>${escapeHTML(it.emoji || "")} ${escapeHTML(it.nombre)}</b>
           <div class="item-controles">
             <button onclick="cambiarCantidad(${i}, -1)">−</button>
-            <span>${it.cantidad}</span>
+            <span role="button" title="Toca para editar la cantidad, admite decimales" onclick="editarCantidad(${i})" style="min-width:28px;text-align:center;cursor:pointer">${formatearCantidad(it.cantidad)}</span>
             <button onclick="cambiarCantidad(${i}, 1)">+</button>
           </div>
         </div>
@@ -185,6 +190,23 @@ function renderCarrito() {
 
   actualizarToggleValores();
   actualizarCarritoFlotante();
+}
+
+function editarCantidad(i) {
+  if (!carrito[i]) return;
+  const actual = formatearCantidad(carrito[i].cantidad);
+  const entrada = prompt(`Cantidad de ${carrito[i].nombre} (puedes usar decimales, por ejemplo 0.5):`, actual);
+  if (entrada === null) return;
+  const cantidad = Number(String(entrada).trim().replace(",", "."));
+  if (!Number.isFinite(cantidad) || cantidad < 0) {
+    alert("Escribe una cantidad válida, igual o mayor que cero.");
+    return;
+  }
+  if (cantidad === 0) carrito.splice(i, 1);
+  else carrito[i].cantidad = Math.round(cantidad * 1000) / 1000;
+  if (!carrito.length) { window._preventaEnProcesoId = null; reiniciarTipoPedido(); cerrarCarritoModal(); }
+  renderCarrito();
+  actualizarEtiquetasStockProductos();
 }
 
 function cambiarCantidad(i, d) {

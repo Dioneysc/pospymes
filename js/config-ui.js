@@ -369,6 +369,8 @@ function importarBackup(e) {
 const MENU_INFERIOR_OPCIONES = [
   { id: "caja", icono: "🛒", nombre: "Venta" },
   { id: "inventario", icono: "📦", nombre: "Inventario" },
+  { id: "productos", icono: "🍗", nombre: "Productos" },
+  { id: "gastos", icono: "💸", nombre: "Gastos" },
   { id: "corte", icono: "💰", nombre: "Caja" },
   { id: "panelVentas", icono: "📈", nombre: "Panel" },
   { id: "reportes", icono: "📊", nombre: "Reportes" },

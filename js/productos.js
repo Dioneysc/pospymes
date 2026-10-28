@@ -114,6 +114,12 @@ function borrarProducto(id) {
   guardar(); renderProductos(); renderCaja(); renderCategorias(); toast("🗑️ Borrado");
 }
 
+/* Refresca las vistas que dependen de una receta sin recargar la página. */
+function refrescarVistasTrasCambioReceta() {
+  if (typeof renderProductos === "function" && document.getElementById("listaProductos")) renderProductos();
+  if (typeof renderCaja === "function" && document.getElementById("gridProductos")) renderCaja();
+}
+
 /* ============ RECETAS DE PRODUCTOS ============ */
 function abrirReceta(productoId) {
   const p = DB.productos.find(x => x.id === productoId);
@@ -220,6 +226,7 @@ function agregarItemReceta(productoId) {
   }
 
   guardar();
+  refrescarVistasTrasCambioReceta();
   const scrollY = document.querySelector(".modal-contenido")?.scrollTop || 0;
   abrirReceta(productoId);
   setTimeout(() => {
@@ -236,6 +243,7 @@ function actualizarCantidadReceta(idx, valor) {
   if (!Number.isFinite(cantidad) || cantidad <= 0) return toast("Cantidad inválida");
   p.insumos[idx].cantidad = cantidad;
   guardar();
+  refrescarVistasTrasCambioReceta();
   const costo = document.getElementById("costoRecetaVal");
   if (costo) costo.textContent = fmt(calcularCostoReceta(p));
 }
@@ -246,6 +254,7 @@ function borrarItemReceta(idx) {
   if (!p || !p.insumos) return;
   p.insumos.splice(idx, 1);
   guardar();
+  refrescarVistasTrasCambioReceta();
   abrirReceta(productoId);
   toast("🗑️ Insumo quitado");
 }
@@ -256,5 +265,6 @@ function guardarReceta(productoId) {
 
   guardar();
   cerrarModal();
+  refrescarVistasTrasCambioReceta();
   toast("💾 Receta guardada");
 }

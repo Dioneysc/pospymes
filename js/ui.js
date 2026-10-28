@@ -138,7 +138,8 @@ function aplicarMenuInferior() {
     cajero: ["caja", "preventas", "pendientes", "historial"]
   };
   const mapa = {
-    caja: ["🛒", "Venta"], inventario: ["📦", "Inventario"], corte: ["💰", "Caja"],
+    caja: ["🛒", "Venta"], inventario: ["📦", "Inventario"], productos: ["🍗", "Productos"],
+    gastos: ["💸", "Gastos"], corte: ["💰", "Caja"],
     panelVentas: ["📈", "Panel"], reportes: ["📊", "Reportes"], preventas: ["📋", "Preventas"],
     pendientes: ["📝", "Pendientes"], historial: ["🧾", "Historial"]
   };
