@@ -4,11 +4,6 @@
 
 /* ============ SERVICE WORKER ============ */
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
-  // Una versión nueva se instala en segundo plano; se usa la próxima vez que se abra la app
-  const habiaControl = !!navigator.serviceWorker.controller;
-  navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (habiaControl && typeof toast === "function") toast("🔄 Nueva versión lista. Se usará al cerrar y volver a abrir la app");
-  });
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" })
       .then(reg => { console.log("✅ Service Worker registrado"); reg.update(); })

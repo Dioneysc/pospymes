@@ -484,38 +484,3 @@ button.menu-inferior-opcion { font: inherit; text-align: left; width: 100%; }
   }
   #reportes .analisis-productos-unificado .tabla-analisis-productos td::before { content: none !important; display: none !important; }
 }
-
-/* ===== Gastos: filtros por período, resumen y agrupación por día ===== */
-.gastos-filtros { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
-.gastos-periodos { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
-.gastos-periodos::-webkit-scrollbar { display: none; }
-.gasto-chip { flex: 0 0 auto; min-height: 38px; padding: 8px 14px; border: 1.5px solid var(--borde); border-radius: 999px; background: var(--gris-card); color: var(--texto-suave); font: inherit; font-size: 13px; font-weight: 700; white-space: nowrap; cursor: pointer; }
-.gasto-chip.activo { background: var(--naranja); border-color: var(--naranja); color: #fff; }
-.gastos-selects { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
-.gastos-selects label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: var(--texto-suave); }
-.gastos-selects select, .gastos-selects input { width: 100%; min-height: 44px; margin: 0; padding: 10px; border: 1.5px solid var(--borde); border-radius: 10px; background: var(--gris-card); color: var(--texto); font-size: 15px; }
-
-.gastos-resumen { margin-bottom: 14px; padding: 16px; background: var(--gris-card); border: 1px solid var(--borde); border-radius: 16px; }
-.gastos-total-linea { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
-.gastos-total-linea small { display: block; font-size: 12px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; color: var(--texto-suave); }
-.gastos-total-monto { font-size: 30px; font-weight: 900; line-height: 1.1; color: var(--texto); }
-.gastos-conteo { font-size: 13px; font-weight: 700; color: var(--texto-suave); }
-.gastos-metodos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-.gasto-metodo { padding: 4px 10px; border-radius: 999px; background: rgba(100, 116, 139, .13); color: var(--texto-suave); font-size: 12px; font-weight: 700; }
-.gasto-metodo b { color: var(--texto); }
-.gastos-cats { display: grid; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--borde); }
-.gasto-cat { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 10px; font-size: 13px; }
-.gasto-cat-nombre { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; color: var(--texto); }
-.gasto-cat-monto { font-weight: 800; color: var(--texto); }
-.gasto-cat-monto small { font-weight: 700; color: var(--texto-suave); margin-left: 4px; }
-.gasto-cat-barra { grid-column: 1 / -1; height: 6px; overflow: hidden; border-radius: 999px; background: rgba(100, 116, 139, .16); }
-.gasto-cat-barra i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #f97316, #fbbf24); }
-
-tr.gasto-dia td { padding: 0; border: none; background: transparent; }
-tr.gasto-dia td::before { content: none; }
-tr.gasto-dia td > div { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 12px; background: rgba(100, 116, 139, .12); color: var(--texto); font-size: 13px; font-weight: 800; }
-@media (max-width: 900px) {
-  tr.gasto-dia { margin: 16px 0 8px; padding: 0; background: transparent; border: none; box-shadow: none; }
-  tr.gasto-dia td { display: block; width: 100%; }
-  tr.gasto-dia td > div { border-radius: 10px; }
-}
