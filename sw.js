@@ -1,7 +1,6 @@
-// IMPORTANTE: sube este número cada vez que publiques cambios (v130 → v131 …).
-// Los archivos de la app se sirven desde la copia guardada de esta versión para abrir rápido;
+// IMPORTANTE: sube este número cada vez que publiques cambios (v131 → v132 …).
 // si el número no cambia, los dispositivos no se enteran de que hay archivos nuevos.
-const VERSION = "v130";
+const VERSION = "v131";
 const CACHE = `pos-polleria-${VERSION}`;
 
 // Sin estos archivos la app no funciona: si falta alguno, la instalación falla y se conserva la versión anterior
@@ -49,7 +48,7 @@ const OPCIONALES = ["./logo.png", "./icons/icon-192.png", "./icons/icon-512.png"
 self.addEventListener("install", e => {
   e.waitUntil(
     caches.open(CACHE).then(async c => {
-      await c.addAll(NUCLEO.map(u => new Request(u, { cache: "reload" }))); // "reload": nunca una copia vieja de la caché del navegador
+      await c.addAll(NUCLEO); // Usa la caché HTTP normal: evita forzar descargas de todos los archivos al instalar la versión.
       await Promise.all(OPCIONALES.map(u => c.add(u).catch(() => console.warn("No se pudo cachear:", u))));
     }).then(() => self.skipWaiting())
   );
