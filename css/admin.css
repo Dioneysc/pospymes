@@ -486,9 +486,152 @@ button.menu-inferior-opcion { font: inherit; text-align: left; width: 100%; }
 }
 
 
-/* Asa compacta para ordenar productos mediante arrastre táctil o con ratón. */
-.asa-orden-producto { display:inline-flex; align-items:center; justify-content:center; width:32px; height:38px; padding:0; border:0; border-radius:8px; background:transparent; color:#64748b; font-size:23px; font-weight:900; line-height:1; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; }
-.asa-orden-producto:active { cursor:grabbing; background:#fff7ed; color:var(--naranja); }
-#listaProductos tbody tr[data-product-order-id] { transition:background .12s ease, opacity .12s ease; }
-#listaProductos tbody tr.producto-orden-arrastrando { opacity:.55; background:#fff7ed; outline:2px dashed var(--naranja); outline-offset:-2px; }
-#listaProductos th:first-child, #listaProductos td:first-child { width:48px; min-width:48px; text-align:center; }
+/* Consolidación móvil: Productos compacto sin alterar la tabla de escritorio (base oficial v126) */
+@media (max-width: 900px) {
+  #productos .vista-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  #productos .vista-header h2 {
+    min-width: 0;
+    margin: 0;
+    font-size: clamp(20px, 5vw, 26px);
+  }
+  #productos .vista-header > button {
+    width: auto;
+    flex: 0 0 auto;
+    min-height: 42px;
+    padding: 10px 13px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  #productos #listaProductos.tabla-wrap {
+    display: block;
+    overflow: visible;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+  #productos #listaProductos > table,
+  #productos #listaProductos > table tbody {
+    display: block;
+    width: 100%;
+  }
+  #productos #listaProductos > table thead {
+    display: none;
+  }
+  #productos #listaProductos > table tbody > tr {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "emoji nombre precio"
+      "emoji categoria estado"
+      "acciones acciones acciones";
+    align-items: center;
+    gap: 5px 10px;
+    margin: 0 0 9px;
+    padding: 11px 12px;
+    border: 1px solid var(--borde, #e7e5e4);
+    border-radius: 14px;
+    background: var(--superficie, #fff);
+    box-shadow: 0 2px 8px rgba(28, 25, 23, .045);
+  }
+  #productos #listaProductos > table tbody > tr > td {
+    display: block;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    text-align: left;
+    font-size: 13px;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+  #productos #listaProductos > table tbody > tr > td::before {
+    content: none !important;
+    display: none !important;
+  }
+  #productos #listaProductos > table tbody > tr > td:nth-child(1) {
+    grid-area: emoji;
+    align-self: center;
+    font-size: 27px !important;
+    text-align: center;
+  }
+  #productos #listaProductos > table tbody > tr > td:nth-child(2) {
+    grid-area: nombre;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--texto, #292524);
+  }
+  #productos #listaProductos > table tbody > tr > td:nth-child(3) {
+    grid-area: categoria;
+    color: var(--texto-suave, #78716c);
+    font-size: 11px;
+  }
+  #productos #listaProductos > table tbody > tr > td:nth-child(4) {
+    grid-area: precio;
+    text-align: right;
+    white-space: nowrap;
+    font-size: 14px;
+  }
+  #productos #listaProductos > table tbody > tr > td:nth-child(4) > div {
+    max-width: 145px;
+    white-space: normal;
+    font-size: 10px !important;
+    line-height: 1.2;
+    margin-top: 2px !important;
+  }
+  #productos #listaProductos > table tbody > tr > td:nth-child(5) {
+    grid-area: estado;
+    justify-self: end;
+    text-align: right;
+  }
+  #productos #listaProductos > table tbody > tr > td:nth-child(6) {
+    grid-area: acciones;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding-top: 7px;
+    margin-top: 3px;
+    border-top: 1px solid #f5f5f4;
+  }
+  #productos #listaProductos > table tbody > tr > td:nth-child(6) .btn-mini {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    min-height: 36px;
+    margin: 0;
+    padding: 6px 9px;
+    border-radius: 10px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  #productos #listaProductos > table tbody > tr > td:nth-child(6) .btn-mini[title="Editar receta"] {
+    padding-inline: 11px;
+  }
+}
+
+@media (max-width: 390px) {
+  #productos .vista-header { gap: 7px; }
+  #productos .vista-header h2 { font-size: 20px; }
+  #productos .vista-header > button { padding: 9px 10px; font-size: 12px; }
+  #productos #listaProductos > table tbody > tr {
+    grid-template-columns: 32px minmax(0, 1fr) auto;
+    gap: 5px 7px;
+    padding: 10px;
+  }
+  #productos #listaProductos > table tbody > tr > td:nth-child(1) { font-size: 24px !important; }
+  #productos #listaProductos > table tbody > tr > td:nth-child(2) { font-size: 14px; }
+  #productos #listaProductos > table tbody > tr > td:nth-child(4) { font-size: 13px; }
+  #productos #listaProductos > table tbody > tr > td:nth-child(4) > div { max-width: 125px; }
+  #productos #listaProductos > table tbody > tr > td:nth-child(6) { gap: 4px; }
+  #productos #listaProductos > table tbody > tr > td:nth-child(6) .btn-mini { min-width: 32px; min-height: 34px; padding: 5px 7px; }
+}
