@@ -51,7 +51,6 @@ function actualizarEtiquetasStockProductos() {
 function renderCaja() {
   const busq = ($("#buscarProducto")?.value || "").toLowerCase();
   let prods = DB.productos.filter(p => p.activo);
-  if (typeof ordenarListaProductos === "function") prods = ordenarListaProductos(prods);
   if (categoriaActiva !== "Todas") prods = prods.filter(p => p.categoria === categoriaActiva);
   if (busq) prods = prods.filter(p => p.nombre.toLowerCase().includes(busq));
 
