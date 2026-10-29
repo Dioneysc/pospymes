@@ -659,3 +659,19 @@ body.modo-oscuro .productos-grid.vista-lista .prod-btn:hover {
   .productos-grid.vista-lista .prod-btn > .prod-nombre { font-size: 12px; }
   .productos-grid.vista-lista .prod-btn > .prod-precio { font-size: 14px; }
 }
+
+
+/* v134 · Reordenamiento local por arrastre; no altera datos de venta. */
+.btn-ordenar { flex: 0 0 auto; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 0 12px; background: #fff; color: #57534e; border: 1.5px solid #e7e5e4; border-radius: 14px; box-shadow: 0 3px 12px rgba(41,37,36,.045); cursor: pointer; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.btn-ordenar > span:first-child { font-size: 21px; line-height: 1; }
+.btn-ordenar.activo { background: #fff7ed; color: #c2410c; border-color: #f97316; }
+.btn-ordenar:disabled { opacity: .45; cursor: not-allowed; }
+body.modo-oscuro .btn-ordenar { background: #1e293b; color: #f1f5f9; border-color: #334155; }
+body.modo-oscuro .btn-ordenar.activo { background: #431407; color: #fed7aa; border-color: #f97316; }
+.prod-btn.modo-ordenar { padding-left: 34px; }
+.prod-btn .asa-arrastre { position: absolute; z-index: 2; left: 7px; top: 50%; transform: translateY(-50%); width: 26px; height: 42px; display: flex; align-items: center; justify-content: center; border-radius: 8px; color: #c2410c; background: rgba(249,115,22,.12); font-size: 24px; font-weight: 800; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.prod-btn .asa-arrastre:active { cursor: grabbing; }
+.productos-grid .prod-btn.arrastrando { opacity: .48; outline: 2px dashed #f97316; outline-offset: -3px; }
+.productos-grid.vista-lista .prod-btn.modo-ordenar { padding-left: 42px; }
+.productos-grid.vista-lista .prod-btn .asa-arrastre { left: 8px; width: 28px; }
+@media (max-width: 420px) { .btn-ordenar { padding: 0 9px; } .btn-ordenar-texto { font-size: 12px; } }
