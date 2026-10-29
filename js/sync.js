@@ -217,35 +217,19 @@ function iniciarFirebase() {
 }
 
 async function descargarTodo() {
-  // Fase 1: descargar TODAS las colecciones antes de tocar el almacenamiento local.
-  // Si una lectura falla, no dejamos el dispositivo con una restauración parcial.
-  const recibidos = {};
+  syncMeta.synced = { config: {} }; syncMeta.cfgT = {};
   for (const c of SYNC_COLS) {
-    const snap = await ref(c).get();
-    recibidos[c] = snap.docs.map(d => d.data());
-  }
-  const configSnap = await ref("config").get();
-  const configRecibida = [];
-  configSnap.forEach(d => configRecibida.push({ id: d.id, data: d.data() }));
-
-  // Fase 2: solo tras completar todas las lecturas, aplicar el estado remoto.
-  const syncedNuevo = { config: {} }, cfgTNuevo = {};
-  for (const c of SYNC_COLS) {
-    const lista = recibidos[c], s = (syncedNuevo[c] = {});
-    lista.forEach(r => { if (r && r.id !== undefined && r.id !== null) s[r.id] = hashDe(sinT(r)); });
+    const lista = [], s = (syncMeta.synced[c] = {});
+    (await ref(c).get()).forEach(d => { const r = d.data(); lista.push(r); s[r.id] = hashDe(sinT(r)); });
     escribir(c, lista);
   }
-  configRecibida.forEach(({ id, data: o }) => {
-    if (SYNC_CFG.includes(id) && o.valor !== undefined) {
-      escribir(id, o.valor);
-      syncedNuevo.config[id] = hashDe(o.valor);
-      cfgTNuevo[id] = o._t || 0;
-    }
+  (await ref("config").get()).forEach(d => {
+    const k = d.id, o = d.data();
+    if (SYNC_CFG.includes(k) && o.valor !== undefined) { escribir(k, o.valor); syncMeta.synced.config[k] = hashDe(o.valor); syncMeta.cfgT[k] = o._t || 0; }
   });
-  syncMeta.synced = syncedNuevo; syncMeta.cfgT = cfgTNuevo;
   // Si la nube no tenía usuarios, escribir([]) dejaba el sistema sin acceso hasta recargar
-  if (typeof actualizarPantallaLogin === "function") actualizarPantallaLogin();
-  if (typeof alinearInventarioConMovimientos === "function") alinearInventarioConMovimientos();
+  if (typeof actualizarPantallaLogin === "function") actualizarPantallaLogin(); // sin usuarios en la nube: el próximo ingreso pedirá crear contraseña
+  if (typeof alinearInventarioConMovimientos === "function") alinearInventarioConMovimientos(); // stock = suma de los movimientos de todos los dispositivos
   guardarMeta();
 }
 
@@ -354,29 +338,7 @@ async function finalizarConexion(user, slot) {
     if (!confirm("La nube ya tiene datos de este negocio.\n\n¿Reemplazar los datos de ESTE dispositivo por los de la nube?\n\nSe descargará un respaldo de lo que hay aquí antes de reemplazar.")) {
       await firebase.auth().signOut(); syncDb = null; syncUid = null; return pintarEstadoSync();
     }
-    // No reemplazar datos locales si no se pudo generar el respaldo preventivo.
-    // exportarBackup() no devuelve el resultado del guardado; usar directamente la función que sí lo informa.
-    let respaldoPrevio = false;
-    try {
-      respaldoPrevio = guardarArchivoRespaldo(
-        `respaldo-antes-de-sincronizar-${hoy()}.json`,
-        crearObjetoRespaldo()
-      );
-    } catch (e) {
-      console.error("No se pudo crear el respaldo previo a sincronizar:", e);
-    }
-    if (!respaldoPrevio) {
-      try { await firebase.auth().signOut(); } catch (_) {}
-      syncDb = null; syncUid = null;
-      pintarEstadoSync("⚠️ No se pudo crear el respaldo local. No se reemplazaron los datos; exporta un respaldo y vuelve a intentar.");
-      return;
-    }
-    if (!confirm("Se solicitó guardar un respaldo de los datos actuales. Comprueba que el archivo esté guardado antes de continuar.\n\n¿Reemplazar ahora los datos de este dispositivo con los de la nube?")) {
-      try { await firebase.auth().signOut(); } catch (_) {}
-      syncDb = null; syncUid = null;
-      pintarEstadoSync();
-      return;
-    }
+    exportarBackup();
     await descargarTodo();
   } else if (primera) { syncMeta.synced = {}; syncMeta.cfgT = {}; }
   syncMeta = { ...syncMeta, activo: true, slot, email: user.email || "", uid: syncUid };

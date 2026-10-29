@@ -104,26 +104,14 @@ function abrirMovimiento(insumoId) {
 function aplicarMovimiento() {
   const id = +$("#mvInsumo").value;
   const tipo = $("#mvTipo").value;
-  const entrada = $("#mvCantidad").value;
-  const cant = Number(entrada);
+  const cant = +$("#mvCantidad").value;
   const ins = DB.insumos.find(x => x.id === id);
   if (!ins) return toast("Insumo no encontrado");
-  if (!["entrada", "salida"].includes(tipo)) return toast("⚠️ Selecciona un tipo de movimiento válido");
-  if (String(entrada ?? "").trim() === "" || !Number.isFinite(cant) || cant <= 0)
-    return toast("⚠️ Ingresa una cantidad mayor que cero y válida");
-  const cantidad = redondear6(cant);
-  if (!Number.isFinite(cantidad) || cantidad <= 0) return toast("⚠️ La cantidad debe ser mayor que cero");
-
-  const stockActual = Math.max(0, Number(ins.stock) || 0);
-  // No descontar parcialmente una salida: el usuario debe corregir la cantidad o registrar un ajuste explícito.
-  if (tipo === "salida" && cantidad > stockActual + 1e-9) {
-    return toast(`⚠️ Stock insuficiente de ${ins.nombre}: disponible ${formatearCantidad(stockActual)} ${ins.unidad}`);
-  }
-  const delta = tipo === "entrada" ? cantidad : -cantidad;
-  const movimiento = registrarMovimientoInventario(tipo, [{ i: id, d: delta }], { motivo: ($("#mvMotivo").value || "").trim() });
-  if (!movimiento) return toast("⚠️ No se pudo registrar el movimiento. No se aplicaron cambios.");
-  guardar("insumos");
-  cerrarModal(); renderInsumos();
+  if (!Number.isFinite(cant) || cant <= 0) return toast("⚠️ Ingresa una cantidad mayor que cero");
+  const delta = tipo === "entrada" ? cant : -Math.min(cant, Math.max(0, Number(ins.stock) || 0));
+  if (delta === 0) return toast("⚠️ No hay stock para descontar");
+  registrarMovimientoInventario(tipo === "entrada" ? "entrada" : "salida", [{ i: id, d: delta }], { motivo: ($("#mvMotivo").value || "").trim() });
+  guardar(); cerrarModal(); renderInsumos();
   mostrarAlertaStock();
   toast("✅ Movimiento aplicado");
 }

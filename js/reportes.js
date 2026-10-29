@@ -3,14 +3,6 @@
    Lee DB existente; no crea ni modifica registros.
    ============================================ */
 
-// Valida costos guardados sin convertir valores ausentes (null/"") en cero.
-// Un costo cero explícito sí es válido; cantidades de receta deben ser estrictamente positivas.
-function numeroRegistradoValido(valor, permitirCero = true) {
-  if (valor === null || valor === undefined || (typeof valor === "string" && valor.trim() === "")) return false;
-  const n = Number(valor);
-  return Number.isFinite(n) && (permitirCero ? n >= 0 : n > 0);
-}
-
 function obtenerRangoReporte(tipo) {
   const ahora = new Date();
   const desde = new Date(ahora);
@@ -104,7 +96,7 @@ function reporteRango(tipo, destino = "reportes") {
 
       // Ventas nuevas: el costo se guardó al vender y no cambia. Ventas anteriores: se estima con la receta actual.
       const costoGuardado = it.costoUnitario;
-      if (numeroRegistradoValido(costoGuardado, true)) {
+      if (costoGuardado !== undefined && costoGuardado !== null && Number.isFinite(Number(costoGuardado))) {
         unidadesConReceta += cantidad;
         costoRecetas += Number(costoGuardado) * cantidad;
         return;
@@ -112,8 +104,7 @@ function reporteRango(tipo, destino = "reportes") {
       const prod = (DB.productos || []).find(p => String(p.id) === String(it.productoId));
       const receta = prod && Array.isArray(prod.insumos) ? prod.insumos : [];
       const recetaCompleta = receta.length > 0 && receta.every(ing =>
-        numeroRegistradoValido(ing.cantidad, false) &&
-        (DB.insumos || []).some(ins => String(ins.id) === String(ing.insumoId) && numeroRegistradoValido(ins.costo, true))
+        (DB.insumos || []).some(ins => String(ins.id) === String(ing.insumoId) && Number.isFinite(Number(ins.costo)))
       );
       if (recetaCompleta) {
         unidadesConReceta += cantidad;
@@ -194,7 +185,7 @@ function reporteRango(tipo, destino = "reportes") {
           <article class="panel-metrica"><span class="panel-metrica-icono">💸</span><span class="panel-metrica-label">Gastos registrados</span><strong>${fmt(totalG)}</strong><small>${gastos.length} movimientos</small></article>
           <article class="panel-metrica"><span class="panel-metrica-icono">📦</span><span class="panel-metrica-label">Costo calculado de recetas</span><strong>${fmt(costoRecetas)}</strong><small>${cobertura}% de unidades con receta completa</small></article>
         </div>
-        ${tieneCostosIncompletos ? `<div class="panel-aviso panel-aviso-amarillo"><strong>⚠️ Costos incompletos o inválidos</strong><span>${unidadesSinReceta} unidad(es) vendidas no tienen un costo histórico válido ni una receta completa con cantidades y costos válidos. La ganancia estimada puede ser mayor que la real. Revisa las recetas y los costos en Productos e Inventario.</span></div>` : ""}
+        ${tieneCostosIncompletos ? `<div class="panel-aviso panel-aviso-amarillo"><strong>⚠️ Faltan costos de productos</strong><span>${unidadesSinReceta} unidad(es) vendidas no tienen una receta de costos completa. La ganancia mostrada puede ser mayor que la real. Completa las recetas en Productos.</span></div>` : ""}
         <div class="panel-aviso panel-aviso-info"><strong>Cómo interpretar la ganancia</strong><span>Esta cifra es estimada. Las ventas nuevas guardan su costo al momento de vender; las anteriores usan el costo actual de la receta. Si registraste como gasto la compra de un insumo cuyo costo también se calcula mediante recetas, ese costo podría descontarse dos veces. Revisa los conceptos de gastos antes de tomarla como utilidad definitiva.</span></div>
 
         <div class="panel-seccion-titulo"><div><h3>💳 Formas de pago</h3><p>Importes de ventas cobradas en el periodo</p></div></div>

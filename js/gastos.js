@@ -134,33 +134,18 @@ function abrirFormGasto() {
 }
 
 function guardarGasto() {
-  const inputMonto = $("#fgMonto");
-  const montoEntrada = Number(inputMonto?.value);
-  if (!Number.isFinite(montoEntrada) || montoEntrada <= 0 || !Number.isFinite(redondear2(montoEntrada)) || redondear2(montoEntrada) <= 0) {
-    return toast("Ingresa un monto mayor que cero y válido");
-  }
-  const categoria = $("#fgCategoria")?.value?.trim() || "";
-  if (!categoria) return toast("Selecciona una categoría para el gasto");
-  const metodo = $("#fgMetodo")?.value || "Efectivo";
-  if (!["Efectivo", "Transferencia", "Caja Fuerte"].includes(metodo)) return toast("Selecciona un método de pago válido");
-  const monto = redondear2(montoEntrada);
-  const gasto = {
+  const monto = Number($("#fgMonto").value);
+  if (!Number.isFinite(monto) || monto <= 0) return toast("Ingresa un monto mayor que cero");
+  const metodo = $("#fgMetodo").value;
+  DB.gastos.push({
     id: nuevoId(DB.gastos),
     fecha: new Date().toISOString(),
-    categoria,
+    categoria: $("#fgCategoria").value,
     monto,
     metodo,
-    nota: $("#fgNota")?.value.trim() || ""
-  };
-  DB.gastos.push(gasto);
-  guardar("gastos");
-  // Verificar persistencia antes de cerrar el formulario o dar éxito.
-  const guardados = LS.get("gastos", null);
-  if (!Array.isArray(guardados) || !guardados.some(g => String(g.id) === String(gasto.id))) {
-    DB.gastos = DB.gastos.filter(g => String(g.id) !== String(gasto.id));
-    return toast("⚠️ No se pudo guardar el gasto. Revisa el espacio disponible en el dispositivo.");
-  }
-  cerrarModal(); renderGastos(); renderEstadoCaja();
+    nota: $("#fgNota").value.trim()
+  });
+  guardar(); cerrarModal(); renderGastos(); renderEstadoCaja();
   toast(metodo === "Caja Fuerte"
     ? "🔐 Gasto registrado en Caja Fuerte; no se descontó de la caja del negocio"
     : "💾 Gasto registrado");
