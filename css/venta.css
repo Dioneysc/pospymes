@@ -545,3 +545,117 @@ body.modo-oscuro .btn-vista { background: #1e293b; color: #f1f5f9; border-color:
 .productos-grid.vista-lista .prod-btn > .prod-nombre { flex: 1 1 0; min-width: 0; font-size: 14px; }
 .productos-grid.vista-lista .prod-stock { order: 2; margin: 0; white-space: nowrap; }
 .productos-grid.vista-lista .prod-precio { order: 3; margin: 0; min-width: 64px; text-align: right; font-size: 16px; }
+
+/* v133 · Vista de lista optimizada para cobrar rápido con muchos productos. */
+.productos-grid.vista-lista {
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: max-content;
+  align-content: start;
+  gap: 7px;
+  padding: 2px 3px 16px;
+}
+.productos-grid.vista-lista .prod-btn {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 11px;
+  row-gap: 3px;
+  width: 100%;
+  min-width: 0;
+  min-height: 66px;
+  padding: 9px 12px;
+  text-align: left;
+  border: 1px solid var(--borde, #e7e5e4);
+  border-radius: 13px;
+  background: var(--fondo-card, #fff);
+  box-shadow: 0 2px 6px rgba(15,23,42,.035);
+  overflow: hidden;
+}
+.productos-grid.vista-lista .prod-btn > .prod-emoji,
+.productos-grid.vista-lista .prod-btn > .prod-imagen {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  justify-self: center;
+  align-self: center;
+  width: 40px;
+  height: 40px;
+  margin: 0;
+  font-size: 29px;
+  line-height: 1;
+  object-fit: cover;
+  border-radius: 10px;
+}
+.productos-grid.vista-lista .prod-btn > .prod-nombre {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  min-width: 0;
+  margin: 0;
+  color: var(--texto, #292524);
+  font-size: 14px;
+  font-weight: 750;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.productos-grid.vista-lista .prod-btn > .prod-stock {
+  grid-column: 3;
+  grid-row: 2;
+  justify-self: end;
+  align-self: start;
+  margin: 0;
+  padding: 2px 6px;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.productos-grid.vista-lista .prod-btn > .prod-precio {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+  align-self: end;
+  min-width: 0;
+  margin: 0;
+  color: var(--naranja2, #ea580c);
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.productos-grid.vista-lista .prod-btn:hover {
+  border-color: rgba(249,115,22,.55);
+  background: var(--fondo-card, #fff);
+  box-shadow: 0 4px 12px rgba(234,88,12,.09);
+  transform: translateY(-1px);
+}
+.productos-grid.vista-lista .prod-btn:active {
+  transform: scale(.99);
+  background: rgba(249,115,22,.07);
+}
+body.modo-oscuro .productos-grid.vista-lista .prod-btn {
+  background: var(--fondo-card, #1e293b);
+  border-color: var(--borde, #334155);
+  box-shadow: 0 2px 7px rgba(0,0,0,.12);
+}
+body.modo-oscuro .productos-grid.vista-lista .prod-btn:hover {
+  background: rgba(249,115,22,.08);
+  border-color: rgba(249,115,22,.6);
+}
+@media (max-width: 520px) {
+  .productos-grid.vista-lista { gap: 6px; }
+  .productos-grid.vista-lista .prod-btn { min-height: 62px; padding: 8px 9px; column-gap: 8px; }
+  .productos-grid.vista-lista .prod-btn > .prod-emoji,
+  .productos-grid.vista-lista .prod-btn > .prod-imagen { width: 36px; height: 36px; font-size: 26px; }
+  .productos-grid.vista-lista .prod-btn > .prod-nombre { font-size: 13px; }
+  .productos-grid.vista-lista .prod-btn > .prod-precio { font-size: 15px; }
+  .productos-grid.vista-lista .prod-btn > .prod-stock { font-size: 9px; padding: 2px 5px; }
+}
+@media (max-width: 360px) {
+  .productos-grid.vista-lista .prod-btn { grid-template-columns: 32px minmax(0,1fr) auto; column-gap: 7px; padding-inline: 7px; }
+  .productos-grid.vista-lista .prod-btn > .prod-emoji,
+  .productos-grid.vista-lista .prod-btn > .prod-imagen { width: 30px; height: 30px; font-size: 23px; }
+  .productos-grid.vista-lista .prod-btn > .prod-nombre { font-size: 12px; }
+  .productos-grid.vista-lista .prod-btn > .prod-precio { font-size: 14px; }
+}
