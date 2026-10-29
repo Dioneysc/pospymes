@@ -6,99 +6,184 @@
 
 function guardarCats() { LS.set("catsGasto", CATS_GASTO); }
 
-function fechaLocalGasto(valor) {
-  const d = new Date(valor);
-  if (Number.isNaN(d.getTime())) return "";
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const dia = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${dia}`;
+/* ---------- Filtros por período, categoría y método ---------- */
+let filtroGastos = { periodo: "mes", desde: "", hasta: "", categoria: "", metodo: "" };
+const PERIODOS_GASTOS = [["hoy", "Hoy"], ["ayer", "Ayer"], ["7dias", "7 días"], ["mes", "Este mes"], ["mes_pasado", "Mes pasado"], ["todo", "Todo"], ["rango", "📅 Rango"]];
+const METODOS_GASTO = [["Efectivo", "💵"], ["Transferencia", "🏦"], ["Caja Fuerte", "🔐"]];
+
+const fechaCortaGasto = ymd => new Date(ymd + "T00:00:00").toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" });
+
+// Devuelve { desde, hasta, titulo } con fechas locales "AAAA-MM-DD" (null = sin límite)
+function rangoGastos(f) {
+  const h = hoy(), d = new Date();
+  switch (f.periodo) {
+    case "hoy": return { desde: h, hasta: h, titulo: "Hoy" };
+    case "ayer": { d.setDate(d.getDate() - 1); const y = fechaLocal(d); return { desde: y, hasta: y, titulo: "Ayer" }; }
+    case "7dias": { d.setDate(d.getDate() - 6); return { desde: fechaLocal(d), hasta: h, titulo: "Últimos 7 días" }; }
+    case "mes": { d.setDate(1); return { desde: fechaLocal(d), hasta: h, titulo: "Este mes" }; }
+    case "mes_pasado": {
+      const ini = new Date(d.getFullYear(), d.getMonth() - 1, 1), fin = new Date(d.getFullYear(), d.getMonth(), 0);
+      return { desde: fechaLocal(ini), hasta: fechaLocal(fin), titulo: "Mes pasado" };
+    }
+    case "rango": {
+      let a = f.desde || "", b = f.hasta || "";
+      if (a && b && a > b) [a, b] = [b, a];
+      return { desde: a || null, hasta: b || null, titulo: !a && !b ? "Elige las fechas" : `${a ? fechaCortaGasto(a) : "…"} – ${b ? fechaCortaGasto(b) : "…"}` };
+    }
+    default: return { desde: null, hasta: null, titulo: "Todo el historial" };
+  }
 }
 
-function actualizarFiltroCategoriasGastos() {
-  const select = $("#gastosCategoriaFiltro");
-  if (!select) return;
-  const seleccion = select.value;
-  const categorias = [...new Set([...(CATS_GASTO || []), ...(DB.gastos || []).map(g => g.categoria).filter(Boolean)])]
-    .sort((a, b) => a.localeCompare(b, "es-MX"));
-  select.innerHTML = `<option value="">Todas las categorías</option>${categorias.map(c =>
-    `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`
-  ).join("")}`;
-  if (categorias.includes(seleccion)) select.value = seleccion;
+function setPeriodoGastos(p) { filtroGastos.periodo = p; renderGastos(); }
+function setFiltroGastos(campo, valor) { if (campo in filtroGastos) { filtroGastos[campo] = valor; renderGastos(); } }
+
+// Tras registrar un gasto, que no quede escondido por el filtro activo
+function asegurarGastoVisible(g) {
+  const r = rangoGastos(filtroGastos), dia = fechaLocal(g.fecha);
+  if ((r.desde && dia < r.desde) || (r.hasta && dia > r.hasta)) filtroGastos.periodo = "hoy";
+  if (filtroGastos.categoria && filtroGastos.categoria !== g.categoria) filtroGastos.categoria = "";
+  if (filtroGastos.metodo && filtroGastos.metodo !== (g.metodo || "Efectivo")) filtroGastos.metodo = "";
 }
 
-function filtrarGastosHoy() {
-  const hoy = fechaLocalGasto(new Date());
-  if ($("#gastosDesde")) $("#gastosDesde").value = hoy;
-  if ($("#gastosHasta")) $("#gastosHasta").value = hoy;
-  renderGastos();
+function pintarFiltrosGastos(completo, todos) {
+  const el = $("#filtrosGastos"); if (!el) return;
+  if (!completo) { el.innerHTML = ""; return; }
+  const f = filtroGastos, hoyStr = hoy();
+  const cats = [...new Set([...CATS_GASTO, ...todos.map(g => g.categoria)].filter(Boolean))];
+  el.innerHTML = `
+    <div class="gastos-filtros">
+      <div class="gastos-periodos" role="group" aria-label="Período">
+        ${PERIODOS_GASTOS.map(([k, t]) => `<button type="button" class="gasto-chip${f.periodo === k ? " activo" : ""}" onclick="setPeriodoGastos('${k}')">${t}</button>`).join("")}
+      </div>
+      ${f.periodo === "rango" ? `
+        <div class="gastos-selects">
+          <label>Desde<input type="date" value="${escapeHTML(f.desde)}" max="${hoyStr}" onchange="setFiltroGastos('desde', this.value)"></label>
+          <label>Hasta<input type="date" value="${escapeHTML(f.hasta)}" max="${hoyStr}" onchange="setFiltroGastos('hasta', this.value)"></label>
+        </div>` : ""}
+      <div class="gastos-selects">
+        <label>Categoría
+          <select onchange="setFiltroGastos('categoria', this.value)">
+            <option value="">Todas</option>
+            ${cats.map(c => `<option value="${escapeHTML(c)}"${f.categoria === c ? " selected" : ""}>${escapeHTML(c)}</option>`).join("")}
+          </select>
+        </label>
+        <label>Método de pago
+          <select onchange="setFiltroGastos('metodo', this.value)">
+            <option value="">Todos</option>
+            ${METODOS_GASTO.map(([m, i]) => `<option value="${m}"${f.metodo === m ? " selected" : ""}>${i} ${m}</option>`).join("")}
+          </select>
+        </label>
+      </div>
+    </div>`;
 }
 
-function limpiarFiltrosGastos() {
-  if ($("#gastosDesde")) $("#gastosDesde").value = "";
-  if ($("#gastosHasta")) $("#gastosHasta").value = "";
-  if ($("#gastosCategoriaFiltro")) $("#gastosCategoriaFiltro").value = "";
-  renderGastos();
+function pintarResumenGastos(lista, titulo) {
+  const el = $("#resumenGastos"); if (!el) return;
+  if (!lista.length) { el.innerHTML = ""; return; }
+  const monto = g => Number(g.monto) || 0;
+  const total = redondear2(lista.reduce((s, g) => s + monto(g), 0));
+  const porMetodo = {}, porCat = {};
+  lista.forEach(g => {
+    const m = g.metodo || "Efectivo", c = g.categoria || "Sin categoría";
+    porMetodo[m] = (porMetodo[m] || 0) + monto(g);
+    porCat[c] = (porCat[c] || 0) + monto(g);
+  });
+  const cats = Object.entries(porCat).sort((a, b) => b[1] - a[1]);
+  el.innerHTML = `
+    <div class="gastos-resumen">
+      <div class="gastos-total-linea">
+        <div><small>${escapeHTML(titulo)}</small><div class="gastos-total-monto">${fmt(total)}</div></div>
+        <span class="gastos-conteo">${lista.length} gasto${lista.length === 1 ? "" : "s"}</span>
+      </div>
+      <div class="gastos-metodos">
+        ${METODOS_GASTO.filter(([m]) => porMetodo[m]).map(([m, i]) => `<span class="gasto-metodo">${i} ${m}: <b>${fmt(porMetodo[m])}</b></span>`).join("")}
+      </div>
+      ${cats.length > 1 ? `
+        <div class="gastos-cats">
+          ${cats.map(([c, v]) => { const pct = total > 0 ? Math.round(v / total * 100) : 0; return `
+            <div class="gasto-cat">
+              <span class="gasto-cat-nombre">${escapeHTML(c)}</span>
+              <span class="gasto-cat-monto">${fmt(v)} <small>${pct}%</small></span>
+              <div class="gasto-cat-barra"><i style="width:${Math.max(pct, 2)}%"></i></div>
+            </div>`; }).join("")}
+        </div>` : ""}
+    </div>`;
+}
+
+function etiquetaDiaGasto(ymd) {
+  const d = new Date(ymd + "T00:00:00");
+  const txt = d.toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "short" });
+  const base = txt.charAt(0).toUpperCase() + txt.slice(1);
+  const ayer = new Date(); ayer.setDate(ayer.getDate() - 1);
+  return ymd === hoy() ? `Hoy · ${base}` : ymd === fechaLocal(ayer) ? `Ayer · ${base}` : base;
 }
 
 function renderGastos() {
-  const todos = [...(DB.gastos || [])].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-  actualizarFiltroCategoriasGastos();
-  const desde = $("#gastosDesde")?.value || "";
-  const hasta = $("#gastosHasta")?.value || "";
-  const categoria = $("#gastosCategoriaFiltro")?.value || "";
-  const rangoInvalido = desde && hasta && desde > hasta;
-  const gastos = rangoInvalido ? [] : todos.filter(g => {
-    const fecha = fechaLocalGasto(g.fecha);
-    return fecha && (!desde || fecha >= desde) && (!hasta || fecha <= hasta) && (!categoria || g.categoria === categoria);
-  });
-  const total = gastos.reduce((s, g) => s + (Number(g.monto) || 0), 0);
-  const resumen = $("#resumenGastosFecha");
-  if (resumen) {
-    resumen.innerHTML = `
-      <div style="flex:1;min-width:145px;padding:14px;border:1px solid var(--borde);border-radius:12px;background:var(--superficie,#f8fafc)">
-        <div style="font-size:12px;color:var(--texto-secundario,#64748b);margin-bottom:5px">${desde || hasta ? "Gastos del periodo" : "Todos los gastos"}</div>
-        <div style="font-size:23px;font-weight:800;color:var(--peligro,#dc2626)">${fmt(total)}</div>
+  const completo = typeof puede !== "function" || puede("historial_completo");
+  const todos = DB.gastos; // al cajero ya le llegan solo los de hoy (ver usuarios.js)
+
+  if (!todos.length) {
+    const f = $("#filtrosGastos"), r = $("#resumenGastos"); if (f) f.innerHTML = ""; if (r) r.innerHTML = "";
+    $("#listaGastos").innerHTML = `
+      <div style="text-align:center;padding:40px 20px;color:#94a3b8">
+        <div style="font-size:60px;margin-bottom:12px">💸</div>
+        <h3 style="color:#64748b;font-size:16px;margin-bottom:8px">Sin gastos registrados</h3>
+        <p style="font-size:13px;margin-bottom:16px">Aquí aparecerán tus gastos</p>
+        <button class="btn-primary" onclick="abrirFormGasto()" style="padding:12px 24px">+ Registrar gasto</button>
       </div>
-      <div style="flex:1;min-width:120px;padding:14px;border:1px solid var(--borde);border-radius:12px;background:var(--superficie,#f8fafc)">
-        <div style="font-size:12px;color:var(--texto-secundario,#64748b);margin-bottom:5px">Movimientos</div>
-        <div style="font-size:23px;font-weight:800">${gastos.length}</div>
-      </div>`;
-  }
-  const contenedor = $("#listaGastos");
-  if (!contenedor) return;
-  if (rangoInvalido) {
-    contenedor.innerHTML = `<div style="text-align:center;padding:24px;color:#b91c1c">La fecha inicial no puede ser posterior a la fecha final.</div>`;
+    `;
     return;
   }
-  if (!gastos.length) {
-    contenedor.innerHTML = `
+
+  const f = completo ? filtroGastos : { periodo: "hoy", categoria: "", metodo: "" };
+  const r = rangoGastos(f);
+  const lista = todos.filter(g => {
+    const dia = fechaLocal(g.fecha);
+    return (!r.desde || dia >= r.desde) && (!r.hasta || dia <= r.hasta)
+      && (!f.categoria || g.categoria === f.categoria)
+      && (!f.metodo || (g.metodo || "Efectivo") === f.metodo);
+  }).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+  pintarFiltrosGastos(completo, todos);
+  pintarResumenGastos(lista, r.titulo);
+
+  if (!lista.length) {
+    $("#listaGastos").innerHTML = `
       <div style="text-align:center;padding:32px 20px;color:#94a3b8">
-        <div style="font-size:48px;margin-bottom:10px">💸</div>
-        <h3 style="color:#64748b;font-size:16px;margin-bottom:8px">${todos.length ? "No hay gastos para estos filtros" : "Sin gastos registrados"}</h3>
-        <p style="font-size:13px;margin-bottom:16px">${todos.length ? "Cambia las fechas o la categoría para ver otros movimientos." : "Aquí aparecerán tus gastos"}</p>
-        ${todos.length ? `<button class="btn-secondary" onclick="limpiarFiltrosGastos()" style="padding:10px 18px">Ver todos</button>` : `<button class="btn-primary" onclick="abrirFormGasto()" style="padding:12px 24px">+ Registrar gasto</button>`}
+        <div style="font-size:44px;margin-bottom:8px">🔎</div>
+        <h3 style="color:#64748b;font-size:15px;margin-bottom:6px">Sin gastos en este filtro</h3>
+        ${completo ? `<button class="btn-secondary" onclick="filtroGastos.categoria='';filtroGastos.metodo='';setPeriodoGastos('todo')" style="margin-top:10px">Ver todo el historial</button>` : ""}
       </div>`;
     return;
   }
-  contenedor.innerHTML = `
+
+  const agrupar = new Set(lista.map(g => fechaLocal(g.fecha))).size > 1; // varios días → encabezado con subtotal por día
+  const subtotal = {};
+  lista.forEach(g => { const d = fechaLocal(g.fecha); subtotal[d] = (subtotal[d] || 0) + (Number(g.monto) || 0); });
+  let diaActual = null;
+  const filas = lista.map(g => {
+    const dia = fechaLocal(g.fecha);
+    const cab = agrupar && dia !== diaActual
+      ? `<tr class="gasto-dia"><td colspan="6"><div><span>${escapeHTML(etiquetaDiaGasto(dia))}</span><b>${fmt(subtotal[dia])}</b></div></td></tr>` : "";
+    diaActual = dia;
+    return `${cab}
+      <tr>
+        <td data-label="Fecha">${new Date(g.fecha).toLocaleString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</td>
+        <td data-label="Categoría">${escapeHTML(g.categoria)}</td>
+        <td data-label="Nota">${escapeHTML(g.nota || "—")}</td>
+        <td data-label="Método">${escapeHTML(g.metodo || "Efectivo")}</td>
+        <td data-label="Monto">${fmt(g.monto)}</td>
+        <td data-label="Acciones"><button class="btn-mini" onclick="borrarGasto(${g.id})">🗑️</button></td>
+      </tr>`;
+  }).join("");
+
+  $("#listaGastos").innerHTML = `
     <table>
       <thead><tr><th>Fecha</th><th>Categoría</th><th>Nota</th><th>Método</th><th>Monto</th><th>Acciones</th></tr></thead>
-      <tbody>
-        ${gastos.map(g => `
-          <tr>
-            <td data-label="Fecha">${new Date(g.fecha).toLocaleDateString("es-MX")}<br><small style="color:var(--texto-secundario,#64748b)">${new Date(g.fecha).toLocaleTimeString("es-MX", {hour:"2-digit",minute:"2-digit"})}</small></td>
-            <td data-label="Categoría">${escapeHTML(g.categoria)}</td>
-            <td data-label="Nota">${escapeHTML(g.nota || "—")}</td>
-            <td data-label="Método">${escapeHTML(g.metodo || "Efectivo")}</td>
-            <td data-label="Monto">${fmt(g.monto)}</td>
-            <td data-label="Acciones"><button class="btn-mini" onclick="borrarGasto(${JSON.stringify(g.id)})" title="Borrar gasto">🗑️</button></td>
-          </tr>
-        `).join("")}
-      </tbody>
-      <tfoot><tr><th colspan="4" style="text-align:right">Total del resultado</th><th>${fmt(total)}</th><th></th></tr></tfoot>
+      <tbody>${filas}</tbody>
     </table>`;
 }
+
 function abrirFormGasto() {
   if (CATS_GASTO.length === 0) {
     return abrirModal("⚠️ Sin categorías", `
@@ -137,15 +222,17 @@ function guardarGasto() {
   const monto = Number($("#fgMonto").value);
   if (!Number.isFinite(monto) || monto <= 0) return toast("Ingresa un monto mayor que cero");
   const metodo = $("#fgMetodo").value;
-  DB.gastos.push({
+  const gasto = {
     id: nuevoId(DB.gastos),
     fecha: new Date().toISOString(),
     categoria: $("#fgCategoria").value,
     monto,
     metodo,
     nota: $("#fgNota").value.trim()
-  });
-  guardar(); cerrarModal(); renderGastos(); renderEstadoCaja();
+  };
+  DB.gastos.push(gasto);
+  asegurarGastoVisible(gasto);
+  guardar("gastos"); cerrarModal(); renderGastos(); renderEstadoCaja();
   toast(metodo === "Caja Fuerte"
     ? "🔐 Gasto registrado en Caja Fuerte; no se descontó de la caja del negocio"
     : "💾 Gasto registrado");

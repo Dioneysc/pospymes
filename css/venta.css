@@ -528,3 +528,20 @@
    Las filas ahora miden lo que mide su contenido y nada dentro del botón se encoge. */
 .productos-grid { grid-auto-rows: max-content; }
 .prod-btn > * { flex-shrink: 0; }
+
+/* ===== Vista de productos: botón de cambio + vista de lista (opcional) ===== */
+.busqueda-fila { display: flex; gap: 8px; align-items: stretch; }
+.busqueda-fila input { flex: 1 1 auto; width: auto; min-width: 0; }
+.btn-vista { flex: 0 0 48px; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; padding: 0; background: #fff; color: #57534e; border: 1.5px solid #e7e5e4; border-radius: 14px; box-shadow: 0 3px 12px rgba(41,37,36,.045); cursor: pointer; }
+.btn-vista svg { width: 22px; height: 22px; }
+.btn-vista:active { transform: scale(.96); border-color: #f97316; color: #ea580c; }
+body.modo-oscuro .btn-vista { background: #1e293b; color: #f1f5f9; border-color: #334155; }
+
+/* La lista reutiliza los mismos botones de producto: solo cambia su acomodo (nombre completo, stock y precio a la derecha). */
+.productos-grid.vista-lista { grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 6px; }
+.productos-grid.vista-lista .prod-btn { flex-direction: row; justify-content: flex-start; text-align: left; gap: 10px; min-height: 0; padding: 8px 12px; border-radius: 12px; }
+.productos-grid.vista-lista .prod-emoji { font-size: 28px; line-height: 1; width: 36px; margin: 0; text-align: center; }
+.productos-grid.vista-lista .prod-imagen { width: 40px; height: 40px; margin: 0; border-radius: 10px; }
+.productos-grid.vista-lista .prod-btn > .prod-nombre { flex: 1 1 0; min-width: 0; font-size: 14px; }
+.productos-grid.vista-lista .prod-stock { order: 2; margin: 0; white-space: nowrap; }
+.productos-grid.vista-lista .prod-precio { order: 3; margin: 0; min-width: 64px; text-align: right; font-size: 16px; }

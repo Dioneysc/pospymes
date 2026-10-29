@@ -1,5 +1,7 @@
-// Sube este número cada vez que publiques cambios (v39 → v40 …)
-const VERSION = "v128";
+// IMPORTANTE: sube este número cada vez que publiques cambios (v130 → v131 …).
+// Los archivos de la app se sirven desde la copia guardada de esta versión para abrir rápido;
+// si el número no cambia, los dispositivos no se enteran de que hay archivos nuevos.
+const VERSION = "v130";
 const CACHE = `pos-polleria-${VERSION}`;
 
 // Sin estos archivos la app no funciona: si falta alguno, la instalación falla y se conserva la versión anterior
@@ -47,7 +49,7 @@ const OPCIONALES = ["./logo.png", "./icons/icon-192.png", "./icons/icon-512.png"
 self.addEventListener("install", e => {
   e.waitUntil(
     caches.open(CACHE).then(async c => {
-      await c.addAll(NUCLEO);
+      await c.addAll(NUCLEO.map(u => new Request(u, { cache: "reload" }))); // "reload": nunca una copia vieja de la caché del navegador
       await Promise.all(OPCIONALES.map(u => c.add(u).catch(() => console.warn("No se pudo cachear:", u))));
     }).then(() => self.skipWaiting())
   );
@@ -62,7 +64,8 @@ self.addEventListener("activate", e => {
   );
 });
 
-// Red primero (siempre la versión más nueva); sin internet o con red lenta, usa lo guardado
+// Copia guardada primero: la app abre al instante, con o sin internet y sin importar qué tan lenta esté la red.
+// Las versiones nuevas se instalan en segundo plano (ver "install") y se usan la siguiente vez que abras la app.
 self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET") return;
@@ -72,7 +75,7 @@ self.addEventListener("fetch", e => {
     if (url.hostname === "www.gstatic.com" && url.pathname.startsWith("/firebasejs/")) e.respondWith(cachePrimero(req));
     return; // WhatsApp, Firestore y otros sitios: no interceptar
   }
-  e.respondWith(redPrimero(req));
+  e.respondWith(appPrimero(req));
 });
 
 async function cachePrimero(req) {
@@ -84,23 +87,17 @@ async function cachePrimero(req) {
   return res;
 }
 
-async function redPrimero(req) {
+async function appPrimero(req) {
   const cache = await caches.open(CACHE);
+  // Es una app de una sola página: cualquier navegación (incluida la raíz "/") abre index.html
+  const guardado = await cache.match(req.mode === "navigate" ? "./index.html" : req, { ignoreSearch: true });
+  if (guardado) return guardado;
+  // Lo que no esté guardado (algo que no está en la lista) se pide a la red
   try {
-    const res = await Promise.race([
-      fetch(req, { cache: "no-cache" }),
-      new Promise((_, rechazar) => setTimeout(() => rechazar(new Error("timeout")), 4000))
-    ]);
-    if (res.ok) {
-      cache.put(req, res.clone());
-      return res;
-    }
-    const guardado = await cache.match(req, { ignoreSearch: true });
-    return guardado || res;
+    const res = await fetch(req);
+    if (res.ok) cache.put(req, res.clone());
+    return res;
   } catch (err) {
-    const guardado = await cache.match(req, { ignoreSearch: true });
-    if (guardado) return guardado;
-    if (req.mode === "navigate") return cache.match("./index.html");
     return Response.error();
   }
 }
