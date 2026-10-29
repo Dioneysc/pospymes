@@ -233,18 +233,22 @@ function validarDatosRespaldo(d) {
   const errores = [];
   const fechaValida = f => typeof f === "string" && !Number.isNaN(new Date(f).getTime());
   const revisar = (nombre, lista, regla) => {
+    const ids = new Set();
     lista.forEach((r, i) => {
       if (!r || typeof r !== "object" || Array.isArray(r)) return errores.push(`${nombre} #${i + 1}: no es un registro válido`);
       if (r.id === undefined || r.id === null || r.id === "") return errores.push(`${nombre} #${i + 1}: no tiene id`);
+      const id = String(r.id);
+      if (ids.has(id)) errores.push(`${nombre} #${id}: id duplicado`);
+      ids.add(id);
       const motivo = regla(r);
-      if (motivo) errores.push(`${nombre} #${r.id}: ${motivo}`);
+      if (motivo) errores.push(`${nombre} #${id}: ${motivo}`);
     });
   };
-  revisar("Producto", d.productos, p => typeof p.nombre !== "string" ? "sin nombre" : !Number.isFinite(Number(p.precio)) ? "precio inválido" : p.insumos !== undefined && !Array.isArray(p.insumos) ? "receta inválida" : "");
-  revisar("Venta", d.ventas, v => !Array.isArray(v.items) ? "sin lista de productos" : !Number.isFinite(Number(v.total)) ? "total inválido" : !fechaValida(v.fecha) ? "fecha inválida" : "");
-  revisar("Insumo", d.insumos, i => typeof i.nombre !== "string" ? "sin nombre" : !Number.isFinite(Number(i.stock)) ? "stock inválido" : "");
-  revisar("Gasto", d.gastos, g => !Number.isFinite(Number(g.monto)) ? "monto inválido" : !fechaValida(g.fecha) ? "fecha inválida" : "");
-  revisar("Usuario", d.usuarios, u => typeof u.username !== "string" || !u.username ? "sin nombre de usuario" : !u.hash && !u.password ? "sin contraseña" : "");
+  revisar("Producto", d.productos, p => typeof p.nombre !== "string" || !p.nombre.trim() ? "sin nombre" : !Number.isFinite(Number(p.precio)) || Number(p.precio) < 0 ? "precio inválido (debe ser un número no negativo)" : p.insumos !== undefined && (!Array.isArray(p.insumos) || p.insumos.some(x => !x || !Number.isFinite(Number(x.cantidad)) || Number(x.cantidad) < 0)) ? "receta inválida" : "");
+  revisar("Venta", d.ventas, v => !Array.isArray(v.items) ? "sin lista de productos" : !Number.isFinite(Number(v.total)) || Number(v.total) < 0 ? "total inválido" : !fechaValida(v.fecha) ? "fecha inválida" : "");
+  revisar("Insumo", d.insumos, i => typeof i.nombre !== "string" || !i.nombre.trim() ? "sin nombre" : !Number.isFinite(Number(i.stock)) || Number(i.stock) < 0 ? "stock inválido" : "");
+  revisar("Gasto", d.gastos, g => !Number.isFinite(Number(g.monto)) || Number(g.monto) < 0 ? "monto inválido" : !fechaValida(g.fecha) ? "fecha inválida" : "");
+  revisar("Usuario", d.usuarios, u => typeof u.username !== "string" || !u.username.trim() ? "sin nombre de usuario" : !u.hash && !u.password ? "sin contraseña" : "");
   if (!d.usuarios.some(u => (u.rol || "admin") === "admin" && u.activo !== false)) errores.push("No hay ningún administrador activo: nadie podría configurar el sistema");
   return errores;
 }
