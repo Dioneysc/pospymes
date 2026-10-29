@@ -54,7 +54,93 @@ const ICONO_VISTA_TARJETAS = '<svg viewBox="0 0 24 24" fill="none" stroke="curre
 
 function vistaProductosActual() { return LS.get("vistaProductos", "tarjetas") === "lista" ? "lista" : "tarjetas"; }
 
+// Orden visual local: solo guarda IDs; nunca modifica productos, precios ni inventario.
+const CLAVE_ORDEN_PRODUCTOS_LOCAL = "ordenProductosLocal";
+let ordenarProductosActivo = false;
+let arrastreProducto = null;
+function obtenerOrdenProductosLocal() {
+  const orden = LS.get(CLAVE_ORDEN_PRODUCTOS_LOCAL, []);
+  return Array.isArray(orden) ? orden.map(String) : [];
+}
+function guardarOrdenProductosLocal(ids) {
+  const unicos = [...new Set(ids.map(String))];
+  LS.set(CLAVE_ORDEN_PRODUCTOS_LOCAL, unicos);
+}
+function puedeReordenarProductos() {
+  return categoriaActiva === "Todas" && !String(document.getElementById("buscarProducto")?.value || "").trim();
+}
+function prepararControlOrdenProductos() {
+  const fila = document.querySelector(".busqueda-fila");
+  if (!fila || document.getElementById("btnOrdenarProductos")) return;
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.id = "btnOrdenarProductos";
+  btn.className = "btn-ordenar";
+  btn.innerHTML = '<span aria-hidden="true">↕</span><span class="btn-ordenar-texto">Ordenar</span>';
+  btn.title = "Reordenar productos";
+  btn.setAttribute("aria-label", "Reordenar productos");
+  btn.addEventListener("click", alternarOrdenarProductos);
+  const vista = document.getElementById("btnVistaProductos");
+  fila.insertBefore(btn, vista || null);
+}
+function actualizarControlOrdenProductos() {
+  prepararControlOrdenProductos();
+  const btn = document.getElementById("btnOrdenarProductos");
+  if (!btn) return;
+  const permitido = puedeReordenarProductos();
+  if (!permitido && ordenarProductosActivo) ordenarProductosActivo = false;
+  btn.classList.toggle("activo", ordenarProductosActivo);
+  btn.disabled = !permitido;
+  btn.innerHTML = ordenarProductosActivo
+    ? '<span aria-hidden="true">✓</span><span class="btn-ordenar-texto">Listo</span>'
+    : '<span aria-hidden="true">↕</span><span class="btn-ordenar-texto">Ordenar</span>';
+  btn.title = permitido ? (ordenarProductosActivo ? "Terminar de ordenar" : "Reordenar productos") : "Para ordenar, selecciona Todas y limpia la búsqueda";
+  btn.setAttribute("aria-label", btn.title);
+}
+function alternarOrdenarProductos() {
+  if (!puedeReordenarProductos()) {
+    if (typeof toast === "function") toast("Para ordenar, selecciona Todas y limpia la búsqueda");
+    return;
+  }
+  ordenarProductosActivo = !ordenarProductosActivo;
+  actualizarControlOrdenProductos();
+  renderCaja();
+  if (typeof toast === "function") toast(ordenarProductosActivo ? "Arrastra el asa ↕ para cambiar el orden" : "Orden de productos guardado en este dispositivo");
+}
+function iniciarArrastreProducto(event, handle) {
+  if (!ordenarProductosActivo || !puedeReordenarProductos()) return;
+  event.preventDefault();
+  event.stopPropagation();
+  const item = handle.closest(".prod-btn");
+  if (!item) return;
+  arrastreProducto = { id: item.dataset.productId, pointerId: event.pointerId, item, movido: false };
+  handle.setPointerCapture?.(event.pointerId);
+  item.classList.add("arrastrando");
+}
+function moverArrastreProducto(event) {
+  if (!arrastreProducto || event.pointerId !== arrastreProducto.pointerId) return;
+  const actual = arrastreProducto.item;
+  const destino = document.elementFromPoint(event.clientX, event.clientY)?.closest?.("#gridProductos .prod-btn");
+  if (!destino || destino === actual || !actual.parentElement || destino.parentElement !== actual.parentElement) return;
+  event.preventDefault();
+  const r = destino.getBoundingClientRect();
+  const horizontal = r.width > r.height * 1.2;
+  const antes = horizontal ? event.clientX < r.left + r.width / 2 : event.clientY < r.top + r.height / 2;
+  destino.parentElement.insertBefore(actual, antes ? destino : destino.nextSibling);
+  arrastreProducto.movido = true;
+}
+function terminarArrastreProducto(event) {
+  if (!arrastreProducto || (event && event.pointerId !== undefined && event.pointerId !== arrastreProducto.pointerId)) return;
+  const movio = arrastreProducto.movido;
+  arrastreProducto.item.classList.remove("arrastrando");
+  arrastreProducto = null;
+  if (movio) {
+    guardarOrdenProductosLocal([...document.querySelectorAll("#gridProductos .prod-btn[data-product-id]")].map(el => el.dataset.productId));
+  }
+}
+
 function aplicarVistaProductos() {
+  actualizarControlOrdenProductos();
   const lista = vistaProductosActual() === "lista";
   const grid = document.getElementById("gridProductos");
   if (grid) grid.classList.toggle("vista-lista", lista);
@@ -75,6 +161,11 @@ function renderCaja() {
   aplicarVistaProductos();
   const busq = ($("#buscarProducto")?.value || "").toLowerCase();
   let prods = DB.productos.filter(p => p.activo);
+  const ordenGuardado = obtenerOrdenProductosLocal();
+  if (ordenGuardado.length) {
+    const posiciones = new Map(ordenGuardado.map((id, i) => [id, i]));
+    prods.sort((a, b) => (posiciones.get(String(a.id)) ?? Number.MAX_SAFE_INTEGER) - (posiciones.get(String(b.id)) ?? Number.MAX_SAFE_INTEGER));
+  }
   if (categoriaActiva !== "Todas") prods = prods.filter(p => p.categoria === categoriaActiva);
   if (busq) prods = prods.filter(p => p.nombre.toLowerCase().includes(busq));
 
@@ -99,7 +190,8 @@ function renderCaja() {
       ? `<img src="${escapeHTML(p.imagen)}" class="prod-imagen" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'prod-emoji',textContent:this.dataset.e}))" data-e="${emojiSeguro}">`
       : `<div class="prod-emoji">${emojiSeguro}</div>`;
     return `
-      <button class="prod-btn" data-product-id="${String(p.id)}" data-cat="${escapeHTML(p.categoria)}" onclick="agregarAlCarrito(${p.id})">
+      <button class="prod-btn${ordenarProductosActivo ? " modo-ordenar" : ""}" data-product-id="${escapeHTML(String(p.id))}" data-cat="${escapeHTML(p.categoria)}" onclick="if(!ordenarProductosActivo) agregarAlCarrito(${JSON.stringify(p.id)})">
+        ${ordenarProductosActivo ? '<span class="asa-arrastre" role="button" tabindex="0" aria-label="Arrastrar para reordenar" title="Arrastrar para reordenar" onpointerdown="iniciarArrastreProducto(event,this)" onpointermove="moverArrastreProducto(event)" onpointerup="terminarArrastreProducto(event)" onpointercancel="terminarArrastreProducto(event)" onclick="event.preventDefault();event.stopPropagation()">⠿</span>' : ""}
         ${contenido}
         <span class="prod-nombre">${escapeHTML(p.nombre)}</span>
         <span class="prod-precio">${fmt(p.precio)}</span>
