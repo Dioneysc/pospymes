@@ -1,7 +1,7 @@
 // IMPORTANTE: sube este número cada vez que publiques cambios (v131 → v132 …).
 // Los archivos de la app se sirven desde la copia guardada de esta versión para abrir rápido;
 // si el número no cambia, los dispositivos no se enteran de que hay archivos nuevos.
-const VERSION = "v138";
+const VERSION = "v137";
 const CACHE = `pos-polleria-${VERSION}`;
 
 // Sin estos archivos la app no funciona: si falta alguno, la instalación falla y se conserva la versión anterior

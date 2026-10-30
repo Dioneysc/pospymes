@@ -4,19 +4,12 @@
 
 /* ============ GESTOR PERSONAL Y APERTURA DE CAJA ============ */
 
-// Un turno abierto sigue vigente al cruzar la medianoche hasta que se haga el corte,
-// siempre que lleve menos de TURNO_MAX_HORAS abierto. Pasado ese tiempo se considera olvidado.
-const TURNO_MAX_HORAS = 20;
-
+// La caja es compartida entre los dispositivos vinculados al mismo negocio.
+// El cambio de fecha o el tiempo transcurrido nunca la cierran automáticamente:
+// únicamente guardarCorte() puede reiniciarla después de registrar el corte.
 function initDia() {
-  const e = estadoCajaHoy;
-  if (e.fecha === hoy()) return;
-  const abierta = e.fondoInicial !== null && e.fondoInicial !== undefined;
-  const t = e.abiertaEn ? new Date(e.abiertaEn).getTime() : NaN;
-  if (abierta && Number.isFinite(t) && Date.now() - t < TURNO_MAX_HORAS * 36e5) return; // turno nocturno: sigue abierto
-  if (abierta && typeof registrarBitacora === "function") registrarBitacora("caja", "Turno anterior sin corte", `La caja abierta el ${e.fecha} no se cerró con corte`);
-  estadoCajaHoy = { fecha: hoy(), fondoInicial: null, retiros: [], depositos: [] };
-  LS.set("cajaHoy", estadoCajaHoy);
+  // Se conserva esta función por compatibilidad con los módulos que la llaman.
+  // No modificar fecha, fondo ni movimientos: un turno puede cruzar varios días.
 }
 
 function abrirFondoInicial() {
