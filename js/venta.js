@@ -108,32 +108,20 @@ function alternarOrdenarProductos() {
   if (typeof toast === "function") toast(ordenarProductosActivo ? "Arrastra el asa ↕ para cambiar el orden" : "Orden de productos guardado en este dispositivo");
 }
 function iniciarArrastreProducto(event, handle) {
-  if (!ordenarProductosActivo || !puedeReordenarProductos() || arrastreProducto) return;
+  if (!ordenarProductosActivo || !puedeReordenarProductos()) return;
   event.preventDefault();
   event.stopPropagation();
   const item = handle.closest(".prod-btn");
-  const grid = document.getElementById("gridProductos");
-  if (!item || !grid || !grid.contains(item)) return;
-  arrastreProducto = {
-    id: item.dataset.productId,
-    pointerId: event.pointerId,
-    item,
-    grid,
-    ordenInicial: [...grid.querySelectorAll(".prod-btn[data-product-id]")].map(el => el.dataset.productId),
-    movido: false
-  };
+  if (!item) return;
+  arrastreProducto = { id: item.dataset.productId, pointerId: event.pointerId, item, movido: false };
+  handle.setPointerCapture?.(event.pointerId);
   item.classList.add("arrastrando");
-  // Los eventos se escuchan en document: el puntero puede salir del asa o de la tarjeta.
-  document.addEventListener("pointermove", moverArrastreProducto, { passive: false });
-  document.addEventListener("pointerup", terminarArrastreProducto);
-  document.addEventListener("pointercancel", terminarArrastreProducto);
-  try { handle.setPointerCapture?.(event.pointerId); } catch (_) {}
 }
 function moverArrastreProducto(event) {
   if (!arrastreProducto || event.pointerId !== arrastreProducto.pointerId) return;
-  const { item: actual, grid } = arrastreProducto;
+  const actual = arrastreProducto.item;
   const destino = document.elementFromPoint(event.clientX, event.clientY)?.closest?.("#gridProductos .prod-btn");
-  if (!destino || destino === actual || !grid.contains(destino) || destino.parentElement !== actual.parentElement) return;
+  if (!destino || destino === actual || !actual.parentElement || destino.parentElement !== actual.parentElement) return;
   event.preventDefault();
   const r = destino.getBoundingClientRect();
   const horizontal = r.width > r.height * 1.2;
@@ -143,16 +131,11 @@ function moverArrastreProducto(event) {
 }
 function terminarArrastreProducto(event) {
   if (!arrastreProducto || (event && event.pointerId !== undefined && event.pointerId !== arrastreProducto.pointerId)) return;
-  document.removeEventListener("pointermove", moverArrastreProducto);
-  document.removeEventListener("pointerup", terminarArrastreProducto);
-  document.removeEventListener("pointercancel", terminarArrastreProducto);
-  const estado = arrastreProducto;
-  const ordenFinal = [...estado.grid.querySelectorAll(".prod-btn[data-product-id]")].map(el => el.dataset.productId);
-  estado.item.classList.remove("arrastrando");
+  const movio = arrastreProducto.movido;
+  arrastreProducto.item.classList.remove("arrastrando");
   arrastreProducto = null;
-  // Guardar solo si el orden realmente cambió; el botón Listo no depende del evento del asa.
-  if (ordenFinal.length && ordenFinal.some((id, i) => id !== estado.ordenInicial[i])) {
-    guardarOrdenProductosLocal(ordenFinal);
+  if (movio) {
+    guardarOrdenProductosLocal([...document.querySelectorAll("#gridProductos .prod-btn[data-product-id]")].map(el => el.dataset.productId));
   }
 }
 
@@ -208,7 +191,7 @@ function renderCaja() {
       : `<div class="prod-emoji">${emojiSeguro}</div>`;
     return `
       <button class="prod-btn${ordenarProductosActivo ? " modo-ordenar" : ""}" data-product-id="${escapeHTML(String(p.id))}" data-cat="${escapeHTML(p.categoria)}" onclick="if(!ordenarProductosActivo) agregarAlCarrito(${JSON.stringify(p.id)})">
-        ${ordenarProductosActivo ? '<span class="asa-arrastre" role="button" tabindex="0" aria-label="Arrastrar para reordenar" title="Arrastrar para reordenar" onpointerdown="iniciarArrastreProducto(event,this)" onclick="event.preventDefault();event.stopPropagation()">⠿</span>' : ""}
+        ${ordenarProductosActivo ? '<span class="asa-arrastre" role="button" tabindex="0" aria-label="Arrastrar para reordenar" title="Arrastrar para reordenar" onpointerdown="iniciarArrastreProducto(event,this)" onpointermove="moverArrastreProducto(event)" onpointerup="terminarArrastreProducto(event)" onpointercancel="terminarArrastreProducto(event)" onclick="event.preventDefault();event.stopPropagation()">⠿</span>' : ""}
         ${contenido}
         <span class="prod-nombre">${escapeHTML(p.nombre)}</span>
         <span class="prod-precio">${fmt(p.precio)}</span>

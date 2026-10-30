@@ -671,8 +671,7 @@ body.modo-oscuro .btn-ordenar.activo { background: #431407; color: #fed7aa; bord
 .prod-btn.modo-ordenar { padding-left: 34px; }
 .prod-btn .asa-arrastre { position: absolute; z-index: 2; left: 7px; top: 50%; transform: translateY(-50%); width: 26px; height: 42px; display: flex; align-items: center; justify-content: center; border-radius: 8px; color: #c2410c; background: rgba(249,115,22,.12); font-size: 24px; font-weight: 800; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
 .prod-btn .asa-arrastre:active { cursor: grabbing; }
-.productos-grid .prod-btn.arrastrando { opacity: .48; outline: 2px dashed #f97316; outline-offset: -3px; pointer-events: none; }
-.prod-btn .asa-arrastre { touch-action: none; -webkit-touch-callout: none; }
+.productos-grid .prod-btn.arrastrando { opacity: .48; outline: 2px dashed #f97316; outline-offset: -3px; }
 .productos-grid.vista-lista .prod-btn.modo-ordenar { padding-left: 42px; }
 .productos-grid.vista-lista .prod-btn .asa-arrastre { left: 8px; width: 28px; }
 @media (max-width: 420px) { .btn-ordenar { padding: 0 9px; } .btn-ordenar-texto { font-size: 12px; } }
