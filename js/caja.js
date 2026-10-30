@@ -6,7 +6,7 @@
 
 // Un turno abierto sigue vigente al cruzar la medianoche hasta que se haga el corte,
 // siempre que lleve menos de TURNO_MAX_HORAS abierto. Pasado ese tiempo se considera olvidado.
-const TURNO_MAX_HORAS = 20;
+const TURNO_MAX_HORAS = 24;
 
 function initDia() {
   const e = estadoCajaHoy;
