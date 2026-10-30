@@ -519,3 +519,372 @@ tr.gasto-dia td > div { display: flex; justify-content: space-between; align-ite
   tr.gasto-dia td { display: block; width: 100%; }
   tr.gasto-dia td > div { border-radius: 10px; }
 }
+
+
+
+/* =========================================================
+   POS POLLERÍA PRO2 · v139 · REDISEÑO INTEGRAL ADMIN
+   Productos/recetas · Inventario · Reportes · Configuración
+   Capa visual únicamente: no modifica datos ni comportamiento.
+   ========================================================= */
+
+/* Encabezados de vistas */
+#productos .vista-header,
+#inventario .vista-header,
+#reportes .vista-header,
+#config .vista-header {
+  padding: 2px 0 14px;
+  border-bottom: 1px solid var(--borde, #e2e8f0);
+}
+#productos .vista-header h2,
+#inventario .vista-header h2,
+#reportes .vista-header h2,
+#config .vista-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--texto, #1f2937);
+  font-size: clamp(21px, 2.2vw, 27px);
+  font-weight: 900;
+  letter-spacing: -.55px;
+}
+
+/* Contenedores y tablas de catálogo e inventario */
+#productos .tabla-wrap,
+#inventario .tabla-wrap,
+#reportes .tabla-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--borde, #e2e8f0);
+  border-radius: 17px;
+  background: var(--superficie, #fff);
+  box-shadow: 0 5px 20px rgba(15,23,42,.045);
+}
+#productos .tabla-wrap > table,
+#inventario .tabla-wrap > table,
+#reportes .tabla-wrap > table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: transparent;
+}
+#productos .tabla-wrap table thead th,
+#inventario .tabla-wrap table thead th,
+#reportes .tabla-wrap table thead th {
+  padding: 14px 13px;
+  background: #f8fafc;
+  color: #64748b;
+  border-bottom: 1px solid var(--borde, #e2e8f0);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .065em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+#productos .tabla-wrap table tbody td,
+#inventario .tabla-wrap table tbody td,
+#reportes .tabla-wrap table tbody td {
+  padding: 13px;
+  color: var(--texto, #334155);
+  border-bottom: 1px solid var(--borde, #edf0f3);
+  font-size: 13px;
+  vertical-align: middle;
+}
+#productos .tabla-wrap table tbody tr:last-child td,
+#inventario .tabla-wrap table tbody tr:last-child td,
+#reportes .tabla-wrap table tbody tr:last-child td { border-bottom: 0; }
+#productos .tabla-wrap table tbody tr:hover,
+#inventario .tabla-wrap table tbody tr:hover,
+#reportes .tabla-wrap table tbody tr:hover { background: rgba(249,115,22,.035); }
+#productos .tabla-wrap table tbody td:nth-child(2),
+#inventario .tabla-wrap table tbody td:first-child { font-weight: 750; }
+#productos .tabla-wrap table tbody td b,
+#inventario .tabla-wrap table tbody td b { font-weight: 900; }
+
+/* Acciones compactas y fáciles de tocar */
+#productos .btn-mini,
+#inventario .btn-mini {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  margin: 2px;
+  border: 1px solid var(--borde, #e2e8f0);
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(15,23,42,.035);
+  transition: transform .14s ease, border-color .14s ease, background .14s ease;
+}
+#productos .btn-mini:hover,
+#inventario .btn-mini:hover {
+  transform: translateY(-1px);
+  border-color: #fdba74;
+  background: #fff7ed;
+}
+
+/* Formularios emergentes de productos, recetas e inventario */
+.modal-contenido label,
+.modal-body label {
+  display: block;
+  margin: 12px 0 6px;
+  color: var(--texto, #334155);
+  font-size: 12px;
+  font-weight: 800;
+}
+.modal-contenido input,
+.modal-contenido select,
+.modal-contenido textarea,
+.modal-body input,
+.modal-body select,
+.modal-body textarea {
+  border-radius: 11px;
+}
+.modal-contenido input:focus,
+.modal-contenido select:focus,
+.modal-contenido textarea:focus,
+.modal-body input:focus,
+.modal-body select:focus,
+.modal-body textarea:focus {
+  border-color: var(--naranja, #f97316);
+  box-shadow: 0 0 0 3px rgba(249,115,22,.12);
+}
+
+/* Paneles de reportes: tarjetas y análisis */
+#reportes .panel-metrica,
+#reportes .comparativa-card,
+#reportes .comparativa-panel,
+#reportes .grafica-7dias {
+  border-radius: 17px;
+  box-shadow: 0 5px 18px rgba(15,23,42,.045);
+}
+#reportes .panel-metrica {
+  padding: 17px;
+  border-color: var(--borde, #e2e8f0);
+}
+#reportes .panel-metrica:not(.panel-metrica-principal) {
+  background: var(--superficie, #fff);
+}
+#reportes .panel-metrica-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: rgba(249,115,22,.11);
+}
+#reportes .panel-metrica-label { font-weight: 750; }
+#reportes .panel-metrica strong { letter-spacing: -.035em; }
+#reportes .panel-seccion-titulo { margin-top: 24px; }
+#reportes .panel-seccion-titulo h3,
+#reportes .comparativa-titulo h3 { letter-spacing: -.2px; }
+#reportes .analisis-comparativa,
+#reportes .analisis-productos-unificado {
+  padding: 16px;
+  border: 1px solid var(--borde, #e2e8f0);
+  border-radius: 17px;
+  background: var(--superficie, #fff);
+  box-shadow: 0 5px 18px rgba(15,23,42,.04);
+}
+#reportes .analisis-productos-controles input,
+#reportes .analisis-productos-controles select {
+  min-height: 40px;
+  border-radius: 11px;
+}
+#reportes .tabla-analisis-productos tbody tr:hover { background: rgba(249,115,22,.04); }
+
+/* Configuración: tarjetas coherentes y navegación visual */
+#config .config-grid { gap: 15px; }
+#config .card-config {
+  padding: 18px;
+  border: 1px solid var(--borde, #e2e8f0);
+  border-radius: 18px;
+  background: var(--superficie, #fff);
+  box-shadow: 0 5px 18px rgba(15,23,42,.04);
+}
+#config .card-config h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 13px;
+  color: var(--texto, #1f2937);
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: -.15px;
+}
+#config .card-config > p {
+  line-height: 1.55;
+}
+#config .card-config input:not([type="checkbox"]):not([type="file"]),
+#config .card-config select,
+#config .card-config textarea {
+  min-height: 42px;
+  border-radius: 11px;
+}
+#config .card-config button { border-radius: 11px; }
+#config .config-menu-card { border-radius: 18px; }
+#config .config-menu-summary {
+  padding: 3px 0;
+  font-weight: 850;
+}
+#config .toggle-modo {
+  border: 1px solid var(--borde, #e2e8f0);
+  border-radius: 13px;
+  background: var(--fondo, #f8fafc);
+}
+#config .card-config.peligro {
+  border-color: #fecaca;
+  background: linear-gradient(145deg, #fff, #fffafa);
+}
+
+/* Estados, avisos y etiquetas */
+#productos .badge,
+#inventario .badge { border-radius: 999px; padding: 5px 10px; font-weight: 850; }
+#productos .btn-primary,
+#inventario .btn-primary,
+#reportes .btn-primary,
+#config .btn-primary {
+  border-radius: 12px;
+  font-weight: 850;
+}
+
+/* Tema oscuro */
+body.modo-oscuro #productos .tabla-wrap,
+body.modo-oscuro #inventario .tabla-wrap,
+body.modo-oscuro #reportes .tabla-wrap,
+body.modo-oscuro #reportes .analisis-comparativa,
+body.modo-oscuro #reportes .analisis-productos-unificado,
+body.modo-oscuro #config .card-config {
+  background: var(--fondo-card, #1e293b);
+  border-color: var(--borde, #334155);
+}
+body.modo-oscuro #productos .tabla-wrap table thead th,
+body.modo-oscuro #inventario .tabla-wrap table thead th,
+body.modo-oscuro #reportes .tabla-wrap table thead th {
+  background: #263449;
+  color: #cbd5e1;
+  border-color: var(--borde, #334155);
+}
+body.modo-oscuro #productos .tabla-wrap table tbody td,
+body.modo-oscuro #inventario .tabla-wrap table tbody td,
+body.modo-oscuro #reportes .tabla-wrap table tbody td {
+  color: var(--texto, #e2e8f0);
+  border-color: var(--borde, #334155);
+}
+body.modo-oscuro #productos .tabla-wrap table tbody tr:hover,
+body.modo-oscuro #inventario .tabla-wrap table tbody tr:hover,
+body.modo-oscuro #reportes .tabla-wrap table tbody tr:hover {
+  background: rgba(249,115,22,.09);
+}
+body.modo-oscuro #productos .btn-mini,
+body.modo-oscuro #inventario .btn-mini {
+  background: #263449;
+  border-color: #475569;
+}
+body.modo-oscuro #config .card-config.peligro {
+  background: #301f25;
+  border-color: #7f1d1d;
+}
+
+/* Adaptación móvil y tablet */
+@media (max-width: 900px) {
+  #productos .tabla-wrap,
+  #inventario .tabla-wrap,
+  #reportes .tabla-wrap { border-radius: 14px; }
+  #productos .tabla-wrap table thead th,
+  #inventario .tabla-wrap table thead th,
+  #reportes .tabla-wrap table thead th { padding: 11px 9px; }
+  #productos .tabla-wrap table tbody td,
+  #inventario .tabla-wrap table tbody td,
+  #reportes .tabla-wrap table tbody td { padding: 11px 9px; }
+  #config .config-grid { gap: 11px; }
+  #config .card-config { padding: 15px; border-radius: 15px; }
+}
+@media (max-width: 520px) {
+  #productos .vista-header,
+  #inventario .vista-header,
+  #reportes .vista-header,
+  #config .vista-header { gap: 10px; }
+  #productos .vista-header > button,
+  #inventario .vista-header > div { width: 100%; }
+  #inventario .vista-header > div button { flex: 1; }
+  #reportes .reporte-controles { width: 100%; }
+  #reportes .btn-comparar-ventas { flex: 1; }
+  #reportes .panel-metrica { padding: 13px; }
+  #reportes .analisis-comparativa,
+  #reportes .analisis-productos-unificado { padding: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #productos .btn-mini,
+  #inventario .btn-mini { transition: none; }
+}
+
+
+
+/* v141 · Acciones de productos: iconos compactos y alineados */
+#productos td.acciones-producto {
+  white-space: nowrap;
+  vertical-align: middle;
+}
+#productos td.acciones-producto .btn-accion-producto {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  margin: 0 5px 0 0;
+  border: 1px solid var(--borde, #e7e5e4);
+  border-radius: 12px;
+  background: var(--fondo-card, #fff);
+  box-shadow: 0 2px 7px rgba(28,25,23,.045);
+  font-size: 17px;
+  line-height: 1;
+  white-space: nowrap;
+}
+#productos td.acciones-producto .btn-accion-producto:last-child { margin-right: 0; }
+#productos td.acciones-producto .btn-receta-producto {
+  background: #fff7ed;
+  border-color: var(--naranja, #f97316);
+}
+#productos td.acciones-producto .btn-accion-producto:hover {
+  border-color: #fdba74;
+  background: #fff7ed;
+  transform: translateY(-1px);
+}
+body.modo-oscuro #productos td.acciones-producto .btn-accion-producto {
+  background: var(--fondo-card, #1e293b);
+  border-color: var(--borde, #475569);
+}
+body.modo-oscuro #productos td.acciones-producto .btn-receta-producto {
+  background: rgba(249,115,22,.13);
+  border-color: var(--naranja, #f97316);
+}
+@media (max-width: 900px) {
+  #productos td.acciones-producto {
+    display: flex !important;
+    align-items: center;
+    justify-content: flex-start !important;
+    flex-wrap: wrap;
+    gap: 7px;
+    padding-top: 10px;
+  }
+  #productos td.acciones-producto::before {
+    flex: 0 0 100%;
+    margin: 0 0 2px;
+  }
+  #productos td.acciones-producto .btn-accion-producto {
+    flex: 0 0 40px;
+    margin: 0;
+  }
+}
+@media (max-width: 380px) {
+  #productos td.acciones-producto { gap: 6px; }
+  #productos td.acciones-producto .btn-accion-producto {
+    width: 37px;
+    min-width: 37px;
+    height: 37px;
+    min-height: 37px;
+    flex-basis: 37px;
+  }
+}

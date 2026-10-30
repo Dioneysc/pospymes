@@ -49,11 +49,11 @@ function renderProductos() {
               ` : ""}
             </td>
             <td data-label="Estado"><span class="badge ${p.activo?'ok':'danger'}">${p.activo?'Activo':'Inactivo'}</span></td>
-            <td data-label="Acciones">
-              <button class="btn-mini" onclick="abrirFormProducto(${p.id})" title="Editar">✏️</button>
-              <button class="btn-mini" onclick="toggleProducto(${p.id})" title="Activar/Desactivar">${p.activo?'🚫':'✅'}</button>
-              <button class="btn-mini" onclick="abrirReceta(${p.id})" title="Editar receta" style="background:#fff7ed;border-color:var(--naranja)">📋 Receta</button>
-              <button class="btn-mini" onclick="borrarProducto(${p.id})" title="Borrar">🗑️</button>
+            <td data-label="Acciones" class="acciones-producto">
+              <button class="btn-mini btn-accion-producto" onclick="abrirFormProducto(${p.id})" title="Editar" aria-label="Editar producto">✏️</button>
+              <button class="btn-mini btn-accion-producto" onclick="toggleProducto(${p.id})" title="Activar/Desactivar" aria-label="${p.activo ? 'Desactivar' : 'Activar'} producto">${p.activo?'🚫':'✅'}</button>
+              <button class="btn-mini btn-accion-producto btn-receta-producto" onclick="abrirReceta(${p.id})" title="Editar receta" aria-label="Editar receta">📋</button>
+              <button class="btn-mini btn-accion-producto" onclick="borrarProducto(${p.id})" title="Borrar" aria-label="Borrar producto">🗑️</button>
             </td>
           </tr>
         `;
@@ -77,6 +77,31 @@ function abrirFormProducto(id) {
     </div>
     <label>Activo</label>
     <select id="fpActivo"><option value="true" ${p.activo?'selected':''}>Sí</option><option value="false" ${!p.activo?'selected':''}>No</option></select>
+
+    <section style="margin-top:16px;padding:12px;border:1px solid #dbeafe;border-radius:12px;background:var(--panel, #f8fafc)">
+      <div style="font-weight:700;font-size:14px;margin-bottom:4px">📦 Control de inventario <span style="font-size:11px;color:#64748b;font-weight:400">(opcional)</span></div>
+      <p style="font-size:12px;color:#64748b;margin:0 0 10px">Indica qué insumo se descuenta automáticamente cada vez que vendes este producto.</p>
+      ${((p.insumos || []).length > 1) ? `
+        <div style="padding:10px;border-radius:8px;background:#fff7ed;color:#9a3412;font-size:12px">
+          Este producto ya tiene una receta de ${p.insumos.length} insumos. Se conservará sin cambios para evitar alterar la receta. Puedes administrarla desde el botón <b>Receta</b>.
+        </div>
+      ` : `
+        <label style="font-size:12px">¿Descontar un insumo al vender?</label>
+        <select id="fpControlInvActivo" onchange="actualizarCamposControlInventario()" style="margin-bottom:8px">
+          <option value="false" ${!(p.insumos || []).length ? 'selected' : ''}>No, no controlar inventario automáticamente</option>
+          <option value="true" ${(p.insumos || []).length === 1 ? 'selected' : ''}>Sí, descontar un insumo</option>
+        </select>
+        <div id="fpControlInvCampos" style="display:${(p.insumos || []).length === 1 ? 'block' : 'none'}">
+          <label style="font-size:12px">Insumo que se descontará</label>
+          <select id="fpControlInvInsumo" style="margin-bottom:8px">
+            ${DB.insumos.map(i => `<option value="${i.id}" ${((p.insumos || [])[0] || {}).insumoId == i.id ? 'selected' : ''}>${escapeHTML(i.nombre)} (${escapeHTML(i.unidad)})</option>`).join("")}
+          </select>
+          <label style="font-size:12px">Cantidad por cada unidad vendida</label>
+          <input id="fpControlInvCantidad" type="number" min="0.01" step="0.01" value="${(p.insumos || []).length === 1 ? p.insumos[0].cantidad : '1'}" style="margin-bottom:0">
+          ${!DB.insumos.length ? `<p style="font-size:12px;color:#b45309;margin-top:8px">Primero registra los insumos en Inventario para poder asignarlos.</p>` : ''}
+        </div>
+      `}
+    </section>
     <div class="acciones">
       <button class="btn-secondary" onclick="cerrarModal()">Cancelar</button>
       <button class="btn-primary" onclick="guardarProducto(${id||0})">Guardar</button>
@@ -91,14 +116,49 @@ function guardarProducto(id) {
   const emoji = $("#fpEmoji").value.trim() || "🍽️";
   const activo = $("#fpActivo").value === "true";
   if (!nombre || !Number.isFinite(precio) || precio <= 0) return toast("Escribe un nombre y un precio mayor que cero");
+  let producto;
   if (id) {
-    const p = DB.productos.find(x => x.id === id);
-    if (!p) { cerrarModal(); return toast("⚠️ El producto ya no existe (¿se borró en otro dispositivo?)"); }
-    Object.assign(p, { nombre, precio, categoria, emoji, activo });
+    producto = DB.productos.find(x => x.id === id);
+    if (!producto) { cerrarModal(); return toast("⚠️ El producto ya no existe (¿se borró en otro dispositivo?)"); }
+    Object.assign(producto, { nombre, precio, categoria, emoji, activo });
   } else {
-    DB.productos.push({ id: nuevoId(DB.productos), nombre, precio, categoria, emoji, activo, insumos: [] });
+    producto = { id: nuevoId(DB.productos), nombre, precio, categoria, emoji, activo, insumos: [] };
+    DB.productos.push(producto);
+  }
+
+  // El control sencillo reutiliza el mecanismo de consumo ya usado por las ventas.
+  // Las recetas de varios insumos nunca se reemplazan desde este formulario.
+  const controlActivo = document.getElementById("fpControlInvActivo");
+  if (controlActivo && (!Array.isArray(producto.insumos) || producto.insumos.length <= 1)) {
+    if (controlActivo.value === "true") {
+      const selector = document.getElementById("fpControlInvInsumo");
+      const campoCantidad = document.getElementById("fpControlInvCantidad");
+      const insumoId = selector ? Number(selector.value) : NaN;
+      const cantidad = campoCantidad ? Number(campoCantidad.value) : NaN;
+      if (!DB.insumos.length || !Number.isFinite(insumoId) || !DB.insumos.some(i => Number(i.id) === insumoId)) {
+        if (!id) DB.productos = DB.productos.filter(x => x !== producto);
+        return toast("Selecciona un insumo registrado en Inventario");
+      }
+      if (!Number.isFinite(cantidad) || cantidad <= 0) {
+        if (!id) DB.productos = DB.productos.filter(x => x !== producto);
+        return toast("La cantidad por venta debe ser mayor que cero");
+      }
+      producto.insumos = [{ insumoId, cantidad }];
+    } else if (Array.isArray(producto.insumos) && producto.insumos.length === 1) {
+      // Proteger una asociación existente: pedir confirmación antes de quitarla.
+      if (!confirm("Este producto ya descuenta un insumo al venderse. ¿Quieres quitar esa asociación de inventario?")) {
+        return;
+      }
+      producto.insumos = [];
+    }
   }
   guardar(); cerrarModal(); renderProductos(); renderCaja(); renderCategorias(); toast("💾 Guardado");
+}
+
+function actualizarCamposControlInventario() {
+  const selector = document.getElementById("fpControlInvActivo");
+  const campos = document.getElementById("fpControlInvCampos");
+  if (selector && campos) campos.style.display = selector.value === "true" ? "block" : "none";
 }
 
 function toggleProducto(id) {
