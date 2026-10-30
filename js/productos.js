@@ -49,11 +49,11 @@ function renderProductos() {
               ` : ""}
             </td>
             <td data-label="Estado"><span class="badge ${p.activo?'ok':'danger'}">${p.activo?'Activo':'Inactivo'}</span></td>
-            <td data-label="Acciones" class="acciones-producto">
-              <button class="btn-mini btn-accion-producto" onclick="abrirFormProducto(${p.id})" title="Editar" aria-label="Editar producto">✏️</button>
-              <button class="btn-mini btn-accion-producto" onclick="toggleProducto(${p.id})" title="Activar/Desactivar" aria-label="${p.activo ? 'Desactivar' : 'Activar'} producto">${p.activo?'🚫':'✅'}</button>
-              <button class="btn-mini btn-accion-producto btn-receta-producto" onclick="abrirReceta(${p.id})" title="Editar receta" aria-label="Editar receta">📋</button>
-              <button class="btn-mini btn-accion-producto" onclick="borrarProducto(${p.id})" title="Borrar" aria-label="Borrar producto">🗑️</button>
+            <td data-label="Acciones">
+              <button class="btn-mini" onclick="abrirFormProducto(${p.id})" title="Editar">✏️</button>
+              <button class="btn-mini" onclick="toggleProducto(${p.id})" title="Activar/Desactivar">${p.activo?'🚫':'✅'}</button>
+              <button class="btn-mini" onclick="abrirReceta(${p.id})" title="Editar receta" style="background:#fff7ed;border-color:var(--naranja)">📋 Receta</button>
+              <button class="btn-mini" onclick="borrarProducto(${p.id})" title="Borrar">🗑️</button>
             </td>
           </tr>
         `;
