@@ -89,7 +89,7 @@ function obtenerPreventa(id) {
     (window._preventaActual && Number(window._preventaActual.id) === Number(id) ? window._preventaActual : null);
 }
 
-function imprimirPreventa(id) {
+async function imprimirPreventa(id) {
   const pedido = obtenerPreventa(id);
   if (!pedido) return toast("⚠️ No se encontró la preventa");
 
@@ -105,8 +105,8 @@ function imprimirPreventa(id) {
 
   // En la terminal Android, utilizar la impresora Bluetooth nativa existente.
   if (typeof EN_ANDROID !== "undefined" && EN_ANDROID) {
-    if (typeof Android !== "undefined" && Android.isConnected && Android.isConnected()) {
-      const enviado = typeof androidImprimirTicket === "function" && androidImprimirTicket(ticketAndroid);
+    if (await androidEstaConectada()) {
+      const enviado = typeof androidImprimirTicket === "function" && await androidImprimirTicket(ticketAndroid);
       if (enviado) {
         cerrarModal();
         toast("🖨️ Preventa enviada a la impresora");

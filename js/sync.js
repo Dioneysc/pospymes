@@ -258,11 +258,8 @@ async function conectarSync() {
     iniciarFirebase();
 
     // En Android, solicitar inicio de sesión nativo
-    if (
-      window.Android &&
-      typeof window.Android.signInWithGoogle === "function"
-    ) {
-      window.Android.signInWithGoogle(String(slot));
+    if (window.POS_NATIVE && window.POS_NATIVE.available) {
+      await window.POS_NATIVE.call("signInWithGoogle", {slot:String(slot)}, 120000);
       return;
     }
 
@@ -338,7 +335,7 @@ async function finalizarConexion(user, slot) {
     if (!confirm("La nube ya tiene datos de este negocio.\n\n¿Reemplazar los datos de ESTE dispositivo por los de la nube?\n\nSe descargará un respaldo de lo que hay aquí antes de reemplazar.")) {
       await firebase.auth().signOut(); syncDb = null; syncUid = null; return pintarEstadoSync();
     }
-    exportarBackup();
+    await exportarBackup();
     await descargarTodo();
   } else if (primera) { syncMeta.synced = {}; syncMeta.cfgT = {}; }
   syncMeta = { ...syncMeta, activo: true, slot, email: user.email || "", uid: syncUid };

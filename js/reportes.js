@@ -429,7 +429,7 @@ function renderComparativaSemanal() {
   `;
 }
 
-function exportarCSV() {
+async function exportarCSV() {
   const rows = [["ID","Fecha","Cajero","Productos","Subtotal","Descuento","Propina","Total","Método","Estado"]];
   DB.ventas.forEach(v => rows.push([
     v.id, new Date(v.fecha).toLocaleString("es-MX"), v.usuario || "",
@@ -439,7 +439,7 @@ function exportarCSV() {
   ]));
   const celda = c => { let s = String(c ?? ""); if (/^[=+\-@\t\r]/.test(s) && isNaN(Number(s))) s = "'" + s; return `"${s.replace(/"/g, '""')}"`; };
   const csv = rows.map(r => r.map(celda).join(",")).join("\n");
-  const ok = guardarArchivoTexto(`ventas_${hoy()}.csv`, "\ufeff" + csv, "text/csv;charset=utf-8");
+  const ok = await guardarArchivoTexto(`ventas_${hoy()}.csv`, "\ufeff" + csv, "text/csv;charset=utf-8");
   if (ok) toast("📥 CSV descargado");
 }
 

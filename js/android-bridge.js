@@ -4,168 +4,47 @@
    Solo funciona si el POS corre dentro de la APK Android
    ============================================ */
 
-// Detectar si estamos dentro de la APK
-const EN_ANDROID = typeof Android !== "undefined" && Android !== null;
-
-console.log("🤖 EN_ANDROID:", EN_ANDROID);
-
-// ============================================
-// ESTADO
-// ============================================
+// El canal seguro solo se habilita mediante WebMessageListener y origen autorizado.
+const POS_NATIVE = window.POS_NATIVE || { available: false, call: () => Promise.reject(new Error("Canal nativo no disponible")) };
+const EN_ANDROID = !!POS_NATIVE.available;
+console.log("🤖 EN_ANDROID (canal seguro):", EN_ANDROID);
 let impresoraConectada = false;
 let impresoraNombre = "";
 
-// ============================================
-// FUNCIONES DE CONEXIÓN
-// ============================================
+async function androidIsBluetoothAvailable() { return EN_ANDROID ? !!(await POS_NATIVE.call("isBluetoothAvailable")) : false; }
+async function androidIsBluetoothEnabled() { return EN_ANDROID ? !!(await POS_NATIVE.call("isBluetoothEnabled")) : false; }
+async function androidPedirActivarBluetooth() { if (EN_ANDROID) await POS_NATIVE.call("requestEnableBluetooth"); }
+async function androidObtenerDispositivos() { return EN_ANDROID ? await POS_NATIVE.call("getPairedDevices") : []; }
+async function androidConectarImpresora(address) { return EN_ANDROID ? !!(await POS_NATIVE.call("connectToPrinter", {address}, 30000)) : false; }
+async function androidDesconectar() { return EN_ANDROID ? !!(await POS_NATIVE.call("disconnect")) : false; }
+async function androidEstaConectada() { return EN_ANDROID ? !!(await POS_NATIVE.call("isConnected")) : false; }
 
-function androidIsBluetoothAvailable() {
-  if (!EN_ANDROID) return false;
-  return Android.isBluetoothAvailable();
+function obtenerCodigoImpresora() { const c = LS.get("impresoraCodigo", "latin1"); return ["latin1", "cp850", "cp1252", "ascii"].includes(c) ? c : "latin1"; }
+function guardarCodigoImpresora(valor) { LS.set("impresoraCodigo", ["latin1", "cp850", "cp1252", "ascii"].includes(valor) ? valor : "latin1"); toast("✅ Guardado. Imprime una prueba para comprobarlo"); }
+
+async function androidImprimirCorte(corte) {
+  if (!EN_ANDROID || !(await androidEstaConectada())) return false;
+  const n = DB.negocio || {};
+  const datos = { tipo:"corte", codigo:obtenerCodigoImpresora(), negocio:n.nombre||"POS", slogan:n.slogan||"", direccion:n.direccion||"", telefono:n.telefono||"", logo:typeof obtenerLogoNegocio==="function"?(obtenerLogoNegocio()||""):"", fecha:new Date(corte.fecha).toLocaleString("es-MX"), cajero:corte.usuario||"admin", fondo:Number(corte.fondo)||0, ventas:{ efectivo:Number(corte.ventas?.efectivo)||0, tarjeta:Number(corte.ventas?.tarjeta)||0, transf:Number(corte.ventas?.transf)||0, total:Number(corte.ventas?.total)||0, tickets:Number(corte.ventas?.tickets)||0 }, gastos:Number(corte.gastos)||0, gastosTransf:Number(corte.gastosTransf)||0, gastosCajaFuerte:Number(corte.gastosCajaFuerte)||0, retiros:Number(corte.retiros)||0, depositos:Number(corte.depositos)||0, esperado:Number(corte.esperado)||0, contado:Number(corte.contado)||0, diferencia:Number(corte.diferencia)||0, nota:corte.nota||"" };
+  try { return (await POS_NATIVE.call("printTicket", {ticketJson:JSON.stringify(datos)}, 45000)) !== false; } catch(e) { console.error("Error al imprimir corte:",e); return false; }
 }
 
-function androidIsBluetoothEnabled() {
-  if (!EN_ANDROID) return false;
-  return Android.isBluetoothEnabled();
-}
-
-function androidPedirActivarBluetooth() {
-  if (!EN_ANDROID) return;
-  Android.requestEnableBluetooth();
-}
-
-function androidObtenerDispositivos() {
-  if (!EN_ANDROID) return [];
-  try {
-    const json = Android.getPairedDevices();
-    return JSON.parse(json);
-  } catch (e) {
-    console.error("Error obteniendo dispositivos:", e);
-    return [];
-  }
-}
-
-function androidConectarImpresora(address) {
-  if (!EN_ANDROID) return false;
-  return Android.connectToPrinter(address);
-}
-
-function androidDesconectar() {
-  if (!EN_ANDROID) return false;
-  return Android.disconnect();
-}
-
-function androidEstaConectada() {
-  if (!EN_ANDROID) return false;
-  return Android.isConnected();
-}
-
-// ============================================
-// IMPRESIÓN
-// ============================================
-
-function androidImprimirCorte(corte) {
-    if (!EN_ANDROID || typeof Android === "undefined" || !Android.isConnected()) return false;
-
-    const n = DB.negocio || {};
-    const datos = {
-        tipo: "corte",
-        codigo: obtenerCodigoImpresora(),
-        negocio: n.nombre || "POS",
-        slogan: n.slogan || "",
-        direccion: n.direccion || "",
-        telefono: n.telefono || "",
-        logo: typeof obtenerLogoNegocio === "function" ? (obtenerLogoNegocio() || "") : "",
-        fecha: new Date(corte.fecha).toLocaleString("es-MX"),
-        cajero: corte.usuario || "admin",
-        fondo: Number(corte.fondo) || 0,
-        ventas: {
-            efectivo: Number(corte.ventas?.efectivo) || 0,
-            tarjeta: Number(corte.ventas?.tarjeta) || 0,
-            transf: Number(corte.ventas?.transf) || 0,
-            total: Number(corte.ventas?.total) || 0,
-            tickets: Number(corte.ventas?.tickets) || 0
-        },
-        gastos: Number(corte.gastos) || 0,
-        gastosTransf: Number(corte.gastosTransf) || 0,
-        gastosCajaFuerte: Number(corte.gastosCajaFuerte) || 0,
-        retiros: Number(corte.retiros) || 0,
-        depositos: Number(corte.depositos) || 0,
-        esperado: Number(corte.esperado) || 0,
-        contado: Number(corte.contado) || 0,
-        diferencia: Number(corte.diferencia) || 0,
-        nota: corte.nota || ""
-    };
-
-    try {
-        // Igual que en el ticket: solo un false explícito es fallo (si el puente no devuelve nada, se da por enviado)
-        return Android.printTicket(JSON.stringify(datos)) !== false;
-    } catch (e) {
-        console.error("Error al imprimir corte:", e);
-        return false;
-    }
-}
-
-/* Tabla de caracteres de la impresora (acentos y ñ). Es un ajuste del dispositivo, no se sincroniza. */
-function obtenerCodigoImpresora() {
-    const c = LS.get("impresoraCodigo", "latin1");
-    return ["latin1", "cp850", "cp1252", "ascii"].includes(c) ? c : "latin1";
-}
-
-function guardarCodigoImpresora(valor) {
-    LS.set("impresoraCodigo", ["latin1", "cp850", "cp1252", "ascii"].includes(valor) ? valor : "latin1");
-    toast("✅ Guardado. Imprime una prueba para comprobarlo");
-}
-
-function androidImprimirTicket(venta) {
-    if (!EN_ANDROID) return false;
-    if (!Android.isConnected()) return false;
-
-    const n = DB.negocio;
-    const ticket = {
-        codigo: obtenerCodigoImpresora(),
-        negocio: n.nombre || "POS",
-        slogan: n.slogan || "",
-        direccion: n.direccion || "",
-        telefono: n.telefono || "",
-        // El logotipo se guarda localmente en el navegador/WebView de este equipo.
-        logo: typeof obtenerLogoNegocio === "function" ? (obtenerLogoNegocio() || "") : "",
-        id: venta.id,
-        fecha: new Date(venta.fecha).toLocaleString("es-MX"),
-        cajero: venta.usuario || "admin",
-        notas: [typeof lineaTipoPedido === "function" ? lineaTipoPedido(venta) : "", venta.notas ? (venta.metodo === "PREVENTA PENDIENTE" ? venta.notas : "Nota: " + venta.notas) : ""].filter(Boolean).join("\n"),
-        items: venta.items.map(it => ({
-            cantidad: it.cantidad,
-            nombre: it.nombre,
-            precio: it.precio
-        })),
-        subtotal: venta.subtotal,
-        descuento: venta.descuento || 0,
-        propina: venta.propina || 0,
-        total: venta.total,
-        metodo: venta.metodo,
-        pagoCon: venta.pagoCon || 0,
-        cambio: venta.cambio || 0
-    };
-
-    try {
-        // Si el puente devuelve false la impresión falló; si no devuelve nada (void) se da por enviada
-        return Android.printTicket(JSON.stringify(ticket)) !== false;
-    } catch (e) {
-        console.error("Error al imprimir ticket:", e);
-        return false;
-    }
+async function androidImprimirTicket(venta) {
+  if (!EN_ANDROID || !(await androidEstaConectada())) return false;
+  const n=DB.negocio||{};
+  const ticket={ codigo:obtenerCodigoImpresora(), negocio:n.nombre||"POS", slogan:n.slogan||"", direccion:n.direccion||"", telefono:n.telefono||"", logo:typeof obtenerLogoNegocio==="function"?(obtenerLogoNegocio()||""):"", id:venta.id, fecha:new Date(venta.fecha).toLocaleString("es-MX"), cajero:venta.usuario||"admin", notas:[typeof lineaTipoPedido==="function"?lineaTipoPedido(venta):"",venta.notas?(venta.metodo==="PREVENTA PENDIENTE"?venta.notas:"Nota: "+venta.notas):""].filter(Boolean).join("\n"), items:(venta.items||[]).map(it=>({cantidad:it.cantidad,nombre:it.nombre,precio:it.precio})), subtotal:venta.subtotal, descuento:venta.descuento||0, propina:venta.propina||0, total:venta.total, metodo:venta.metodo, pagoCon:venta.pagoCon||0, cambio:venta.cambio||0 };
+  try { return (await POS_NATIVE.call("printTicket", {ticketJson:JSON.stringify(ticket)}, 45000)) !== false; } catch(e) { console.error("Error al imprimir ticket:",e); return false; }
 }
 
 // ============================================
 // UI — Modal de conexión
 // ============================================
 
-function abrirModalImpresora() {
+async function abrirModalImpresora() {
   if (!EN_ANDROID) {
     return abrirModal("⚠️ Solo en app Android", `
       <p style="color:#64748b;font-size:14px;margin-bottom:14px">
-        La impresión nativa Bluetooth solo funciona dentro de la app Android.
+        La impresión nativa Bluetooth solo funciona dentro de la aplicación móvil.
         Estás usando la versión web.
       </p>
       <p style="color:#64748b;font-size:13px;margin-bottom:14px">
@@ -178,7 +57,7 @@ function abrirModalImpresora() {
   }
 
   // Verificar Bluetooth
-  if (!androidIsBluetoothAvailable()) {
+  if (!(await androidIsBluetoothAvailable())) {
     return abrirModal("⚠️ Sin Bluetooth", `
       <p style="color:#64748b;font-size:14px">
         Este dispositivo no tiene Bluetooth disponible.
@@ -189,7 +68,7 @@ function abrirModalImpresora() {
     `);
   }
 
-  if (!androidIsBluetoothEnabled()) {
+  if (!(await androidIsBluetoothEnabled())) {
     return abrirModal("📶 Activar Bluetooth", `
       <p style="color:#64748b;font-size:14px;margin-bottom:14px">
         El Bluetooth está apagado. Actívalo para conectar la impresora.
@@ -202,8 +81,8 @@ function abrirModalImpresora() {
   }
 
   // Obtener dispositivos emparejados
-  const dispositivos = androidObtenerDispositivos();
-  const conectada = androidEstaConectada();
+  const dispositivos = await androidObtenerDispositivos();
+  const conectada = await androidEstaConectada();
 
   abrirModal("🖨️ Impresora Bluetooth", `
     <div style="background:${conectada ? '#d1fae5' : '#f1f5f9'};border-radius:12px;padding:14px;margin-bottom:16px">
@@ -266,11 +145,11 @@ function abrirModalImpresora() {
   `);
 }
 
-function conectarImpresora(address, nombre) {
+async function conectarImpresora(address, nombre) {
   toast("🔄 Conectando...");
 
-  setTimeout(() => {
-    const ok = androidConectarImpresora(address);
+  setTimeout(async () => {
+    const ok = await androidConectarImpresora(address);
     if (ok) {
       impresoraConectada = true;
       impresoraNombre = nombre;
@@ -283,9 +162,9 @@ function conectarImpresora(address, nombre) {
   }, 100);
 }
 
-function desconectarImpresora() {
+async function desconectarImpresora() {
   if (!EN_ANDROID) return;
-  androidDesconectar();
+  await androidDesconectar();
   impresoraConectada = false;
   impresoraNombre = "";
   toast("🔌 Desconectada");
@@ -293,7 +172,7 @@ function desconectarImpresora() {
   setTimeout(() => abrirModalImpresora(), 300);
 }
 
-function imprimirPrueba() {
+async function imprimirPrueba() {
   if (!EN_ANDROID) return;
 
   const testTicket = {
@@ -318,7 +197,7 @@ function imprimirPrueba() {
   };
 
   try {
-    const ok = Android.printTicket(JSON.stringify(testTicket));
+    const ok = await POS_NATIVE.call("printTicket", {ticketJson:JSON.stringify(testTicket)}, 45000);
     if (ok !== false) {
       toast("✅ Impresión enviada");
     } else {
@@ -330,7 +209,7 @@ function imprimirPrueba() {
 }
 
 // ============================================
-// CALLBACKS desde Android
+// CALLBACKS del dispositivo
 // ============================================
 window.onPrintSuccess = function(message) {
   console.log("✅ Print success:", message);

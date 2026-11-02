@@ -13,9 +13,9 @@ const escapeHTML = t => String(t ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;
 
 /* Descarga/guarda un archivo de texto. En la APK (WebView) las descargas blob: no funcionan,
    así que se usa el puente nativo; en navegador, descarga normal. */
-function guardarArchivoTexto(nombre, contenido, mime) {
-  if (window.Android && typeof window.Android.guardarArchivo === "function") {
-    return !!window.Android.guardarArchivo(nombre, contenido);
+async function guardarArchivoTexto(nombre, contenido, mime) {
+  if (window.POS_NATIVE && window.POS_NATIVE.available) {
+    return !!(await window.POS_NATIVE.call("guardarArchivo", {name:nombre, content:contenido}, 30000));
   }
   const blob = new Blob([contenido], { type: mime || "text/plain;charset=utf-8" });
   const url = URL.createObjectURL(blob);

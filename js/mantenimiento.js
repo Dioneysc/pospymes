@@ -80,7 +80,7 @@ function resumirPorMes(ventas, gastos) {
   return Object.values(m);
 }
 
-function archivarVentasAntiguas() {
+async function archivarVentasAntiguas() {
   const meses = Number((document.getElementById("mantMeses") || {}).value) || 6;
   const limite = new Date(); limite.setHours(0, 0, 0, 0); limite.setDate(1); limite.setMonth(limite.getMonth() - meses);
   const viejas = DB.ventas.filter(v => new Date(v.fecha) < limite);
@@ -101,7 +101,7 @@ function archivarVentasAntiguas() {
     ventas: viejas, gastos: gViejos, resumenMensual: resumen
   };
   let guardado = false;
-  try { guardado = guardarArchivoRespaldo(`archivo-historico-hasta-${fechaLocal(limite).slice(0, 7)}.json`, archivo); } catch (e) { console.error(e); }
+  try { guardado = await guardarArchivoRespaldo(`archivo-historico-hasta-${fechaLocal(limite).slice(0, 7)}.json`, archivo); } catch (e) { console.error(e); }
   if (!guardado) return toast("❌ No se pudo guardar el archivo. No se eliminó nada.");
 
   if (!confirm("✅ Archivo guardado.\n\nComprueba que esté en tu dispositivo (carpeta Descargas). Si ya lo tienes, se eliminarán esas " +
@@ -136,18 +136,18 @@ function registrarRespaldo() { LS.set("ultimoRespaldo", new Date().toISOString()
 function alternarRespaldoAutoCorte(on) { LS.set("respaldoAutoCorte", !!on); toast(on ? "💾 Respaldo automático al corte: activado" : "Respaldo automático al corte: desactivado"); }
 
 // Se llama al guardar un corte. Nunca debe impedir el corte si algo falla.
-function respaldoAutomatico(origen) {
+async function respaldoAutomatico(origen) {
   if (origen === "corte" && LS.get("respaldoAutoCorte", true) === false) return false;
   try {
     const d = new Date(), hhmm = String(d.getHours()).padStart(2, "0") + String(d.getMinutes()).padStart(2, "0");
-    const ok = guardarArchivoRespaldo(`respaldo-pos-${hoy()}-${hhmm}-${origen}.json`, crearObjetoRespaldo());
+    const ok = await guardarArchivoRespaldo(`respaldo-pos-${hoy()}-${hhmm}-${origen}.json`, crearObjetoRespaldo());
     if (ok) { registrarRespaldo(); toast("💾 Respaldo automático guardado"); }
     return !!ok;
   } catch (e) { console.warn("Respaldo automático:", e); return false; }
 }
 
 // Al iniciar sesión (solo administrador, una vez por sesión)
-function recordarRespaldo() {
+async function recordarRespaldo() {
   const s = JSON.parse(sessionStorage.getItem("sesion") || "{}");
   const rol = typeof rolActual === "function" ? rolActual() : s.rol;
   if (rol !== "admin" || sessionStorage.getItem("avisoRespaldo")) return;
@@ -157,7 +157,7 @@ function recordarRespaldo() {
   if (ult || DB.ventas.length) {
     const dias = ult ? Math.floor((Date.now() - new Date(ult)) / 864e5) : null;
     if (dias === null || dias >= MANT_DIAS_RESPALDO) {
-      if (confirm(`💾 ${dias === null ? "Aún no tienes un respaldo en este dispositivo" : "Hace " + dias + " días que no exportas un respaldo"}.\n\n¿Exportarlo ahora?`)) exportarBackup();
+      if (confirm(`💾 ${dias === null ? "Aún no tienes un respaldo en este dispositivo" : "Hace " + dias + " días que no exportas un respaldo"}.\n\n¿Exportarlo ahora?`)) await exportarBackup();
     }
   }
   const u = usoAlmacenamiento();

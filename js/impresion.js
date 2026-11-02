@@ -53,15 +53,15 @@ function mostrarTicketImpresion(v) {
     </div>
   `);
 }
-function imprimirVentaActual() {
+async function imprimirVentaActual() {
     if (!window._ventaActual) {
         return toast("⚠️ No hay venta reciente");
     }
 
     // Si estamos en la app Android
     if (typeof EN_ANDROID !== "undefined" && EN_ANDROID) {
-        if (typeof Android !== "undefined" && Android.isConnected && Android.isConnected()) {
-            const enviado = androidImprimirTicket(window._ventaActual);
+        if (await androidEstaConectada()) {
+            const enviado = await androidImprimirTicket(window._ventaActual);
             if (enviado) {
                 toast("🖨️ Impresión enviada");
                 return;

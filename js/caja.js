@@ -6,7 +6,7 @@
 
 // Un turno abierto sigue vigente al cruzar la medianoche hasta que se haga el corte,
 // siempre que lleve menos de TURNO_MAX_HORAS abierto. Pasado ese tiempo se considera olvidado.
-const TURNO_MAX_HORAS = 24;
+const TURNO_MAX_HORAS = 20;
 
 function initDia() {
   const e = estadoCajaHoy;
@@ -437,7 +437,7 @@ function calcArqueo() {
   el.style.color = Math.abs(dif) < 0.01 ? "var(--ok)" : (dif > 0 ? "#3b82f6" : "var(--rojo)");
 }
 
-function guardarCorte(esperado, efectivo, tarjeta, transf, total) {
+async function guardarCorte(esperado, efectivo, tarjeta, transf, total) {
   if (!confirm("El corte reinicia la caja: fondo inicial y movimientos de caja fuerte.\n\nLas ventas y gastos se conservan en Historial y Reportes.\n\n¿Guardar el corte?")) return;
   const contado = +$("#totalContado").textContent.replace(/[^0-9.-]/g, "");
   const nota = $("#corteNota").value.trim();
@@ -473,8 +473,8 @@ function guardarCorte(esperado, efectivo, tarjeta, transf, total) {
   window._fechaHistorialCortes = corte.dia;
   renderHistorialCortes();
   mostrarAlertaStock();
-  if (typeof respaldoAutomatico === "function") respaldoAutomatico("corte"); // antes de imprimir: no debe depender de la impresora
-  imprimirCorte(corte);
+  if (typeof respaldoAutomatico === "function") await respaldoAutomatico("corte"); // antes de imprimir: no debe depender de la impresora
+  await imprimirCorte(corte);
 }
 
 function resumenResultadoCorte(corte) {
@@ -553,17 +553,17 @@ function renderHistorialCortes(fechaSeleccionada) {
   `;
 }
 
-function imprimirCorteId(id) {
+async function imprimirCorteId(id) {
   const c = LS.get("cortes", []).find(x => String(x.id) === String(id));
   if (!c) return toast("⚠️ Corte no encontrado");
-  imprimirCorte(c);
+  await imprimirCorte(c);
 }
 
-function imprimirCorte(c) {
+async function imprimirCorte(c) {
   // En Android, enviar el corte al puente nativo Bluetooth (window.print no imprime por esta ruta).
   if (typeof EN_ANDROID !== "undefined" && EN_ANDROID) {
-    if (typeof androidImprimirCorte === "function" && typeof Android !== "undefined" && Android.isConnected && Android.isConnected()) {
-      const enviado = androidImprimirCorte(c);
+    if (typeof androidImprimirCorte === "function" && await androidEstaConectada()) {
+      const enviado = await androidImprimirCorte(c);
       if (enviado) {
         toast("🖨️ Corte enviado a la impresora");
       } else {

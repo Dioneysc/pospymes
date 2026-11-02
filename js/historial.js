@@ -117,7 +117,7 @@ function verTicketHistorial(ref) {
   `);
 }
 
-function exportarHistorial() {
+async function exportarHistorial() {
   const rows = [["Ticket","Fecha","Cajero","Productos","Subtotal","Desc","Propina","Total","Método","Estado","Motivo cancelación"]];
   DB.ventas.forEach(v => {
     rows.push([
@@ -134,7 +134,7 @@ function exportarHistorial() {
   const celda = c => { let s = String(c ?? ""); if (/^[=+\-@\t\r]/.test(s) && isNaN(Number(s))) s = "'" + s; return `"${s.replace(/"/g, '""')}"`; };
   const csv = rows.map(r => r.map(celda).join(",")).join("\n");
   // guardarArchivoTexto usa el puente nativo en la APK (las descargas blob: no funcionan allí)
-  if (guardarArchivoTexto(`historial_${hoy()}.csv`, "\ufeff" + csv, "text/csv;charset=utf-8")) toast("📥 Historial exportado");
+  if (await guardarArchivoTexto(`historial_${hoy()}.csv`, "\ufeff" + csv, "text/csv;charset=utf-8")) toast("📥 Historial exportado");
   else toast("⚠️ No se pudo guardar el archivo");
 }
 
@@ -209,13 +209,12 @@ function confirmarCancelarVenta(id) {
 }
 
 // Reimprime una venta existente tanto desde historial como desde la vista previa.
-function reimprimirVenta(ventaId) {
+async function reimprimirVenta(ventaId) {
   const venta = DB.ventas.find(v => String(v.id) === String(ventaId));
   if (!venta) return toast("⚠️ Venta no encontrada");
 
-  if (typeof EN_ANDROID !== "undefined" && EN_ANDROID &&
-      typeof Android !== "undefined" && typeof Android.isConnected === "function" && Android.isConnected()) {
-    const enviado = androidImprimirTicket(venta);
+  if (typeof EN_ANDROID !== "undefined" && EN_ANDROID && await androidEstaConectada()) {
+    const enviado = await androidImprimirTicket(venta);
     if (enviado) {
       toast("🖨️ Ticket enviado a la impresora");
       return;

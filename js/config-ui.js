@@ -126,12 +126,12 @@ function crearObjetoRespaldo() {
   };
 }
 
-function guardarArchivoRespaldo(nombre, respaldo) {
+async function guardarArchivoRespaldo(nombre, respaldo) {
   const contenido = JSON.stringify(respaldo, null, 2);
 
   // Android: guardar directamente el contenido mediante el puente nativo.
-  if (window.Android && typeof window.Android.guardarArchivo === "function") {
-    return !!window.Android.guardarArchivo(nombre, contenido);
+  if (window.POS_NATIVE && window.POS_NATIVE.available) {
+    return !!(await window.POS_NATIVE.call("guardarArchivo", {name:nombre, content:contenido}, 30000));
   }
 
   // Navegadores web: descargar normalmente mediante Blob.
@@ -147,11 +147,11 @@ function guardarArchivoRespaldo(nombre, respaldo) {
   return true;
 }
 
-function exportarBackup() {
+async function exportarBackup() {
   try {
     const respaldo = crearObjetoRespaldo();
     const nombre = `respaldo-pos-${hoy()}.json`;
-    if (!guardarArchivoRespaldo(nombre, respaldo)) {
+    if (!(await guardarArchivoRespaldo(nombre, respaldo))) {
       throw new Error("El dispositivo no pudo guardar el archivo");
     }
     if (typeof registrarRespaldo === "function") registrarRespaldo();
@@ -264,7 +264,7 @@ function importarBackup(e) {
 
   const lector = new FileReader();
 
-  lector.onload = function (evento) {
+  lector.onload = async function (evento) {
     try {
       const texto = evento.target.result;
       const respaldo = JSON.parse(texto);
@@ -330,7 +330,7 @@ function importarBackup(e) {
       const nombrePrevio = `respaldo-antes-de-restaurar-${hoy()}.json`;
       let respaldoPrevioGuardado = false;
       try {
-        respaldoPrevioGuardado = guardarArchivoRespaldo(nombrePrevio, crearObjetoRespaldo());
+        respaldoPrevioGuardado = await guardarArchivoRespaldo(nombrePrevio, crearObjetoRespaldo());
       } catch (errorRespaldo) {
         console.error("No se pudo crear el respaldo preventivo:", errorRespaldo);
       }
