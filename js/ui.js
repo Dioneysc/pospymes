@@ -23,7 +23,7 @@ function actualizarHeader() {
 
   const elLoginNombre = $("#loginNombre");
   const elLoginSlogan = $("#loginSlogan");
-  if (elLoginNombre) elLoginNombre.textContent = "🍗 " + (n.nombre || "POS");
+  if (elLoginNombre) elLoginNombre.textContent = (n.nombre || "POS");
   if (elLoginSlogan) elLoginSlogan.textContent = slogan;
 }
 
