@@ -13,7 +13,45 @@ let impresoraNombre = "";
 
 async function androidIsBluetoothAvailable() { return EN_ANDROID ? !!(await POS_NATIVE.call("isBluetoothAvailable")) : false; }
 async function androidIsBluetoothEnabled() { return EN_ANDROID ? !!(await POS_NATIVE.call("isBluetoothEnabled")) : false; }
-async function androidPedirActivarBluetooth() { if (EN_ANDROID) await POS_NATIVE.call("requestEnableBluetooth"); }
+async function androidPedirActivarBluetooth() {
+  if (!EN_ANDROID) return false;
+  try {
+    await POS_NATIVE.call("requestEnableBluetooth");
+    // La petición nativa abre el diálogo del sistema. Esperar a que Android
+    // regrese a primer plano y consultar el estado real sin cerrar el modal.
+    const activado = await new Promise(resolve => {
+      let terminado = false;
+      let intentos = 0;
+      const finalizar = valor => {
+        if (terminado) return;
+        terminado = true;
+        window.removeEventListener("pos:app-resume", revisar);
+        resolve(valor);
+      };
+      const revisar = async () => {
+        intentos++;
+        try {
+          if (await androidIsBluetoothEnabled()) return finalizar(true);
+        } catch (_) {}
+        if (intentos >= 40) return finalizar(false);
+        setTimeout(revisar, 400);
+      };
+      window.addEventListener("pos:app-resume", revisar);
+      setTimeout(revisar, 500);
+    });
+    if (activado) {
+      toast("✅ Bluetooth activado");
+      await abrirModalImpresora();
+    } else {
+      toast("Bluetooth sigue apagado. Puedes intentarlo nuevamente.");
+    }
+    return activado;
+  } catch (error) {
+    console.error("No se pudo activar Bluetooth:", error);
+    toast("No se pudo comprobar el estado de Bluetooth");
+    return false;
+  }
+}
 async function androidObtenerDispositivos() { return EN_ANDROID ? await POS_NATIVE.call("getPairedDevices") : []; }
 async function androidConectarImpresora(address) { return EN_ANDROID ? !!(await POS_NATIVE.call("connectToPrinter", {address}, 30000)) : false; }
 async function androidDesconectar() { return EN_ANDROID ? !!(await POS_NATIVE.call("disconnect")) : false; }
@@ -155,7 +193,26 @@ async function conectarImpresora(address, nombre) {
       impresoraNombre = nombre;
       toast("✅ Impresora conectada");
       cerrarModal();
-      setTimeout(() => abrirModalImpresora(), 300);
+      const ticketPendiente = window._ticketPendienteImpresion || null;
+      window._ticketPendienteImpresion = null;
+      if (ticketPendiente) {
+        // Reintentar solo la impresión: la venta ya está guardada y no se registra otra vez.
+        try {
+          const impreso = await androidImprimirTicket(ticketPendiente);
+          if (impreso) {
+            toast("🖨️ Ticket impreso correctamente");
+            if (typeof mostrarTicketImpresion === "function") mostrarTicketImpresion(ticketPendiente);
+          } else {
+            toast("⚠️ No se pudo imprimir. Puedes reintentar desde el ticket.");
+            if (typeof mostrarTicketImpresion === "function") mostrarTicketImpresion(ticketPendiente);
+          }
+        } catch (e) {
+          console.error("Error al reintentar ticket:", e);
+          if (typeof mostrarTicketImpresion === "function") mostrarTicketImpresion(ticketPendiente);
+        }
+      } else {
+        setTimeout(() => abrirModalImpresora(), 300);
+      }
     } else {
       toast("❌ No se pudo conectar");
     }

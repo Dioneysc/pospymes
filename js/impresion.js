@@ -70,9 +70,12 @@ async function imprimirVentaActual() {
                 return;
             }
         } else {
-            toast("⚠️ No hay impresora Bluetooth conectada");
+            // Conservar el ticket ya guardado. Al conectar la impresora se
+            // reintentará únicamente la impresión, sin duplicar la venta.
+            window._ticketPendienteImpresion = window._ventaActual;
+            toast("⚠️ Conecta la impresora para imprimir este ticket");
             if (typeof abrirModalImpresora === "function") {
-                abrirModalImpresora();
+                await abrirModalImpresora();
             }
             return;
         }
