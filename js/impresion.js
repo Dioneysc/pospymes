@@ -14,12 +14,15 @@ function mostrarTicketImpresion(v) {
   `).join("");
 
   const logoNegocio = typeof obtenerLogoNegocio === "function" ? obtenerLogoNegocio() : "";
+  const direccionTicket = n.mostrarDireccion !== false && n.direccion ? `<div class="centro">${escapeHTML(n.direccion)}</div>` : "";
+  const redesTicket = n.mostrarRedes === true ? [n.facebook ? `Facebook: ${n.facebook}` : "", n.instagram ? `Instagram: ${n.instagram}` : ""].filter(Boolean) : [];
+  const redesHTML = redesTicket.length ? `<div class="centro">Síguenos en nuestras redes:</div>${redesTicket.map(x => `<div class="centro">${escapeHTML(x)}</div>`).join("")}<div class="centro">¡Será un gusto atenderte nuevamente!</div>` : "";
   abrirModal("🧾 Ticket de venta", `
     <div class="ticket-preview">
       ${logoNegocio ? `<div class="centro"><img src="${escapeHTML(logoNegocio)}" alt="Logotipo" style="max-width:90px;max-height:70px;object-fit:contain"></div>` : ""}
       <div class="centro bold grande">${escapeHTML(n.nombre || "POS")}</div>
       <div class="centro">${escapeHTML(n.slogan || "")}</div>
-      ${n.direccion ? `<div class="centro">${escapeHTML(n.direccion)}</div>` : ""}
+      ${direccionTicket}
       ${n.telefono ? `<div class="centro">Tel: ${escapeHTML(n.telefono)}</div>` : ""}
       <hr>
       <div>Ticket No. ${String(v.id).padStart(6, "0")}</div>
@@ -42,8 +45,7 @@ function mostrarTicketImpresion(v) {
       ` : ""}
       <hr>
       <div class="centro">¡Gracias por su preferencia!</div>
-      <div class="centro bold">${escapeHTML(n.nombre || "")}</div>
-      <div class="centro">${escapeHTML(n.slogan || "")}</div>
+      ${redesHTML}
     </div>
 
     <div class="ticket-acciones" style="grid-template-columns: 1fr 1fr 1fr;">
@@ -133,12 +135,15 @@ function imprimirTicket(v) {
   ).join("");
 
   const logoNegocio = typeof obtenerLogoNegocio === "function" ? obtenerLogoNegocio() : "";
+  const direccionTicket = n.mostrarDireccion !== false && n.direccion ? `<div class="c">${escapeHTML(n.direccion)}</div>` : "";
+  const redesTicket = n.mostrarRedes === true ? [n.facebook ? `Facebook: ${n.facebook}` : "", n.instagram ? `Instagram: ${n.instagram}` : ""].filter(Boolean) : [];
+  const redesHTML = redesTicket.length ? `<div class="c">Síguenos en nuestras redes:</div>${redesTicket.map(x => `<div class="c">${escapeHTML(x)}</div>`).join("")}<div class="c">¡Será un gusto atenderte nuevamente!</div>` : "";
   imprimirHTML(`
     ${logoNegocio ? `<div class="c"><img src="${escapeHTML(logoNegocio)}" alt="Logotipo" style="max-width:90px;max-height:70px;object-fit:contain"></div>` : ""}
     <div class="c b g">${escapeHTML(n.nombre || "POS")}</div>
     <div class="c">${escapeHTML(n.slogan || "")}</div>
-    <div class="c">${escapeHTML(n.direccion || "")}</div>
-    <div class="c">Tel: ${escapeHTML(n.telefono || "")}</div>
+    ${direccionTicket}
+    ${n.telefono ? `<div class="c">Tel: ${escapeHTML(n.telefono)}</div>` : ""}
     <hr>
     <div>Ticket #${String(v.id).padStart(6, "0")}</div>
     <div>${new Date(v.fecha).toLocaleString("es-MX")}</div>
@@ -158,7 +163,6 @@ function imprimirTicket(v) {
     ` : ""}
     <hr>
     <div class="c">¡Gracias por su preferencia!</div>
-    <div class="c b">${escapeHTML(n.nombre || "")}</div>
-    <div class="c">${escapeHTML(n.slogan || "")}</div>
+    ${redesHTML}
   `, "ticket");
 }

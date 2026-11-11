@@ -32,7 +32,7 @@ let DB = {
   ventas: LS.get("ventas", []),
   gastos: LS.get("gastos", []),
   usuarios: LS.get("usuarios", []),
-  negocio: LS.get("negocio", { nombre: "POS PyMes", slogan: "Sistema de venta", direccion: "", telefono: "" })
+  negocio: LS.get("negocio", { nombre: "POS PyMes", slogan: "Sistema de venta", direccion: "", telefono: "", mostrarDireccion: true, mostrarRedes: false, facebook: "", instagram: "" })
 };
 
 // Sin argumentos guarda todo (como siempre). Con nombres, guarda solo esas colecciones:

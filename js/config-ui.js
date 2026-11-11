@@ -9,10 +9,18 @@ function cargarNegocio() {
   const elS = $("#cfgSlogan");
   const elD = $("#cfgDireccion");
   const elT = $("#cfgTelefono");
+  const elMD = $("#cfgMostrarDireccion");
+  const elMR = $("#cfgMostrarRedes");
+  const elFB = $("#cfgFacebook");
+  const elIG = $("#cfgInstagram");
   if (elN) elN.value = DB.negocio.nombre || "";
   if (elS) elS.value = DB.negocio.slogan || "";
   if (elD) elD.value = DB.negocio.direccion || "";
   if (elT) elT.value = DB.negocio.telefono || "";
+  if (elMD) elMD.checked = DB.negocio.mostrarDireccion !== false;
+  if (elMR) elMR.checked = DB.negocio.mostrarRedes === true;
+  if (elFB) elFB.value = DB.negocio.facebook || "";
+  if (elIG) elIG.value = DB.negocio.instagram || "";
   actualizarPreviewLogoNegocio();
 }
 
@@ -87,7 +95,11 @@ function guardarNegocio() {
     nombre: $("#cfgNombre").value.trim() || "POS",
     slogan: $("#cfgSlogan").value.trim() || "Sistema de venta",
     direccion: $("#cfgDireccion").value.trim(),
-    telefono: $("#cfgTelefono").value.trim()
+    telefono: $("#cfgTelefono").value.trim(),
+    mostrarDireccion: $("#cfgMostrarDireccion").checked,
+    mostrarRedes: $("#cfgMostrarRedes").checked,
+    facebook: $("#cfgFacebook").value.trim(),
+    instagram: $("#cfgInstagram").value.trim()
   };
   guardar();
   actualizarHeader();

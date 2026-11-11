@@ -28,6 +28,7 @@ function initDia() {
   }
 }
 
+
 function abrirFondoInicial() {
   abrirModal("💵 Abrir caja del día", `
     <p style="color:#64748b;font-size:14px;margin-bottom:12px">Ingresa el fondo inicial en efectivo para dar cambio.</p>
