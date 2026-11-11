@@ -67,17 +67,10 @@ async function androidImprimirCorte(corte) {
   try { return (await POS_NATIVE.call("printTicket", {ticketJson:JSON.stringify(datos)}, 45000)) !== false; } catch(e) { console.error("Error al imprimir corte:",e); return false; }
 }
 
-function formatearFechaTicketCorta(valor) {
-  const d = new Date(valor);
-  if (Number.isNaN(d.getTime())) return "";
-  const pad = n => String(n).padStart(2, "0");
-  return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${String(d.getFullYear()).slice(-2)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
 async function androidImprimirTicket(venta) {
   if (!EN_ANDROID || !(await androidEstaConectada())) return false;
   const n=DB.negocio||{};
-  const ticket={ codigo:obtenerCodigoImpresora(), negocio:n.nombre||"POS", slogan:n.slogan||"", direccion:n.direccion||"", telefono:n.telefono||"", logo:typeof obtenerLogoNegocio==="function"?(obtenerLogoNegocio()||""):"", id:venta.id, fechaCorta:formatearFechaTicketCorta(venta.fecha), cajero:venta.usuario||"admin", notas:[typeof lineaTipoPedido==="function"?lineaTipoPedido(venta):"",venta.notas?(venta.metodo==="PREVENTA PENDIENTE"?venta.notas:"Nota: "+venta.notas):""].filter(Boolean).join("\n"), items:(venta.items||[]).map(it=>({cantidad:it.cantidad,nombre:it.nombre,precio:it.precio})), subtotal:venta.subtotal, descuento:venta.descuento||0, propina:venta.propina||0, total:venta.total, metodo:venta.metodo, pagoCon:venta.pagoCon||0, cambio:venta.cambio||0 };
+  const ticket={ codigo:obtenerCodigoImpresora(), negocio:n.nombre||"POS", slogan:n.slogan||"", direccion:n.direccion||"", telefono:n.telefono||"", logo:typeof obtenerLogoNegocio==="function"?(obtenerLogoNegocio()||""):"", id:venta.id, fecha:new Date(venta.fecha).toLocaleString("es-MX"), cajero:venta.usuario||"admin", notas:[typeof lineaTipoPedido==="function"?lineaTipoPedido(venta):"",venta.notas?(venta.metodo==="PREVENTA PENDIENTE"?venta.notas:"Nota: "+venta.notas):""].filter(Boolean).join("\n"), items:(venta.items||[]).map(it=>({cantidad:it.cantidad,nombre:it.nombre,precio:it.precio})), subtotal:venta.subtotal, descuento:venta.descuento||0, propina:venta.propina||0, total:venta.total, metodo:venta.metodo, pagoCon:venta.pagoCon||0, cambio:venta.cambio||0 };
   try { return (await POS_NATIVE.call("printTicket", {ticketJson:JSON.stringify(ticket)}, 45000)) !== false; } catch(e) { console.error("Error al imprimir ticket:",e); return false; }
 }
 
