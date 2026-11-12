@@ -94,7 +94,7 @@ function guardarNegocio() {
   DB.negocio = {
     nombre: $("#cfgNombre").value.trim() || "POS",
     slogan: $("#cfgSlogan").value.trim() || "Sistema de venta",
-    direccion: $("#cfgDireccion").value.trim(),
+    direccion: $("#cfgDireccion").value.replace(/\r\n/g, "\n").trim(),
     telefono: $("#cfgTelefono").value.trim(),
     mostrarDireccion: $("#cfgMostrarDireccion").checked,
     mostrarRedes: $("#cfgMostrarRedes").checked,

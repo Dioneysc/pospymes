@@ -519,3 +519,9 @@ tr.gasto-dia td > div { display: flex; justify-content: space-between; align-ite
   tr.gasto-dia td { display: block; width: 100%; }
   tr.gasto-dia td > div { border-radius: 10px; }
 }
+
+
+/* Controles compactos de impresión del ticket */
+.config-toggle { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; margin:8px 0 10px; font-size:13px; font-weight:600; }
+.config-toggle input[type="checkbox"] { flex:0 0 auto; width:18px; height:18px; margin:0; accent-color:var(--naranja,#ea580c); }
+#cfgDireccion { width:100%; box-sizing:border-box; font:inherit; line-height:1.4; padding:10px 12px; border:1px solid var(--borde); border-radius:10px; background:var(--superficie,#fff); color:var(--texto); }
