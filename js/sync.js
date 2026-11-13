@@ -6,7 +6,7 @@
    ============================================ */
 
 const SYNC_COLS = ["productos", "insumos", "ventas", "gastos", "usuarios", "cortes", "preventasPendientes", "gastosPersonales", "cajaFuerteMovimientos", "bitacora", "movimientosInventario"]; // listas de registros con id
-const SYNC_CFG = ["negocio", "catsGasto", "cajaHoy", "cajaFuerteSaldoAjuste", "menusPorUsuario"]; // valores únicos (carpeta config)
+const SYNC_CFG = ["negocio", "catsGasto", "cajaFuerteSaldoAjuste", "menusPorUsuario"]; // cajaHoy usa transacciones exclusivas // valores únicos (carpeta config)
 const SYNC_LOCAL_LISTS = new Set(["preventasPendientes", "gastosPersonales", "cajaFuerteMovimientos", "bitacora", "movimientosInventario"]);
 const SYNC_CLAVES = new Set([...SYNC_COLS, ...SYNC_CFG]);
 const FB_VER = "10.12.2";
@@ -26,6 +26,7 @@ function marcarSyncCompleto() { syncForzarCompleto = true; }   // llamar tras ed
 let syncMeta = LS.get("syncMeta", { activo: false, slot: 0, email: "", uid: "", synced: {}, cfgT: {}, ultima: 0 });
 let SYNC_SLOT = syncMeta.slot || 0; // terminación de los IDs de este dispositivo (ver nuevoId en db.js)
 let syncDb = null, syncUid = null, syncUnsubs = [];
+let cajaNubeLista = false;
 let syncOcupado = false, syncRepetir = false, syncTimer = null, syncAplicando = false, uiTimer = null, syncUltimoError = "";
 
 // ---------- utilidades ----------
@@ -132,6 +133,17 @@ async function empujarCambios() {
 // ---------- recibir cambios de otros dispositivos ----------
 function escucharNube() {
   detenerEscucha();
+  cajaNubeLista = false;
+  // cajaHoy se escucha aparte: nunca debe competir con la subida genérica de configuración.
+  syncUnsubs.push(ref("config").doc("cajaHoy").onSnapshot(doc => {
+    if (!doc.exists) { cajaNubeLista = true; return; }
+    const remoto = doc.data()?.valor;
+    if (!remoto || typeof remoto !== "object") { cajaNubeLista = true; return; }
+    cajaNubeLista = true;
+    estadoCajaHoy = remoto;
+    syncAplicando = true; try { _lsSet("cajaHoy", remoto); } finally { syncAplicando = false; }
+    if (typeof renderEstadoCaja === "function") renderEstadoCaja();
+  }, e => { syncUltimoError = msgSync(e); pintarEstadoSync("⚠️ No se pudo actualizar el estado central de caja: " + syncUltimoError); }));
   [...SYNC_COLS, "config"].forEach(c => syncUnsubs.push(
     consultaEscucha(c).onSnapshot(snap => aplicarRemoto(c, snap.docChanges()), e => {
       syncUltimoError = msgSync(e);
@@ -153,6 +165,7 @@ function aplicarRemoto(c, cambios) {
     syncMeta.synced.config = syncMeta.synced.config || {};
     cambios.forEach(ch => {
       const k = ch.doc.id, d = ch.doc.data();
+      if (k === "cajaHoy") return; // estado exclusivo: lo gestiona su listener y las transacciones
       if (ch.type === "removed" || !SYNC_CFG.includes(k) || d.valor === undefined) return;
       const sh = syncMeta.synced.config[k], h = hashDe(d.valor);
       if (sh === h) return;                                            // ya está igual
@@ -195,6 +208,43 @@ function refrescarUI() {
   }, 400);
 }
 
+// ---------- operaciones atómicas de caja ----------
+// Requiere conexión confirmada. Firestore serializa transacciones concurrentes entre dispositivos.
+async function ejecutarOperacionCaja(tipo, datos = {}) {
+  if (!syncDb || !syncUid || !syncMeta.activo || !cajaNubeLista) throw new Error("Todavía se está recuperando el estado central de caja. Espera unos segundos e intenta de nuevo.");
+  if (!navigator.onLine) throw new Error("Se necesita internet para confirmar la apertura o el corte de caja.");
+  const cajaRef = ref("config").doc("cajaHoy");
+  const corteRef = tipo === "corte" ? ref("cortes").doc(String(datos.corte.id)) : null;
+  return syncDb.runTransaction(async tx => {
+    const snap = await tx.get(cajaRef);
+    const actual = snap.exists && snap.data().valor && typeof snap.data().valor === "object"
+      ? snap.data().valor : { fecha: hoy(), fondoInicial: null, retiros: [], depositos: [] };
+    const abierta = actual.fondoInicial !== null && actual.fondoInicial !== undefined;
+    if (tipo === "abrir") {
+      if (abierta) throw new Error("La caja ya está abierta en otro dispositivo. Se actualizará el estado de esta pantalla.");
+      const nueva = { ...actual, fecha: hoy(), fondoInicial: datos.monto, abiertaEn: new Date().toISOString(), abiertaId: datos.abiertaId, retiros: Array.isArray(actual.retiros) ? actual.retiros : [], depositos: Array.isArray(actual.depositos) ? actual.depositos : [] };
+      tx.set(cajaRef, { valor: nueva, _t: Date.now() });
+      return nueva;
+    }
+    if (tipo === "editarFondo") {
+      if (!abierta) throw new Error("La caja ya no está abierta. Actualiza la pantalla antes de continuar.");
+      const nueva = { ...actual, fondoInicial: datos.monto };
+      tx.set(cajaRef, { valor: nueva, _t: Date.now() });
+      return nueva;
+    }
+    if (tipo === "corte") {
+      if (!abierta) throw new Error("La caja ya está cerrada o el corte se realizó desde otro dispositivo.");
+      const coincide = datos.abiertaId ? actual.abiertaId === datos.abiertaId : actual.abiertaEn === datos.abiertaEn;
+      if (!coincide) throw new Error("La apertura cambió en otro dispositivo. No se guardó este corte; actualiza la pantalla.");
+      tx.set(corteRef, datos.corte);
+      const cerrada = { fecha: hoy(), fondoInicial: null, retiros: [], depositos: [], desde: new Date().toISOString() };
+      tx.set(cajaRef, { valor: cerrada, _t: Date.now() });
+      return { caja: cerrada, corte: datos.corte };
+    }
+    throw new Error("Operación de caja no reconocida.");
+  });
+}
+
 // ---------- conexión ----------
 function cargarFirebase() {
   if (typeof firebase !== "undefined" && firebase.firestore) return Promise.resolve();
@@ -227,6 +277,10 @@ async function descargarTodo() {
     const k = d.id, o = d.data();
     if (SYNC_CFG.includes(k) && o.valor !== undefined) { escribir(k, o.valor); syncMeta.synced.config[k] = hashDe(o.valor); syncMeta.cfgT[k] = o._t || 0; }
   });
+  const cajaDoc = await ref("config").doc("cajaHoy").get();
+  if (cajaDoc.exists && cajaDoc.data().valor !== undefined) {
+    escribir("cajaHoy", cajaDoc.data().valor);
+  }
   // Si la nube no tenía usuarios, escribir([]) dejaba el sistema sin acceso hasta recargar
   if (typeof actualizarPantallaLogin === "function") actualizarPantallaLogin(); // sin usuarios en la nube: el próximo ingreso pedirá crear contraseña
   if (typeof alinearInventarioConMovimientos === "function") alinearInventarioConMovimientos(); // stock = suma de los movimientos de todos los dispositivos

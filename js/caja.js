@@ -41,16 +41,23 @@ function abrirFondoInicial() {
   `);
 }
 
-function guardarFondo() {
+async function guardarFondo() {
   const monto = redondear2(+$("#fondoMonto").value || 0);
   if (monto < 0) return toast("⚠️ El fondo inicial no puede ser negativo");
   const estabaCerrada = estadoCajaHoy.fondoInicial === null || estadoCajaHoy.fondoInicial === undefined;
-  estadoCajaHoy.fondoInicial = monto;
-  if (estabaCerrada || !estadoCajaHoy.abiertaEn) estadoCajaHoy.abiertaEn = new Date().toISOString(); // editar el fondo no reinicia la hora de apertura
-  LS.set("cajaHoy", estadoCajaHoy);
-  cerrarModal();
-  renderEstadoCaja();
-  toast("✅ Caja abierta con fondo de " + fmt(monto));
+  try {
+    const nueva = await ejecutarOperacionCaja(estabaCerrada ? "abrir" : "editarFondo", {
+      monto, abiertaId: estabaCerrada ? (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2)) : undefined
+    });
+    estadoCajaHoy = nueva;
+    LS.set("cajaHoy", nueva); // almacenamiento local; la nube ya confirmó la transacción
+    cerrarModal(); renderEstadoCaja();
+    toast((estabaCerrada ? "✅ Caja abierta" : "✅ Fondo actualizado") + " con " + fmt(monto));
+  } catch (e) {
+    toast("⚠️ " + (e.message || "No se pudo confirmar la operación en Firebase"));
+    // Recuperar el valor central para no dejar la interfaz mostrando una caja desactualizada.
+    try { const snap = await firebase.firestore().collection("negocios").doc(syncUid).collection("config").doc("cajaHoy").get(); if (snap.exists) { estadoCajaHoy = snap.data().valor; LS.set("cajaHoy", estadoCajaHoy); renderEstadoCaja(); } } catch (_) {}
+  }
 }
 
 // Caja Fuerte: movimientos personales separados de las ventas y gastos del negocio.
@@ -469,13 +476,20 @@ async function guardarCorte(esperado, efectivo, tarjeta, transf, total) {
     usuario: JSON.parse(sessionStorage.getItem("sesion") || "{}").nombre || "admin"
   };
 
-  const cortes = LS.get("cortes", []);
-  cortes.push(corte);
-  LS.set("cortes", cortes);
-
-  // Reiniciar la caja: lo anterior queda en el corte, el Historial y los Reportes
-  estadoCajaHoy = { fecha: hoy(), fondoInicial: null, retiros: [], depositos: [], desde: new Date().toISOString() };
-  LS.set("cajaHoy", estadoCajaHoy);
+  try {
+    const resultado = await ejecutarOperacionCaja("corte", {
+      corte, abiertaId: estadoCajaHoy.abiertaId, abiertaEn: estadoCajaHoy.abiertaEn
+    });
+    const cortes = LS.get("cortes", []);
+    if (!cortes.some(c => String(c.id) === String(corte.id))) cortes.push(corte);
+    LS.set("cortes", cortes);
+    // El corte y el cierre ya quedaron confirmados juntos en una sola transacción.
+    estadoCajaHoy = resultado.caja;
+    LS.set("cajaHoy", estadoCajaHoy);
+  } catch (e) {
+    toast("⚠️ No se guardó el corte: " + (e.message || "Firebase no confirmó la operación"));
+    return;
+  }
 
   cerrarModal();
   toast(`✅ Corte guardado · Diferencia: ${fmt(diferencia)} · Caja reiniciada`);
